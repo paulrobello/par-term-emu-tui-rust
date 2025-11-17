@@ -1,0 +1,125 @@
+name: Publish 🐍 📦 to TestPyPI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Build package for testing
+  build-test-package:
+    name: Build test package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install uv and build
+        run: pip install uv build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-package-distributions
+          path: dist/
+
+  # Publish to TestPyPI
+  publish-to-testpypi:
+    name: Publish 🐍 distribution 📦 to TestPyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [build-test-package]
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/par-term-emu-tui-rust
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Get version
+        id: get_version
+        run: |
+          version=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "Package version: $version"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-package-distributions
+          path: dist/
+
+      - name: Publish distribution 📦 to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+      - name: Discord notification
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: 'The project {{ EVENT_PAYLOAD.repository.full_name }} v${{ steps.get_version.outputs.version }} has been published to TestPyPI for testing.'
+        continue-on-error: true
+
+  # Test installation from TestPyPI
+  test-testpypi-install:
+    name: Test TestPyPI Installation
+    runs-on: ubuntu-latest
+    needs: publish-to-testpypi
+    timeout-minutes: 10
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Wait for package availability
+        run: sleep 30
+
+      - name: Install from TestPyPI
+        run: |
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ par-term-emu-tui-rust
+
+      - name: Test import and CLI
+        run: |
+          source .venv/bin/activate
+          python -c "from par_term_emu_tui_rust.app import TerminalApp; print('✓ Import successful')"
+          python -c "from par_term_emu_tui_rust import __version__; print(f'✓ Version: {__version__}')" || echo "⚠ Version import not available"
+          par-term-emu-tui-rust --help
+          ptr --help
+
+      - name: Discord notification
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: 'TestPyPI package installation verified successfully for {{ EVENT_PAYLOAD.repository.full_name }}.'
+        continue-on-error: true

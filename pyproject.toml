@@ -1,0 +1,177 @@
+[project]
+name = "par-term-emu-tui-rust"
+version = "0.1.0"
+description = "Textual-based TUI demonstration of par-term-emu-tui-rust terminal emulator"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "textual[syntax]>=6.6.0",
+    "pyyaml>=6.0.3",
+    "xdg-base-dirs>=6.0.2",
+    "pyperclip>=1.11.0",
+    "par-term-emu-core-rust>=0.2.3",
+]
+authors = [
+    { name = "Paul Robello", email = "probello@gmail.com" },
+]
+maintainers = [
+    { name = "Paul Robello", email = "probello@gmail.com" },
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Environment :: Console",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Topic :: Terminals",
+    "Topic :: Terminals :: Terminal Emulators/X Terminals",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+keywords = [
+    "terminal",
+    "emulator",
+    "tui",
+    "textual",
+    "vt100",
+    "vt220",
+    "vt320",
+    "vt420",
+    "ansi",
+    "sixel",
+    "pty",
+    "terminal-emulator",
+    "unicode",
+    "true-color",
+]
+
+[project.license]
+file = "LICENSE"
+
+[project.urls]
+Homepage = "https://github.com/paulrobello/par-term-emu-tui-rust"
+Documentation = "https://github.com/paulrobello/par-term-emu-tui-rust/blob/main/README.md"
+Repository = "https://github.com/paulrobello/par-term-emu-tui-rust"
+Issues = "https://github.com/paulrobello/par-term-emu-tui-rust/issues"
+Discussions = "https://github.com/paulrobello/par-term-emu-tui-rust/discussions"
+
+[project.scripts]
+par-term-emu-tui-rust = "par_term_emu_tui_rust.app:main"
+ptr = "par_term_emu_tui_rust.app:main"
+
+[build-system]
+requires = [
+    "hatchling",
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/par_term_emu_tui_rust",
+]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/par_term_emu_tui_rust/install_scripts" = "par_term_emu_tui_rust/install_scripts"
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+exclude = [
+    "debug_scripts",
+    "__pycache__",
+    ".git",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "N",
+    "UP",
+    "ANN",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "T10",
+    "EM",
+    "ISC",
+    "ICN",
+    "G",
+    "PIE",
+    "T20",
+    "PT",
+    "Q",
+    "RSE",
+    "RET",
+    "SLF",
+    "SIM",
+    "TID",
+    "TCH",
+    "ARG",
+    "PTH",
+    "ERA",
+    "PD",
+    "PGH",
+    "PL",
+    "TRY",
+    "NPY",
+    "RUF",
+]
+ignore = [
+    "COM812",
+    "PLR0911",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+    "PLR2004",
+    "TRY300",
+    "TRY301",
+    "B007",
+    "PLC0415",
+    "SLF001",
+    "PLW2901",
+    "ARG002",
+    "ERA001",
+    "SIM102",
+    "SIM108",
+    "ANN401",
+    "A002",
+]
+
+[tool.pyright]
+pythonVersion = "3.14"
+typeCheckingMode = "standard"
+reportMissingTypeStubs = false
+reportMissingModuleSource = false
+include = ["src"]
+exclude = [
+    "debug_scripts",
+    "__pycache__",
+    ".git",
+    ".venv",
+]
+
+[tool.pytest.ini_options]
+timeout = 10  # Default timeout for all individual tests (seconds)
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.4.0",
+    "pyright>=1.1.407",
+    "pytest>=9.0.1",
+    "pytest-timeout>=2.4.0",
+    "ruff>=0.14.5",
+    "textual-dev>=1.8.0",
+]

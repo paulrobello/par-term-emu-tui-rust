@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test - Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.12", "3.13", "3.14"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install uv
+      run: pip install uv
+
+    - name: Create virtual environment and sync dependencies
+      run: |
+        uv venv .venv
+        uv sync --all-groups
+
+    - name: Run tests (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        source .venv/bin/activate
+        timeout 300 uv run pytest tests/ -v --timeout=10 --timeout-method=thread
+
+    - name: Run tests (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: |
+        .venv\Scripts\activate
+        uv run pytest tests/ -v --timeout=10 --timeout-method=thread
+
+  lint:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.14"
+
+    - name: Install uv
+      run: pip install uv
+
+    - name: Create virtual environment and sync dev dependencies
+      run: |
+        uv venv .venv
+        uv sync --group dev
+
+    - name: Check Python formatting
+      run: |
+        source .venv/bin/activate
+        uv run ruff format --check .
+
+    - name: Run Python linting
+      run: |
+        source .venv/bin/activate
+        uv run ruff check .
+
+    - name: Run Python type checking
+      run: |
+        source .venv/bin/activate
+        uv run pyright .

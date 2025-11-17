@@ -1,0 +1,186 @@
+# === Python Core ===
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+*.dylib
+
+# === Build & Distribution ===
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# === Virtual Environments ===
+# Python virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+**/venv/
+**/.venv/
+
+# UV virtual environments
+.uv/
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# === Testing & Coverage ===
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# === Development Tools ===
+# Code analysis and formatting
+.ruff_cache/
+.mypy_cache/
+.pytype/
+.pyre/
+
+# Documentation
+.pdoc/
+src/par_ai_core/html/
+
+# Profiling
+*.prof
+
+# === IDEs & Editors ===
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# === Operating Systems ===
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+.com
+.Trashes
+.VolumeIcon.icns
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+
+# === Environment & Secrets ===
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Configuration files with potential secrets
+config.json
+/config.json
+history.json
+/history.json
+
+# === AI Development Tools ===
+# Aider
+.aider*
+
+# Claude Code
+CLAUDE.md.bak
+
+# === Project Specific ===
+# Output directories
+output/
+/output/
+logs/
+temp/
+tmp/
+
+# Translations
+*.mo
+*.pot
+
+# === Language Version Managers ===
+# pyenv
+.python-version
+
+# === Package Managers ===
+# Poetry
+poetry.lock
+
+# Pipenv (commented - usually want this in version control)
+#Pipfile.lock
+
+# === Temporary Files ===
+*.tmp
+*.temp
+*.log
+*.bak
+*.backup

@@ -1,0 +1,241 @@
+# par-term-emu-tui-rust TUI Configuration
+#
+# This is an example configuration file showing all available options.
+# Copy this to ~/.config/par-term-emu-tui-rust/config.yaml to customize your settings.
+#
+# Default location: ~/.config/par-term-emu-tui-rust/config.yaml (Linux/macOS)
+#                   ~/Library/Application Support/par-term-emu-tui-rust/config.yaml (macOS)
+
+# ============================================================================
+# Selection & Clipboard
+# ============================================================================
+
+# Automatically copy selected text to clipboard
+# When enabled, double-click (word), triple-click (line), and shift+drag selections
+# are automatically copied to the system clipboard.
+# Default: true
+auto_copy_selection: true
+
+# Keep text highlighted after copying to clipboard
+# When enabled, the selection remains visible (like iTerm2) until the next input
+# event (keypress or mouse click). When disabled, selection clears immediately
+# after copying.
+# Default: true
+keep_selection_after_copy: true
+
+# Expose system clipboard to terminal applications
+# When enabled, allows terminal applications to read clipboard contents using
+# OSC 52 escape sequences (e.g., vim, tmux). When disabled, blocks clipboard
+# read operations for security.
+# Default: true
+expose_system_clipboard: true
+
+# Include trailing newline when copying lines
+# When enabled, adds \n at the end of copied line content.
+# Default: false
+copy_trailing_newline: false
+
+# Characters considered part of a word for double-click selection
+# Any character not in this string will be treated as a word boundary.
+# Default matches iTerm2: "/-+\\~_." (slash, hyphen, plus, backslash, tilde, underscore, dot)
+# For URL-friendly selection, you could use: "-_.~:/?#[]@!$&'()*+,;="
+word_characters: "/-+\\~_."
+
+# Select full wrapped lines on triple-click
+# When enabled, triple-click follows line wrapping to select complete logical lines.
+# When disabled, only selects the visible line on screen.
+# Default: true
+triple_click_selects_wrapped_lines: true
+
+# ============================================================================
+# Scrollback & Cursor
+# ============================================================================
+
+# Maximum number of lines to keep in scrollback buffer
+# Set to 0 for unlimited (up to max_scrollback_lines safety limit).
+# Default: 10000
+scrollback_lines: 10000
+
+# Safety limit for unlimited scrollback
+# Maximum number of lines even when scrollback_lines is 0.
+# Default: 100000
+max_scrollback_lines: 100000
+
+# Enable cursor blinking
+# When enabled, blinking cursor styles (BlinkingBlock, BlinkingUnderline, BlinkingBar)
+# will blink. Steady cursor styles remain always visible regardless.
+# Default: false
+cursor_blink_enabled: false
+
+# Cursor blink interval in seconds
+# Time between blink state changes when cursor_blink_enabled is true.
+# Default: 0.5
+cursor_blink_rate: 0.5
+
+# Default cursor appearance
+# Valid values: "blinking_block", "steady_block", "blinking_underline",
+#               "steady_underline", "blinking_bar", "steady_bar"
+# Default: "blinking_block"
+cursor_style: "blinking_block"
+
+# ============================================================================
+# Paste Enhancement
+# ============================================================================
+
+# Paste in chunks to avoid overwhelming the terminal
+# Set to 0 to disable chunking and paste all at once.
+# When > 0, splits paste into chunks of this many bytes.
+# Default: 0
+paste_chunk_size: 0
+
+# Delay in milliseconds between paste chunks
+# Only used when paste_chunk_size > 0.
+# Default: 10
+paste_chunk_delay_ms: 10
+
+# Warn user before pasting content larger than this many bytes
+# Helps prevent accidentally pasting huge content.
+# Default: 100000
+paste_warn_size: 100000
+
+# ============================================================================
+# Mouse & Focus
+# ============================================================================
+
+# Auto-focus terminal on mouse hover
+# When enabled, terminal automatically gains focus when mouse enters.
+# Default: false
+focus_follows_mouse: false
+
+# Paste on middle mouse button click
+# When enabled, middle click pastes text. On Linux, pastes from X11 PRIMARY
+# selection (text selected with mouse). On macOS/Windows, pastes from regular clipboard.
+# Default: true
+middle_click_paste: true
+
+# Number of lines to scroll per mouse wheel tick
+# Controls how many lines the terminal scrolls when using the mouse wheel
+# (when mouse tracking is off).
+# Default: 3
+mouse_wheel_scroll_lines: 3
+
+# ============================================================================
+# Security & Advanced
+# ============================================================================
+
+# Block potentially risky escape sequences
+# When enabled, filters out sequences that could be security risks.
+# Note: Currently not implemented.
+# Default: false
+disable_insecure_sequences: false
+
+# Allow directory tracking via OSC 7 sequences
+# When enabled, terminal applications can report current working directory.
+# Note: Currently not implemented.
+# Default: true
+accept_osc7: true
+
+# ============================================================================
+# Theme & Colors
+# ============================================================================
+
+# Color theme name to use for terminal colors
+# Available themes can be listed with `--list-themes` or `make tui-themes`.
+#
+# Each theme includes:
+#   - 16 ANSI palette colors (black, red, green, yellow, blue, magenta, cyan, white + bright variants)
+#   - background: Default background color
+#   - foreground: Default text color
+#   - cursor: Cursor color
+#   - cursor_text: Text color inside cursor
+#   - selection: Selection background color
+#   - selection_text: Selection text color
+#   - link: Hyperlink color
+#   - bold: Bold text color (when use_bold_color is enabled)
+#   - cursor_guide: Cursor guide vertical line color
+#   - underline: Underline color (when use_underline_color is enabled)
+#   - badge: Badge color
+#   - match: Search/match highlight color
+#
+# Available themes:
+#   - iterm2-dark: iTerm2-style colors with pure black background (default)
+#   - dark-background: Classic dark terminal colors
+#   - light-background: Classic light terminal colors
+#   - high-contrast: High contrast colors for accessibility
+#   - pastel-dark: Soft pastel colors on dark background
+#   - regular: Balanced colors for general use
+#   - smoooooth: Smooth, muted colors
+#   - solarized: Original Solarized theme
+#   - solarized-dark: Solarized Dark variant
+#   - solarized-light: Solarized Light variant
+#   - tango-dark: Tango colors on dark gray background
+#   - tango-light: Tango colors on light background
+#
+# Default: "iterm2-dark"
+theme: "iterm2-dark"
+
+# ============================================================================
+# Notifications
+# ============================================================================
+
+# Display OSC 9/777 notifications as toast messages
+# When enabled, terminal applications can display desktop-style notifications
+# using OSC 9 (simple) or OSC 777 (title + message).
+# Default: true
+show_notifications: true
+
+# Duration in seconds to display notifications
+# How long notification toasts remain visible before auto-dismissing.
+# Default: 5
+notification_timeout: 5
+
+# ============================================================================
+# Screenshot
+# ============================================================================
+
+# Directory to save screenshots
+# When not set (null), tries in order:
+# 1. Shell's current working directory (from OSC 7)
+# 2. XDG_PICTURES_DIR/Screenshots
+# 3. ~/Pictures/Screenshots
+# 4. Home directory
+# Set to a custom path to override default behavior.
+# Default: null
+screenshot_directory: null
+
+# File format for screenshots
+# Supported formats:
+#   - png: Lossless, best for text (default)
+#   - jpeg: Smaller file size, lossy compression
+#   - bmp: Uncompressed, large file size
+#   - svg: Vector format, infinitely scalable with selectable text
+#   - html: Full HTML document with inline styles, viewable in browsers
+# Default: "png"
+screenshot_format: "png"
+
+# Automatically open screenshot after capture
+# When enabled, opens the screenshot file with the system's default image viewer
+# (macOS: open, Linux: xdg-open, Windows: start) immediately after capturing.
+# Default: false
+open_screenshot_after_capture: false
+
+# ============================================================================
+# Shell Behavior
+# ============================================================================
+
+# Exit TUI when shell exits
+# When enabled, the TUI application exits when the shell process exits.
+# When disabled, displays exit message and allows restart with Ctrl+Shift+R.
+# Default: true
+exit_on_shell_exit: true
+
+# ============================================================================
+# UI Elements
+# ============================================================================
+
+# Show or hide the status bar at the bottom of the terminal
+# When enabled, the status bar is visible and can display information like
+# current directory (OSC 7). When disabled, the status bar is completely
+# hidden to maximize terminal space.
+# Default: true
+show_status_bar: true
