@@ -84,7 +84,7 @@ class TuiConfig:
         mouse_wheel_scroll_lines: Number of lines to scroll per mouse wheel tick.
                                  Controls how many lines the terminal scrolls when using the
                                  mouse wheel (when mouse tracking is off).
-                                 (default: 3)
+                                 (default: 1)
         disable_insecure_sequences: Block potentially risky escape sequences.
                                    When True, filters out sequences that could be security risks.
                                    Note: Currently not implemented.
@@ -96,6 +96,11 @@ class TuiConfig:
         theme: Color theme name to use for terminal colors.
               Available themes can be listed with `--list-themes`.
               (default: "dark-background")
+        bold_brightening: Use bright ANSI colors (8-15) for bold text with normal colors (0-7).
+                         When True, bold text with ANSI colors 0-7 automatically uses bright
+                         variants 8-15 (like iTerm2's "Use Bright Bold" setting). When False,
+                         bold text uses the original color without brightening.
+                         (default: True)
         show_notifications: Display OSC 9/777 notifications as toast messages.
                           When True, terminal applications can display desktop-style
                           notifications using OSC 9 (simple) or OSC 777 (title + message).
@@ -168,6 +173,27 @@ class TuiConfig:
                            terminal receives a bell character (BEL/\\x07). The icon
                            disappears on the next keyboard or mouse input.
                            (default: True)
+        keyboard_protocol_enabled: Enable KITTY keyboard protocol for embedded applications.
+                                  When True, sends enhanced keyboard sequences to the shell,
+                                  allowing apps to distinguish Ctrl+I from Tab, Ctrl+M from Enter,
+                                  and receive key release events (if flags include 2).
+                                  Applications must support KITTY protocol to benefit.
+                                  (default: False)
+        keyboard_protocol_flags: KITTY protocol feature flags.
+                                Bitwise OR combination of:
+                                - 1: Disambiguate escape codes (Ctrl+I ≠ Tab)
+                                - 2: Report key press and release events
+                                - 4: Report alternate key representations
+                                - 8: Report all keys as escape codes
+                                - 16: Include associated text with events
+                                Example: 3 = 1 + 2 (disambiguate + events)
+                                (default: 1)
+        keyboard_protocol_auto_detect: Auto-detect and enable KITTY protocol when apps request it.
+                                      When True, monitors PTY output for protocol activation sequences
+                                      (CSI >flags u) and automatically enables the protocol. When apps
+                                      disable it (CSI <u), automatically disables. Works seamlessly with
+                                      supporting applications without manual configuration.
+                                      (default: False)
     """
 
     # Selection & Clipboard (Currently Implemented)
@@ -203,6 +229,7 @@ class TuiConfig:
 
     # Theme (Phase 6)
     theme: str = "dark-background"  # Color theme name
+    bold_brightening: bool = True  # Use bright colors (8-15) for bold text with colors 0-7
 
     # Notifications (OSC 9/777)
     show_notifications: bool = True  # Display OSC 9/777 notifications as toasts
@@ -219,7 +246,7 @@ class TuiConfig:
     # Hyperlinks & URLs
     clickable_urls: bool = True  # Enable clicking URLs to open in browser
     link_color: tuple[int, int, int] = (100, 150, 255)  # RGB color for hyperlinks (blue)
-    url_modifier: str = "none"  # Modifier key for URL clicks: "none", "ctrl", "shift", "alt"
+    url_modifier: str = "ctrl"  # Modifier key for URL clicks: "none", "ctrl", "shift", "alt"
     allowed_url_schemes: list[str] = field(  # URL schemes allowed for clickable links
         default_factory=lambda: ["http", "https", "ftp", "ftps", "file", "mailto"],
     )
@@ -233,6 +260,13 @@ class TuiConfig:
 
     # Visual Bell
     visual_bell_enabled: bool = True  # Enable visual bell indicator (bell icon in header)
+
+    # Keyboard Protocol (KITTY)
+    keyboard_protocol_enabled: bool = False  # Enable KITTY keyboard protocol for embedded apps
+    keyboard_protocol_flags: int = (
+        1  # KITTY protocol flags (1=disambiguate, 2=events, 4=alternate, 8=report_all, 16=associated_text)
+    )
+    keyboard_protocol_auto_detect: bool = False  # Auto-detect and enable when apps request protocol
 
     @classmethod
     def load(cls, config_path: Path | None = None) -> TuiConfig:

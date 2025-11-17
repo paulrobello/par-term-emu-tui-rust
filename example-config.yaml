@@ -174,6 +174,13 @@ accept_osc7: true
 # Default: "iterm2-dark"
 theme: "iterm2-dark"
 
+# Use bright ANSI colors (8-15) for bold text with normal colors (0-7)
+# When enabled, bold text with ANSI colors 0-7 automatically uses bright
+# variants 8-15 (like iTerm2's "Use Bright Bold" setting). When disabled,
+# bold text uses the original color without brightening.
+# Default: true
+bold_brightening: true
+
 # ============================================================================
 # Notifications
 # ============================================================================
@@ -239,3 +246,112 @@ exit_on_shell_exit: true
 # hidden to maximize terminal space.
 # Default: true
 show_status_bar: true
+
+# Enable visual bell indicator in the header
+# When enabled, a bell icon (🔔) appears in the header when the terminal
+# receives a bell character (BEL/\x07). The icon disappears on the next
+# keyboard or mouse input.
+# Default: true
+visual_bell_enabled: true
+
+# ============================================================================
+# Hyperlinks & URLs
+# ============================================================================
+
+# Enable clicking URLs to open in browser
+# When enabled, clicking on URLs (OSC 8 hyperlinks or plain text URLs) will
+# open them in the default web browser.
+# Default: true
+clickable_urls: true
+
+# RGB color for hyperlinks
+# Controls the visual appearance of clickable links in the terminal.
+# Format: [red, green, blue] where each value is 0-255.
+# Default: [100, 150, 255] (blue)
+link_color: [100, 150, 255]
+
+# Modifier key required for URL clicks
+# Options: "none", "ctrl", "shift", "alt"
+# - "none": Click URLs directly without modifier
+# - "ctrl": Require Ctrl+Click to open URLs
+# - "shift": Require Shift+Click to open URLs
+# - "alt": Require Alt+Click to open URLs
+# Default: "ctrl"
+url_modifier: "ctrl"
+
+# List of URL schemes allowed to be opened via clickable links
+# Schemes are case-insensitive. Examples: "http", "https", "ftp", "ftps", "file", "mailto"
+# Default: ["http", "https", "ftp", "ftps", "file", "mailto"]
+allowed_url_schemes:
+  - "http"
+  - "https"
+  - "ftp"
+  - "ftps"
+  - "file"
+  - "mailto"
+
+# Warn when a URL is blocked due to unknown scheme
+# When enabled, a non-fatal warning is displayed instead of opening the URL.
+# Default: true
+warn_on_unknown_url_scheme: true
+
+# ============================================================================
+# Search & Highlighting
+# ============================================================================
+
+# RGB color for search match highlights
+# Controls the visual appearance of search matches in the terminal.
+# Format: [red, green, blue] where each value is 0-255.
+# Prepares for future search feature implementation.
+# Default: [255, 255, 0] (yellow)
+search_match_color: [255, 255, 0]
+
+# ============================================================================
+# Keyboard Protocol (KITTY)
+# ============================================================================
+
+# Enable KITTY keyboard protocol for embedded applications
+# When enabled, sends enhanced keyboard sequences to the shell, allowing apps
+# to distinguish Ctrl+I from Tab, Ctrl+M from Enter, and receive key release
+# events (if flags include 2). Applications must support KITTY protocol to benefit.
+#
+# Mode 1 (Manual): Always use enhanced sequences
+# Mode 2 (Auto-Detect): Enable when apps request via CSI >flags u
+#
+# Recommendation: Use auto_detect mode for seamless operation.
+# Default: false
+keyboard_protocol_enabled: false
+
+# KITTY protocol feature flags
+# Bitwise OR combination of:
+#   1: Disambiguate escape codes (Ctrl+I ≠ Tab) - RECOMMENDED
+#   2: Report key press and release events
+#   4: Report alternate key representations
+#   8: Report all keys as escape codes
+#   16: Include associated text with events
+#
+# Common values:
+#   1: Just disambiguation (recommended default)
+#   3: Disambiguation + key release events (1 + 2)
+#   7: Disambiguation + events + alternate keys (1 + 2 + 4)
+#
+# Note: Textual framework currently supports flag 1 only. Flags 2, 4, 8, 16
+# require upstream Textual enhancements.
+# Default: 1
+keyboard_protocol_flags: 1
+
+# Auto-detect and enable KITTY protocol when apps request it
+# When enabled, monitors PTY output for protocol activation sequences
+# (CSI >flags u) and automatically enables the protocol. When apps disable
+# it (CSI <u), automatically disables. Works seamlessly with supporting
+# applications without manual configuration.
+#
+# How it works:
+#   1. App requests protocol: CSI >flags u → TUI enables enhanced sequences
+#   2. App disables protocol: CSI <u → TUI reverts to legacy sequences
+#   3. Zero configuration: Works with supporting apps automatically
+#   4. Backward compatible: Legacy apps continue to work normally
+#
+# Recommendation: Enable this for the best user experience.
+# Default: false
+keyboard_protocol_auto_detect: false

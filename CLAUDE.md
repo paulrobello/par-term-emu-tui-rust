@@ -53,6 +53,23 @@ uv run pytest tests/test_foo.py          # Run specific test file
 uv run pytest tests/test_foo.py::test_bar # Run specific test
 ```
 
+### Installation Commands
+```bash
+# Install all components (recommended after setup)
+par-term-emu-tui-rust install all
+
+# Install individual components
+par-term-emu-tui-rust install terminfo              # Install terminfo definition
+par-term-emu-tui-rust install terminfo --system     # System-wide (requires sudo)
+par-term-emu-tui-rust install shell-integration     # For current shell
+par-term-emu-tui-rust install shell-integration --all  # For all shells
+par-term-emu-tui-rust install shell-integration zsh # For specific shell
+par-term-emu-tui-rust install font                  # Install Hack font
+
+# Get help
+par-term-emu-tui-rust install --help
+```
+
 **IMPORTANT:** When tests fail, investigate if the issue is:
 1. A real bug in the code (fix the code)
 2. A test implementation problem (fix the test)
@@ -331,3 +348,4 @@ uv run textual keys     # Key name helper
 - Never run the tui, ask the user to run it
 - the sister project par-term-emu-core-rust is located locally in ../par-term-emu-core-rust and on github in https://github.com/paulrobello/par-term-emu-core-rust
 - *IMPORTANT* NEVER RUN THE TUI IT WILL CORRUPT YOUR TERMINAL, ASK THE USER TO RUN IT!
+- Do not store package versions in documentation. It is brittle and difficult to maintain.

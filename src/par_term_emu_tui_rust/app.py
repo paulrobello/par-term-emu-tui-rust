@@ -19,6 +19,7 @@ from par_term_emu_tui_rust.terminal_widget import TerminalWidget
 from par_term_emu_tui_rust.terminal_widget.screenshot import ScreenshotManager
 from par_term_emu_tui_rust.themes import list_themes
 from par_term_emu_tui_rust.utils import open_with_default_app
+from par_term_emu_tui_rust.widgets.bell_flash import BellFlash
 from par_term_emu_tui_rust.widgets.flash_line import FlashLine
 from par_term_emu_tui_rust.widgets.status_bar import StatusBar
 from par_term_emu_tui_rust.widgets.terminal_header import TerminalHeader
@@ -70,6 +71,12 @@ class TerminalApp(App):
     ]
     AUTO_FOCUS = "TerminalWidget"
 
+    DEFAULT_CSS = """
+    Screen {
+        align: center middle;
+    }
+    """
+
     def __init__(
         self,
         shell_command: str | None = None,
@@ -117,6 +124,7 @@ class TerminalApp(App):
             status_bar.styles.display = "none"
         yield status_bar
         yield FlashLine()
+        yield BellFlash()
         yield Footer()
 
     def on_mount(self) -> None:
@@ -287,7 +295,12 @@ def main(
         parser = argparse.ArgumentParser(
             description="PAR Terminal Emulator - Rust backend with Python TUI",
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            epilog=f"Configuration file: {TuiConfig.default_config_path()}",
+            epilog=f"""Configuration file: {TuiConfig.default_config_path()}
+
+Subcommands:
+  install                  Install shell integration, terminfo, or fonts
+                          Run 'par-term-emu-tui-rust install --help' for details
+""",
         )
         parser.add_argument(
             "--debug",
@@ -364,6 +377,39 @@ def main(
             type=str,
             help="Color theme to use for this session (overrides config file)",
             default=None,
+        )
+        parser.add_argument(
+            "--keyboard-protocol",
+            action="store_true",
+            default=None,
+            help="Enable KITTY keyboard protocol for embedded applications",
+        )
+        parser.add_argument(
+            "--no-keyboard-protocol",
+            action="store_true",
+            default=None,
+            help="Disable KITTY keyboard protocol (override config file)",
+        )
+        parser.add_argument(
+            "--keyboard-protocol-flags",
+            type=int,
+            default=None,
+            metavar="FLAGS",
+            help=(
+                "KITTY protocol flags: 1=disambiguate, 2=events, 4=alternate, 8=report_all, 16=text (combine by adding)"
+            ),
+        )
+        parser.add_argument(
+            "--keyboard-protocol-auto-detect",
+            action="store_true",
+            default=None,
+            help="Auto-detect and enable KITTY protocol when embedded apps request it",
+        )
+        parser.add_argument(
+            "--no-keyboard-protocol-auto-detect",
+            action="store_true",
+            default=None,
+            help="Disable auto-detection (override config file)",
         )
         args = parser.parse_args()
 
@@ -567,12 +613,22 @@ def main(
         screenshot_after_seconds = args.screenshot
         open_screenshot = args.open_screenshot
         debug_mode = args.debug
+        keyboard_protocol_override = args.keyboard_protocol
+        no_keyboard_protocol_override = args.no_keyboard_protocol
+        keyboard_protocol_flags_override = args.keyboard_protocol_flags
+        keyboard_protocol_auto_detect_override = args.keyboard_protocol_auto_detect
+        no_keyboard_protocol_auto_detect_override = args.no_keyboard_protocol_auto_detect
     else:
         # Parameters were provided directly, use defaults for others
         auto_quit_seconds = None
         screenshot_after_seconds = None
         open_screenshot = False
         debug_mode = False
+        keyboard_protocol_override = None
+        no_keyboard_protocol_override = None
+        keyboard_protocol_flags_override = None
+        keyboard_protocol_auto_detect_override = None
+        no_keyboard_protocol_auto_detect_override = None
 
     # Load config if not provided
     if config is None:
@@ -581,6 +637,19 @@ def main(
     # Override theme from command line if provided
     if parsed_args and theme_override is not None:
         config.theme = theme_override
+
+    # Override keyboard protocol settings from command line if provided
+    if parsed_args:
+        if keyboard_protocol_override:
+            config.keyboard_protocol_enabled = True
+        elif no_keyboard_protocol_override:
+            config.keyboard_protocol_enabled = False
+        if keyboard_protocol_flags_override is not None:
+            config.keyboard_protocol_flags = keyboard_protocol_flags_override
+        if keyboard_protocol_auto_detect_override:
+            config.keyboard_protocol_auto_detect = True
+        elif no_keyboard_protocol_auto_detect_override:
+            config.keyboard_protocol_auto_detect = False
 
     app = TerminalApp(
         shell_command=shell_command,

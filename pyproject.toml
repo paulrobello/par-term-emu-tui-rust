@@ -1,15 +1,15 @@
 [project]
 name = "par-term-emu-tui-rust"
-version = "0.2.0"
+version = "0.3.0"
 description = "Textual-based TUI demonstration of par-term-emu-tui-rust terminal emulator"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "textual[syntax]>=6.6.0",
     "pyyaml>=6.0.3",
     "xdg-base-dirs>=6.0.2",
     "pyperclip>=1.11.0",
-    "par-term-emu-core-rust>=0.2.3",
+    "par-term-emu-core-rust>=0.5.0",
 ]
 authors = [
     { name = "Paul Robello", email = "probello@gmail.com" },
@@ -151,7 +151,9 @@ pythonVersion = "3.14"
 typeCheckingMode = "standard"
 reportMissingTypeStubs = false
 reportMissingModuleSource = false
-include = ["src"]
+include = [
+    "src",
+]
 exclude = [
     "debug_scripts",
     "__pycache__",
@@ -160,8 +162,10 @@ exclude = [
 ]
 
 [tool.pytest.ini_options]
-timeout = 10  # Default timeout for all individual tests (seconds)
-testpaths = ["tests"]
+timeout = 10
+testpaths = [
+    "tests",
+]
 
 [dependency-groups]
 dev = [

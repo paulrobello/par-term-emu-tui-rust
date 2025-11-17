@@ -66,7 +66,7 @@ graph TD
 
 **Configuration:**
 ```yaml
-mouse_wheel_scroll_lines: 3  # Lines per wheel tick
+mouse_wheel_scroll_lines: 1  # Lines per wheel tick
 ```
 
 ### Click Actions on Special Elements

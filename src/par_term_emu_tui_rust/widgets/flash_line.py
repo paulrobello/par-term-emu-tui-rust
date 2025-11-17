@@ -22,7 +22,7 @@ class FlashLine(Static):
         text-wrap: nowrap;
         text-overflow: ellipsis;
         overlay: screen;
-        offset-y: 0;
+        offset-y: -1;
 
         &.-default {
             background: $primary 10%;
@@ -45,11 +45,12 @@ class FlashLine(Static):
         }
 
         &.-location-bottom {
-            offset-y: 0;
+            offset-y: -1;
         }
 
         &.-location-top {
             position: absolute;
+            offset-y: 1;
         }
     }
     """

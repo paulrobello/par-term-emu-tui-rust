@@ -16,9 +16,9 @@ class StatusBar(Static):
         background: $success 10%;
         color: $text-success;
         text-align: center;
-        visibility: hidden;
         text-wrap: nowrap;
         text-overflow: ellipsis;
+        offset-y: 0;
 
         &.-default {
             background: $primary 10%;

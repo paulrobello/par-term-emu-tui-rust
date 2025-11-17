@@ -90,9 +90,10 @@ A built-in modal dialog for editing configuration files directly within the TUI:
 - Opens `~/.config/par-term-emu-tui-rust/config.yaml`
 
 **Keyboard Shortcuts:**
-- `Ctrl+S` - Save changes and close dialog
-- `Escape` - Cancel and discard changes
-- Standard text editing (arrow keys, home/end, etc.)
+- **Ctrl+S** - Save changes and close dialog
+- **Escape** - Cancel and discard changes
+- Standard text editing (arrow keys, home/end, page up/down, etc.)
+- **Tab** - Indent (4 spaces in YAML mode)
 
 **Use Cases:**
 - Quick configuration adjustments without leaving TUI
@@ -138,8 +139,10 @@ graph TD
 ```
 
 **Implementation:**
-- Located in `src/par_term_emu_tui_rust/dialogs/config_edit_dialog.py`
+- Dialog: `src/par_term_emu_tui_rust/dialogs/config_edit_dialog.py`
+- Action binding: `src/par_term_emu_tui_rust/app.py` (action_edit_config)
 - Uses Textual's ModalScreen and TextArea widgets
+- YAML syntax highlighting with Monokai theme
 - Integrates with TuiConfig for default value generation
 - Flash messages for user feedback on save/error
 
@@ -206,7 +209,7 @@ Navigate through terminal history to view previous output.
 # Scrollback settings
 scrollback_lines: 10000          # Maximum history lines (0 = unlimited)
 max_scrollback_lines: 100000     # Safety limit for unlimited mode
-mouse_wheel_scroll_lines: 3      # Lines per wheel tick
+mouse_wheel_scroll_lines: 1      # Lines per wheel tick
 ```
 
 ## Mouse Support
@@ -357,7 +360,7 @@ paste_warn_size: 100000                # Warn before pasting large content
 
 ## Visual Bell
 
-The terminal supports visual bell notifications that display a bell icon in the header when applications send a bell character (BEL/\x07).
+The terminal supports visual bell notifications using TWO complementary systems when applications send a bell character (BEL/\x07).
 
 ### Bell Behavior
 
@@ -366,16 +369,26 @@ The terminal supports visual bell notifications that display a bell icon in the 
 - Examples: `echo -e "\a"`, `printf "\007"`, system alerts
 - Common in shells for completion alerts, errors, or notifications
 
-**Visual Indicator:**
-- Bell icon (🔔) appears in the header
-- Persists until user interaction (any key press or mouse click)
-- Non-intrusive visual feedback
-- No audio component (visual only)
+**Visual Indicators:**
+
+1. **Flash Overlay (BellFlash)**:
+   - 3×3 centered overlay with bell icon (🔔)
+   - Appears for 0.25 seconds then auto-dismisses
+   - Immediate, attention-grabbing visual feedback
+   - Uses warning color theme with rounded border
+
+2. **Header Indicator (TerminalHeader)**:
+   - Bell icon (🔔) appears in the header subtitle
+   - Persists until user interaction (any key press or mouse click)
+   - Provides lasting visual reminder
+   - Non-intrusive indicator for users who miss the flash
 
 **User Interaction:**
-- Bell clears on next keyboard input
-- Bell clears on any mouse click
+- Header bell clears on next keyboard input
+- Header bell clears on any mouse click
+- Flash overlay dismisses automatically after 0.25 seconds
 - Allows user to acknowledge notification naturally
+- No audio component (visual only)
 
 ### Configuration
 

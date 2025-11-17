@@ -75,6 +75,7 @@ par-term-emu-tui-rust --command "cd /tmp && ls"
 
 ```
 Usage: par-term-emu-tui-rust [OPTIONS]
+       par-term-emu-tui-rust install <component> [OPTIONS]
 
 Options:
   -d, --debug                  Enable debug logging to debug_logs/
@@ -90,6 +91,10 @@ Options:
   --apply-theme-from FILE      Apply theme from YAML file and exit
   --theme NAME                 Use theme for this session (overrides config)
   -h, --help                   Show this help message and exit
+
+Subcommands:
+  install                      Install shell integration, terminfo, or fonts
+                              Run 'par-term-emu-tui-rust install --help' for details
 ```
 
 ### Debug Options
@@ -182,7 +187,7 @@ paste_warn_size: 100000
 # ============================================================================
 focus_follows_mouse: false
 middle_click_paste: true
-mouse_wheel_scroll_lines: 3
+mouse_wheel_scroll_lines: 1
 
 # ============================================================================
 # Security & Advanced

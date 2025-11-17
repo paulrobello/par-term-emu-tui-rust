@@ -24,6 +24,7 @@ This guide establishes standards and best practices for creating and maintaining
 - **Test all examples** before documenting
 - **Update cross-references** when modifying content
 - **Never use line numbers** in file references - They're brittle and hard to maintain
+- **Do not store package versions** in documentation - Version numbers are brittle and difficult to maintain
 
 ## Document Structure
 
@@ -238,6 +239,38 @@ graph TD
 - Temporary debugging notes (marked clearly as temporary)
 - Issue reports with specific commit SHA references
 - Code review comments (ephemeral by nature)
+
+#### Package Versions
+
+**IMPORTANT**: Do not store package version numbers in documentation. Versions are brittle and difficult to maintain as dependencies are updated.
+
+**Good examples:**
+- "Requires Python 3.12+" - minimum version requirement only
+- "Uses Textual framework for the TUI"
+- "Built with par-term-emu-core-rust (Rust backend)"
+- "Dependencies managed via pyproject.toml"
+
+**Bad examples:**
+- ❌ "Textual 6.6.0+" - specific version that will become outdated
+- ❌ "PyYAML 6.0.3 for configuration" - unnecessarily specific
+- ❌ "par-term-emu-core-rust 0.4.0 or later" - maintenance burden
+
+**Why avoid version numbers:**
+- Dependencies update frequently
+- Documentation becomes stale and misleading
+- Creates maintenance burden across all docs
+- Version requirements are already defined in package manifests (pyproject.toml, requirements.txt, etc.)
+- Users should reference the canonical source (package files) for version info
+
+**Where versions ARE appropriate:**
+- Release notes and changelogs
+- Migration guides (e.g., "Upgrading from v1.x to v2.x")
+- Troubleshooting specific version-related bugs
+- Package manifest files (pyproject.toml, requirements.txt)
+
+**Best practice**: Reference the package manifest location instead:
+- "See `pyproject.toml` for current dependency versions"
+- "Minimum Python version specified in `pyproject.toml`"
 
 #### Callout Boxes
 

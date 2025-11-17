@@ -30,7 +30,7 @@ from par_term_emu_tui_rust.terminal_widget.rendering import Renderer
 from par_term_emu_tui_rust.terminal_widget.screenshot import ScreenshotManager
 from par_term_emu_tui_rust.terminal_widget.selection import SelectionManager
 from par_term_emu_tui_rust.utils import open_with_default_app
-from par_term_emu_tui_rust.widgets.terminal_header import TerminalHeader
+from par_term_emu_tui_rust.widgets.bell_flash import BellFlash
 
 if TYPE_CHECKING:
     from textual.events import (
@@ -94,10 +94,10 @@ class TerminalWidget(Widget, can_focus=True):
         ("ctrl+shift+c", "copy_selection", "Copy"),
         ("ctrl+shift+v", "paste_clipboard", "Paste"),
         ("ctrl+shift+s", "save_screenshot", "Screenshot"),
-        ("ctrl+shift+pageup", "scroll_up", "Scroll Up"),
-        ("ctrl+shift+pagedown", "scroll_down", "Scroll Down"),
-        ("shift+home", "scroll_top", "Scroll to Top"),
-        ("shift+end", "scroll_bottom", "Scroll to Bottom"),
+        ("ctrl+shift+pageup", "scroll_up", "Page Up"),
+        ("ctrl+shift+pagedown", "scroll_down", "Page Down"),
+        ("shift+home", "scroll_top", "Scroll Top"),
+        ("shift+end", "scroll_bottom", "Scroll Bottom"),
     ]
 
     # Reactive attributes
@@ -154,8 +154,13 @@ class TerminalWidget(Widget, can_focus=True):
         self.term.set_allow_clipboard_read(self.config.expose_system_clipboard)
         self.term.set_accept_osc7(self.config.accept_osc7)
         self.term.set_disable_insecure_sequences(self.config.disable_insecure_sequences)
+        self.term.set_bold_brightening(self.config.bold_brightening)
         self.last_update_generation = 0
         self.render_generation = 0  # Generation snapshot for rendering (prevents stale rendering)
+
+        # Track keyboard protocol auto-detection state
+        self._last_keyboard_flags = 0
+        self._app_requested_protocol = False
         self.last_bell_count = 0  # Track last bell count for detecting new bell events
         self._poll_interval = None
         self._mouse_button_state = None  # Track which button is pressed (None = no button)
@@ -277,6 +282,14 @@ class TerminalWidget(Widget, can_focus=True):
                 # Use default shell via spawn_shell() method
                 self.term.spawn_shell()
                 debug_log("LIFECYCLE", f"spawned default shell for widget {widget_id}")
+
+            # Enable KITTY keyboard protocol if configured
+            if self.config.keyboard_protocol_enabled:
+                self.term.set_keyboard_flags(self.config.keyboard_protocol_flags, mode=1)
+                debug_log(
+                    "KEYBOARD",
+                    f"enabled KITTY keyboard protocol with flags {self.config.keyboard_protocol_flags}",
+                )
 
             # Theme was already applied in __init__, just get the background color for widget styles
             # Re-apply theme to get the background color (theme_manager.apply_theme is idempotent)
@@ -523,6 +536,45 @@ class TerminalWidget(Widget, can_focus=True):
         except Exception:
             return None, None
 
+    def _check_keyboard_protocol_changes(self) -> None:
+        """Check if the embedded application has requested or disabled KITTY keyboard protocol.
+
+        This implements Option B (Smart Protocol Detection):
+        - Monitors the terminal's keyboard_flags() state
+        - When flags change from 0 to non-zero: app requested protocol, auto-enable
+        - When flags change from non-zero to 0: app disabled protocol, auto-disable
+        - Only active when keyboard_protocol_auto_detect is enabled in config
+        """
+        current_flags = self.term.keyboard_flags()
+
+        # Detect changes in keyboard protocol state
+        if current_flags != self._last_keyboard_flags:
+            # App requested protocol (flags went from 0 to non-zero)
+            if current_flags > 0 and self._last_keyboard_flags == 0:
+                self._app_requested_protocol = True
+                debug_log(
+                    "KEYBOARD",
+                    f"Auto-detected: App requested KITTY protocol with flags {current_flags}",
+                )
+                # Protocol is already active in the terminal, we just track it
+
+            # App disabled protocol (flags went from non-zero to 0)
+            elif current_flags == 0 and self._last_keyboard_flags > 0:
+                self._app_requested_protocol = False
+                debug_log(
+                    "KEYBOARD",
+                    "Auto-detected: App disabled KITTY protocol",
+                )
+
+            # App changed flags while protocol was active
+            elif current_flags > 0 and self._last_keyboard_flags > 0:
+                debug_log(
+                    "KEYBOARD",
+                    f"Auto-detected: App changed KITTY protocol flags {self._last_keyboard_flags} → {current_flags}",
+                )
+
+            self._last_keyboard_flags = current_flags
+
     def _poll_updates(self) -> None:
         """Poll for PTY updates and refresh if content changed.
 
@@ -593,6 +645,10 @@ class TerminalWidget(Widget, can_focus=True):
             # Update our generation counter
             old_gen = self.last_update_generation
             self.last_update_generation = current_gen
+
+            # Check for keyboard protocol auto-detection (Option B)
+            if self.config.keyboard_protocol_auto_detect:
+                self._check_keyboard_protocol_changes()
 
             # CRITICAL: Snapshot the generation we're about to render
             # This prevents stale rendering if PTY updates during the render cycle
@@ -666,23 +722,15 @@ class TerminalWidget(Widget, can_focus=True):
             try:
                 current_bell_count = self.term.bell_count()
 
-                # If bell count increased, show bell icon in header
+                # If bell count increased, show bell flash in center of screen
                 if current_bell_count > self.last_bell_count:
                     self.last_bell_count = current_bell_count
-                    # Get the header widget and show bell icon
-                    header = self.app.query_one(TerminalHeader)
-                    header.show_bell()
+                    # Get the BellFlash widget and show it for 1 second
+                    bell_flash = self.app.query_one(BellFlash)
+                    bell_flash.flash()
                     debug_log("BELL", f"Bell event detected, count={current_bell_count}")
             except Exception as e:
                 debug_log("BELL", f"Error checking bell: {e}")
-
-    def _clear_bell(self) -> None:
-        """Clear the bell icon from the header on user interaction."""
-        try:
-            header = self.app.query_one(TerminalHeader)
-            header.hide_bell()
-        except Exception as e:
-            debug_log("BELL", f"Error clearing bell: {e}")
 
     def _do_refresh(self) -> None:
         """Execute the actual refresh after debounce delay."""
@@ -709,15 +757,128 @@ class TerminalWidget(Widget, can_focus=True):
         widget_id = str(self.id) if self.id else "unknown"
         return self.renderer.render_line(y, widget_id, self.size, self._rendering_ready)
 
+    def _key_to_unicode(self, key: str) -> int | None:
+        """Map key name to Unicode codepoint for KITTY keyboard protocol.
+
+        Args:
+            key: Key name from Textual (e.g., "a", "tab", "f1")
+
+        Returns:
+            Unicode codepoint, or None if key cannot be mapped
+
+        Examples:
+            "a" → 97
+            "tab" → 9
+            "f1" → 57376 (KITTY extended code)
+        """
+        # Functional keys with KITTY protocol codes
+        functional_keys = {
+            "escape": 27,
+            "enter": 13,
+            "tab": 9,
+            "backspace": 127,
+            "delete": 57426,
+            "insert": 57425,
+            "up": 57419,
+            "down": 57420,
+            "left": 57417,
+            "right": 57418,
+            "home": 57423,
+            "end": 57424,
+            "pageup": 57421,
+            "pagedown": 57422,
+            "f1": 57376,
+            "f2": 57377,
+            "f3": 57378,
+            "f4": 57379,
+            "f5": 57380,
+            "f6": 57381,
+            "f7": 57382,
+            "f8": 57383,
+            "f9": 57384,
+            "f10": 57385,
+            "f11": 57386,
+            "f12": 57387,
+            # Keypad keys
+            "kp_0": 57399,
+            "kp_1": 57400,
+            "kp_2": 57401,
+            "kp_3": 57402,
+            "kp_4": 57403,
+            "kp_5": 57404,
+            "kp_6": 57405,
+            "kp_7": 57406,
+            "kp_8": 57407,
+            "kp_9": 57408,
+        }
+
+        if key in functional_keys:
+            return functional_keys[key]
+
+        # Single character keys - convert to Unicode
+        if len(key) == 1:
+            return ord(key)
+
+        return None
+
+    def _key_event_to_kitty_sequence(self, event: Key) -> str | None:
+        """Convert Textual Key event to KITTY keyboard protocol sequence.
+
+        Args:
+            event: Textual Key event
+
+        Returns:
+            KITTY protocol escape sequence, or None if conversion not possible
+
+        Examples:
+            Key("a", "a") → "\\x1b[97u"
+            Key("ctrl+a", None) → "\\x1b[97;5u"
+            Key("ctrl+shift+a", None) → "\\x1b[65;6u"
+            Key("tab", None) → "\\x1b[9u"
+            Key("ctrl+i", None) → "\\x1b[105;5u"  (different from tab!)
+        """
+        # Parse key string to extract modifiers and base key
+        parts = event.key.split("+")
+        key_name = parts[-1]
+        modifier_names = parts[:-1]
+
+        # Calculate modifier bitmask
+        # KITTY protocol modifier encoding:
+        # shift=1, alt=2, ctrl=4, super=8, hyper=16, meta=32
+        # Final value is (bitmask + 1)
+        modifiers = 0
+        for mod in modifier_names:
+            if mod == "shift":
+                modifiers |= 0b000001  # 1
+            elif mod == "alt":
+                modifiers |= 0b000010  # 2
+            elif mod == "ctrl":
+                modifiers |= 0b000100  # 4
+            elif mod == "super":
+                modifiers |= 0b001000  # 8
+            elif mod == "hyper":
+                modifiers |= 0b010000  # 16
+            elif mod == "meta":
+                modifiers |= 0b100000  # 32
+
+        # Get Unicode codepoint for the key
+        codepoint = self._key_to_unicode(key_name)
+        if codepoint is None:
+            return None
+
+        # Format KITTY protocol sequence: CSI unicode ; modifiers u
+        if modifiers:
+            # With modifiers: CSI unicode ; (modifiers+1) u
+            return f"\x1b[{codepoint};{modifiers + 1}u"
+        # No modifiers: CSI unicode u
+        return f"\x1b[{codepoint}u"
+
     async def on_key(self, event: Key) -> None:
         """Handle key presses and send them to the PTY.
 
         Args:
             event: The key event
         """
-        # Clear bell icon on any key press
-        self._clear_bell()
-
         # Don't send keys if process isn't running
         if not self.term.is_running():
             return
@@ -784,6 +945,25 @@ class TerminalWidget(Widget, can_focus=True):
             self.refresh()
 
         try:
+            # Try KITTY keyboard protocol first if enabled (manual or auto-detected)
+            # Use protocol when either:
+            #   1. Manually enabled via config, OR
+            #   2. Auto-detect is on AND app requested protocol
+            use_kitty_protocol = self.config.keyboard_protocol_enabled or (
+                self.config.keyboard_protocol_auto_detect and self._app_requested_protocol
+            )
+
+            if use_kitty_protocol:
+                kitty_sequence = self._key_event_to_kitty_sequence(event)
+                if kitty_sequence:
+                    self.term.write_str(kitty_sequence)
+                    debug_log(
+                        "KEYBOARD",
+                        f"Sent KITTY protocol sequence for {key}: {kitty_sequence!r}",
+                    )
+                    return  # Done - don't fall through to legacy mapping
+
+            # Fall back to legacy escape sequence mapping
             # Map special keys to escape sequences
             if key == "enter":
                 self.term.write_str("\r")
@@ -1034,9 +1214,6 @@ class TerminalWidget(Widget, can_focus=True):
         Args:
             event: The mouse down event
         """
-        # Clear bell icon on any mouse click
-        self._clear_bell()
-
         # Detect double and triple clicks for word/line selection
         current_time = time.time()
         current_pos = (event.x, event.y)

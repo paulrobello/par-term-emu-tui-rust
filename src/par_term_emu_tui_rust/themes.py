@@ -358,35 +358,35 @@ THEMES: dict[str, Theme] = {
     "iterm2-dark": Theme(
         name="iTerm2 Dark",
         palette=[
-            "#2e3436",
-            "#cc0000",
-            "#4e9a06",
-            "#c4a000",
-            "#3465a4",
-            "#75507b",
-            "#06989a",
-            "#d3d7cf",
-            "#555753",
-            "#ef2929",
-            "#8ae234",
-            "#fce94f",
-            "#729fcf",
-            "#ad7fa8",
-            "#34e2e2",
-            "#eeeeec",
+            "#14181c",  # Black (color-picked from iTerm2)
+            "#ab3525",  # Red (color-picked from iTerm2)
+            "#00ba00",  # Green (color-picked from iTerm2)
+            "#c0bd00",  # Yellow (color-picked from iTerm2)
+            "#233bc0",  # Blue (color-picked from iTerm2)
+            "#b838b6",  # Magenta (color-picked from iTerm2)
+            "#00bec0",  # Cyan (color-picked from iTerm2)
+            "#c0c0c0",  # White (color-picked from iTerm2)
+            "#5d5d5d",  # Bright Black (color-picked from iTerm2)
+            "#d86e6a",  # Bright Red (color-picked from iTerm2)
+            "#4ee385",  # Bright Green (color-picked from iTerm2)
+            "#e9dd00",  # Bright Yellow (color-picked from iTerm2)
+            "#9da1f0",  # Bright Blue (color-picked from iTerm2)
+            "#dd72dd",  # Bright Magenta (color-picked from iTerm2)
+            "#55fdff",  # Bright Cyan (color-picked from iTerm2)
+            "#ffffff",  # Bright White (color-picked from iTerm2)
         ],
         background="#000000",
-        foreground="#d3d7cf",
-        cursor="#d3d7cf",
+        foreground="#b2b2b2",
+        cursor="#ffffff",
         cursor_text="#000000",
-        selection="#eeeeec",
-        selection_text="#555753",
-        link="#729fcf",
-        bold="#eeeeec",
-        cursor_guide="#555753",
-        underline="#d3d7cf",
-        badge="#cc0000",
-        match="#fce94f",
+        selection="#b3d7ff",
+        selection_text="#000000",
+        link="#4d8ce7",
+        bold="#ffffff",
+        cursor_guide="#5d5d5d",
+        underline="#b2b2b2",
+        badge="#ab3525",
+        match="#e9dd00",
     ),
     "tango-dark": Theme(
         name="Tango Dark",

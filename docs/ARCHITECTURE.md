@@ -38,12 +38,12 @@ Comprehensive architecture documentation for the par-term-emu-tui-rust terminal 
 **par-term-emu-tui-rust** is a Textual-based terminal user interface (TUI) that wraps the **par-term-emu-core-rust** terminal emulator library. It provides an interactive shell environment within a Python TUI framework, with advanced features including text selection, clipboard management, themes, screenshots, and shell integration.
 
 **Key Technologies:**
-- Python 3.14
-- Textual 6.6.0+ (TUI framework)
-- par-term-emu-core-rust 0.2.3+ (Rust terminal emulator backend)
-- PyYAML 6.0.3+ (configuration management)
-- xdg-base-dirs 6.0.2+ (XDG directory compliance)
-- pyperclip 1.11.0+ (cross-platform clipboard)
+- Python 3.12+ (requires >=3.12)
+- Textual (TUI framework)
+- par-term-emu-core-rust (Rust terminal emulator backend)
+- PyYAML (configuration management)
+- xdg-base-dirs (XDG directory compliance)
+- pyperclip (cross-platform clipboard)
 
 **Project Structure:**
 ```
@@ -55,9 +55,12 @@ par-term-emu-tui-rust/
 │   ├── themes.py                       # Color theme definitions (11 built-in themes)
 │   ├── utils.py                        # Utility functions
 │   ├── installer.py                    # Installation script handler
+│   ├── dialogs/
+│   │   ├── __init__.py
+│   │   └── config_edit_dialog.py       # Config editor dialog
 │   ├── terminal_widget/
 │   │   ├── __init__.py
-│   │   ├── terminal_widget.py          # Main TerminalWidget class (1480 lines)
+│   │   ├── terminal_widget.py          # Main TerminalWidget class
 │   │   ├── rendering.py                # Renderer class for line-based rendering
 │   │   ├── selection.py                # SelectionManager for text selection
 │   │   ├── clipboard.py                # ClipboardManager for clipboard ops
@@ -65,16 +68,28 @@ par-term-emu-tui-rust/
 │   │   └── theme_manager.py            # Apply themes to terminal
 │   └── widgets/
 │       ├── __init__.py
+│       ├── terminal_header.py          # TerminalHeader widget (custom header with bell)
 │       ├── status_bar.py               # StatusBar widget (directory display)
-│       └── flash_line.py               # FlashLine widget (flash messages)
+│       ├── flash_line.py               # FlashLine widget (flash messages)
+│       └── bell_flash.py               # BellFlash widget (visual bell overlay)
 ├── tests/
+│   └── test_keyboard_protocol.py
 ├── pyproject.toml
 ├── README.md
 ├── docs/
 │   ├── DEBUG.md                        # Comprehensive debugging guide
 │   ├── CONFIG_REFERENCE.md             # Configuration options reference
 │   ├── DOCUMENTATION_STYLE_GUIDE.md    # Documentation standards
-│   └── ARCHITECTURE.md                 # This file
+│   ├── ARCHITECTURE.md                 # This file
+│   ├── KEYBOARD_PROTOCOL.md            # KITTY keyboard protocol documentation
+│   ├── FEATURES.md                     # Feature descriptions
+│   ├── KEY_BINDINGS.md                 # Keyboard shortcuts
+│   ├── USAGE.md                        # Command-line usage
+│   ├── QUICK_START.md                  # Getting started
+│   ├── INSTALLATION.md                 # Installation guide
+│   ├── TROUBLESHOOTING.md              # Common issues
+│   ├── THEMES.md                       # Theme documentation
+│   └── SCREENSHOTS.md                  # Screenshot gallery
 └── Makefile
 ```
 
@@ -89,8 +104,8 @@ par-term-emu-tui-rust/
 The top-level Textual application that manages the overall UI structure and application lifecycle.
 
 **Key Responsibilities:**
-- Compose UI hierarchy (Header, TerminalWidget, StatusBar, FlashLine, Footer)
-- Handle application-level key bindings (Ctrl+Shift+Q to quit)
+- Compose UI hierarchy (TerminalHeader, TerminalWidget, StatusBar, FlashLine, BellFlash, Footer)
+- Handle application-level key bindings (Ctrl+Shift+Q to quit, Alt+Ctrl+Shift+C to edit config)
 - Manage screenshot capture and auto-quit timers
 - Process custom messages from child widgets (Directory changes, title changes, flash notifications)
 - Parse and handle command-line arguments
@@ -98,15 +113,15 @@ The top-level Textual application that manages the overall UI structure and appl
 - Disable default Ctrl+Q and Ctrl+C bindings to let them pass to the terminal
 
 **Key Methods:**
-- `__init__()` - Initialize with optional shell command, config, and debug settings
-- `compose()` - Create child widgets (Header, TerminalWidget, StatusBar, FlashLine, Footer)
+- `__init__()` - Initialize with optional shell command, shell path, config, and debug settings
+- `compose()` - Create child widgets (TerminalHeader, TerminalWidget, StatusBar, FlashLine, BellFlash, Footer)
 - `on_mount()` - Schedule screenshot and auto-quit timers
 - `_take_screenshot()` - Capture terminal buffer to file (PNG/JPEG/SVG/HTML/BMP)
 - `_auto_quit()` - Exit application after delay
 - `on_flash()` - Handle Flash messages from child widgets
 - `on_directory_changed()` - Handle OSC 7 directory change messages
 - `on_title_changed()` - Handle OSC 0/1/2 title change messages
-- `flash()` - Display transient flash message to user
+- `action_edit_config()` - Open config editor dialog
 - `main()` - Entry point with full CLI argument parsing
 
 **Configuration Integration:**
@@ -123,7 +138,7 @@ The top-level Textual application that manages the overall UI structure and appl
 
 ### 2. Terminal Widget Layer (`TerminalWidget`)
 
-**File:** `terminal_widget/terminal_widget.py` (1480 lines)
+**File:** `terminal_widget/terminal_widget.py`
 
 The core custom Textual widget that wraps `par_term_emu_core_rust.PtyTerminal` and provides interactive shell access with advanced terminal features.
 
@@ -562,7 +577,7 @@ Manages application configuration with YAML persistence and XDG directory compli
 **Mouse & Focus:**
 - `focus_follows_mouse` - Auto-focus on hover (default: false)
 - `middle_click_paste` - Paste on middle click (default: true)
-- `mouse_wheel_scroll_lines` - Lines per wheel tick (default: 3)
+- `mouse_wheel_scroll_lines` - Lines per wheel tick (default: 1)
 
 **Security:**
 - `disable_insecure_sequences` - Filter risky sequences (default: false)
@@ -656,6 +671,26 @@ class TitleChanged(Message):
 
 ### 10. Supporting Widgets
 
+#### TerminalHeader (`widgets/terminal_header.py`)
+
+Custom header widget that displays a bell icon when terminal bell is triggered.
+
+**Key Features:**
+- Extends Textual's Header widget
+- Shows bell icon (🔔) in sub-title when bell event detected
+- Bell disappears on user keyboard/mouse input
+- Reactive bell_active boolean
+
+**Key Methods:**
+
+```python
+def show_bell()
+    # Show bell icon in header sub-title
+
+def hide_bell()
+    # Hide bell icon and restore original sub-title
+```
+
 #### StatusBar (`widgets/status_bar.py`)
 
 Displays information at the bottom of the TUI (directory from OSC 7).
@@ -687,6 +722,24 @@ Overlay widget for transient flash messages (notifications, clipboard feedback).
 ```python
 def flash(content, duration=None, style="default")
     # Flash message for specified duration
+    # Auto-hide after timeout
+```
+
+#### BellFlash (`widgets/bell_flash.py`)
+
+A 3x3 bell icon overlay widget that displays in the center of the screen when the terminal receives a bell character (BEL/\x07).
+
+**Key Features:**
+- 4-wide by 3-high widget with round border
+- Displays bell icon (🔔) for 0.25 seconds
+- Centered on screen as overlay
+- Warning color scheme
+
+**Key Methods:**
+
+```python
+def flash(duration=0.25)
+    # Flash bell icon for specified duration
     # Auto-hide after timeout
 ```
 
@@ -1227,10 +1280,11 @@ from par_term_emu_core_rust.debug import (
 graph TB
     subgraph "Application Layer"
         App[TerminalApp<br/>app.py]
-        App --> Header[Header Widget]
+        App --> Header[TerminalHeader Widget]
         App --> Term[TerminalWidget]
         App --> Status[StatusBar Widget]
         App --> Flash[FlashLine Widget]
+        App --> Bell[BellFlash Widget]
         App --> Footer[Footer Widget]
     end
 
@@ -1269,6 +1323,7 @@ graph TB
 
     App --> Status
     App --> Flash
+    App --> Bell
 
     style App fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
     style Term fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
@@ -1283,12 +1338,12 @@ graph TB
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Frontend** | Textual 6.6.0+ | TUI framework |
-| **Terminal Emulation** | par-term-emu-core-rust 0.2.3+ | VT100/220/420 terminal emulation (Rust) |
-| **Configuration** | PyYAML 6.0.3+ | YAML config parsing |
-| **Clipboard** | pyperclip 1.11.0+ | Cross-platform clipboard |
-| **XDG Compliance** | xdg-base-dirs 6.0.2+ | XDG directory handling |
-| **Runtime** | Python 3.14 | Application runtime |
+| **Frontend** | Textual | TUI framework |
+| **Terminal Emulation** | par-term-emu-core-rust | VT100/220/420 terminal emulation (Rust) |
+| **Configuration** | PyYAML | YAML config parsing |
+| **Clipboard** | pyperclip | Cross-platform clipboard |
+| **XDG Compliance** | xdg-base-dirs | XDG directory handling |
+| **Runtime** | Python 3.12+ | Application runtime (requires >=3.12) |
 | **Build** | hatchling | Python packaging |
 | **Quality** | ruff, pyright, pytest | Linting, type checking, testing |
 
@@ -1316,3 +1371,12 @@ The architecture successfully demonstrates how to integrate a high-performance R
 - [CONFIG_REFERENCE](CONFIG_REFERENCE.md) - Complete configuration reference
 - [DEBUG](DEBUG.md) - Debugging guide and troubleshooting
 - [DOCUMENTATION_STYLE_GUIDE](DOCUMENTATION_STYLE_GUIDE.md) - Documentation standards
+- [KEYBOARD_PROTOCOL](KEYBOARD_PROTOCOL.md) - KITTY keyboard protocol support
+- [FEATURES](FEATURES.md) - Feature descriptions and usage
+- [KEY_BINDINGS](KEY_BINDINGS.md) - Keyboard shortcuts reference
+- [USAGE](USAGE.md) - Command-line usage guide
+- [QUICK_START](QUICK_START.md) - Getting started guide
+- [INSTALLATION](INSTALLATION.md) - Installation instructions
+- [TROUBLESHOOTING](TROUBLESHOOTING.md) - Common issues and solutions
+- [THEMES](THEMES.md) - Theme system documentation
+- [SCREENSHOTS](SCREENSHOTS.md) - Screenshot gallery and examples

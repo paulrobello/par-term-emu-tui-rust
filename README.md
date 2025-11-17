@@ -13,12 +13,31 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/probello3)
 
-## What's New in v0.2.0
+## What's New in v0.3.0
 
-### Code Quality & Testing
+### New Features
+- **Visual Bell Flash**: Added animated bell icon overlay when terminal receives BEL character (🔔)
+- **Install Command Discoverability**: Added `install` subcommand to `--help` output for easier discovery
+- **KITTY Keyboard Protocol Documentation**: Comprehensive guide for enhanced keyboard handling
+
+### Configuration Updates
+- **Mouse wheel scrolling**: Changed default from 3 lines to 1 line per tick for finer control
+
+### Improvements
+- **Better CLI Help**: Install subcommand now visible in main help output
+- **Enhanced Documentation**: All docs updated to reference install command and new features
+- **Code Organization**: Added BellFlash widget for visual bell feedback
+
+### Documentation
+- New [KEYBOARD_PROTOCOL.md](docs/KEYBOARD_PROTOCOL.md) - Complete KITTY protocol guide
+- Enhanced [USAGE.md](docs/USAGE.md) - Install command now documented
+- Updated [CLAUDE.md](CLAUDE.md) - Installation commands reference added
+- Updated all documentation to reflect new scrolling default
+
+### Previous Release (v0.2.0)
 - Fixed all lint errors (22 → 0) and achieved 100% type checking compliance
 - Enhanced test suite reliability with all 20 tests passing
-- Added pytest-asyncio support for async clipboard tests
+- Added KITTY keyboard protocol support with auto-detection
 - Improved code consistency and type safety across codebase
 
 ## Quick Start
@@ -165,20 +184,20 @@ See [Configuration Reference](docs/CONFIG_REFERENCE.md) for all options.
 Par Term Emu TUI Rust aims to provide sensible, configurable defaults for
 potentially sensitive features:
 
-- **Clipboard access (OSC 52)**  
+- **Clipboard access (OSC 52)**
   Controlled by `expose_system_clipboard`:
   - When `true` (default), terminal applications can read/write the system clipboard
     via OSC 52 escape sequences.
   - When `false`, clipboard reads from applications are blocked.
 
-- **Clickable URLs**  
+- **Clickable URLs**
   Clickable links (OSC 8 and auto-detected plain URLs) are allowed only for
   configured schemes:
   - `allowed_url_schemes` defaults to: `http`, `https`, `ftp`, `ftps`, `file`, `mailto`.
   - Unknown/unsupported schemes are blocked; when `warn_on_unknown_url_scheme` is
     `true`, a non-fatal warning is shown in the TUI instead of opening the link.
 
-- **Escape sequence safety**  
+- **Escape sequence safety**
   Some sequences can be powerful (and potentially dangerous). You can harden
   behavior with:
   - `disable_insecure_sequences`: when `true`, the Rust core filters out escape

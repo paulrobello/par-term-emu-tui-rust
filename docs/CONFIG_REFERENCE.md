@@ -72,8 +72,8 @@ par-term-emu-tui-rust --init-config  # Creates default config
 
 ## Currently Implemented Settings
 
-**Implementation Status** (Last Updated: 2025-11-16):
-- ✅ **32 options fully implemented**
+**Implementation Status** (Last Updated: 2025-11-17):
+- ✅ **33 options fully implemented**
 
 | Setting | Config Key | Default | Notes |
 |---------|-----------|---------|-------|
@@ -98,6 +98,7 @@ par-term-emu-tui-rust --init-config  # Creates default config
 | Accept OSC 7 | `accept_osc7` | `true` | Directory tracking via shell integration |
 | Visual bell enabled | `visual_bell_enabled` | `true` | Shows bell icon (🔔) in header on BEL character |
 | Theme | `theme` | `"dark-background"` | Color theme name |
+| Bold brightening | `bold_brightening` | `true` | Use bright colors (8-15) for bold text with colors 0-7 |
 | Show notifications | `show_notifications` | `true` | Display OSC 9/777 notifications |
 | Notification timeout | `notification_timeout` | `5` | Notification display duration (seconds) |
 | Screenshot directory | `screenshot_directory` | `None` | Directory for screenshots |
@@ -106,7 +107,7 @@ par-term-emu-tui-rust --init-config  # Creates default config
 | Exit on shell exit | `exit_on_shell_exit` | `true` | Exit TUI when shell exits |
 | Clickable URLs | `clickable_urls` | `true` | Enable clicking URLs to open in browser |
 | Link color | `link_color` | `[100, 150, 255]` | RGB color for hyperlinks (blue) |
-| URL modifier key | `url_modifier` | `"none"` | Required modifier: none, ctrl, shift, alt |
+| URL modifier key | `url_modifier` | `"ctrl"` | Required modifier: none, ctrl, shift, alt |
 | Search match color | `search_match_color` | `[255, 255, 0]` | RGB color for search highlights (yellow) |
 | Show status bar | `show_status_bar` | `true` | Show/hide status bar at bottom |
 
@@ -327,16 +328,24 @@ accept_osc7: true                   # Enable directory tracking (default)
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `theme` | `str` | `"dark-background"` | Color theme name to use for terminal colors |
+| `bold_brightening` | `bool` | `true` | Use bright ANSI colors (8-15) for bold text with normal colors (0-7) |
 
 **Available Themes:**
 - Use `par-term-emu-tui-rust --list-themes` to see all available themes
 - Themes control the terminal's color palette and appearance
 
+**Bold Brightening:**
+- When enabled (default), bold text with ANSI colors 0-7 automatically uses bright variants 8-15
+- This matches iTerm2's "Use Bright Bold" setting
+- When disabled, bold text keeps its original color (0-7) without brightening
+- Useful for matching color appearance across different terminal emulators
+
 ### Example Configuration
 
 ```yaml
 # Theme
-theme: "dark-background"  # Default dark theme
+theme: "dark-background"       # Default dark theme
+bold_brightening: true         # Use bright colors for bold text (iTerm2 behavior)
 ```
 
 ---
@@ -412,7 +421,7 @@ Control how clickable hyperlinks work in the terminal.
 |---------|------|---------|-------------|
 | `clickable_urls` | `bool` | `true` | Enable clicking URLs to open in browser |
 | `link_color` | `tuple[int, int, int]` | `(100, 150, 255)` | RGB color for hyperlinks (blue) |
-| `url_modifier` | `str` | `"none"` | Modifier key required for URL clicks |
+| `url_modifier` | `str` | `"ctrl"` | Modifier key required for URL clicks |
 | `allowed_url_schemes` | `list[str]` | `["http", "https", "ftp", "ftps", "file", "mailto"]` | URL schemes allowed for clickable links |
 | `warn_on_unknown_url_scheme` | `bool` | `true` | Warn when blocking URLs with unsupported schemes |
 
@@ -453,7 +462,7 @@ Control how clickable hyperlinks work in the terminal.
 # Hyperlinks & URLs
 clickable_urls: true                 # Enable URL clicking
 link_color: [100, 150, 255]         # Blue hyperlinks
-url_modifier: "none"                # No modifier required (click directly)
+url_modifier: "ctrl"                # Require Ctrl+Click (safer default)
 allowed_url_schemes:                # Allow common safe schemes
   - http
   - https

@@ -18,28 +18,6 @@ repos:
       - id: check-merge-conflict
       - id: mixed-line-ending
 
-  # Rust formatting
-  - repo: local
-    hooks:
-      - id: cargo-fmt
-        name: cargo fmt
-        description: Format Rust code with rustfmt
-        entry: cargo fmt --all --
-        language: system
-        types: [rust]
-        pass_filenames: false
-
-  # Rust linting
-  - repo: local
-    hooks:
-      - id: cargo-clippy
-        name: cargo clippy
-        description: Lint Rust code with clippy
-        entry: cargo clippy --all-targets --all-features -- -D warnings
-        language: system
-        types: [rust]
-        pass_filenames: false
-
   # Python formatting with ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.4
