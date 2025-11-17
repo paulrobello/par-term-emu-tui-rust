@@ -13,6 +13,14 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/probello3)
 
+## What's New in v0.2.0
+
+### Code Quality & Testing
+- Fixed all lint errors (22 → 0) and achieved 100% type checking compliance
+- Enhanced test suite reliability with all 20 tests passing
+- Added pytest-asyncio support for async clipboard tests
+- Improved code consistency and type safety across codebase
+
 ## Quick Start
 
 ```bash
@@ -151,6 +159,33 @@ See [Configuration Reference](docs/CONFIG_REFERENCE.md) for all options.
 - **PyYAML** - Configuration
 - **pyperclip** - Clipboard support
 - **xdg-base-dirs** - XDG compliance
+
+## Security & Safety Notes
+
+Par Term Emu TUI Rust aims to provide sensible, configurable defaults for
+potentially sensitive features:
+
+- **Clipboard access (OSC 52)**  
+  Controlled by `expose_system_clipboard`:
+  - When `true` (default), terminal applications can read/write the system clipboard
+    via OSC 52 escape sequences.
+  - When `false`, clipboard reads from applications are blocked.
+
+- **Clickable URLs**  
+  Clickable links (OSC 8 and auto-detected plain URLs) are allowed only for
+  configured schemes:
+  - `allowed_url_schemes` defaults to: `http`, `https`, `ftp`, `ftps`, `file`, `mailto`.
+  - Unknown/unsupported schemes are blocked; when `warn_on_unknown_url_scheme` is
+    `true`, a non-fatal warning is shown in the TUI instead of opening the link.
+
+- **Escape sequence safety**  
+  Some sequences can be powerful (and potentially dangerous). You can harden
+  behavior with:
+  - `disable_insecure_sequences`: when `true`, the Rust core filters out escape
+    sequences considered risky.
+
+See the [Configuration Reference](docs/CONFIG_REFERENCE.md) for details and
+recommended values for locked-down environments.
 
 ## Architecture
 

@@ -311,6 +311,9 @@ open_screenshot_after_capture: false
 #!/bin/bash
 # capture-test-screenshots.sh
 
+# Optional: set a dedicated screenshot directory in config.yaml
+# screenshot_directory: ./test-screenshots
+
 # Array of test scenarios
 declare -a scenarios=(
     "ls -la"
@@ -320,6 +323,8 @@ declare -a scenarios=(
 
 # Capture each scenario
 for i in "${!scenarios[@]}"; do
+    # Run from a directory where you want screenshots to be written,
+    # or set screenshot_directory in the config as shown above.
     par-term-emu-tui-rust \
         --command "${scenarios[$i]}" \
         --screenshot 2 \

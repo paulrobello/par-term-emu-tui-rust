@@ -1,4 +1,4 @@
-.PHONY: help run install setup-venv clean fmt lint checkall themes \
+.PHONY: help run install setup-venv clean fmt lint test checkall themes \
         debug debug-verbose debug-trace debug-clear debug-tail debug-view debug-copy-logs \
         pre-commit-install pre-commit-uninstall pre-commit-run pre-commit-update keys borders colors
 
@@ -40,7 +40,8 @@ help:
 	@echo "Code Quality:"
 	@echo "  fmt             - Format Python code with ruff"
 	@echo "  lint            - Run Python linters (format + ruff + pyright, auto-fix)"
-	@echo "  checkall        - Run ALL checks: format, lint, typecheck (auto-fix all)"
+	@echo "  test            - Run Python tests with pytest"
+	@echo "  checkall        - Run ALL checks: format, lint, typecheck, tests"
 	@echo ""
 	@echo "Pre-commit Hooks:"
 	@echo "  pre-commit-install   - Install pre-commit hooks"
@@ -207,7 +208,11 @@ lint:
 	$(ruff) check --fix .
 	$(pyright) .
 
-checkall: lint
+test:
+	@echo "Running Python tests with pytest..."
+	$(run) pytest tests
+
+checkall: lint test
 	@echo ""
 	@echo "======================================================================"
 	@echo "  All code quality checks passed!"

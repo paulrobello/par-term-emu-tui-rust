@@ -69,15 +69,14 @@ repos:
         pass_filenames: false
 
   # Python tests with pytest
-  # NOTE: This runs on pre-commit. You may want to disable this if tests are slow.
-  # Comment out this section if you prefer to run tests manually before pushing.
-#  - repo: local
-#    hooks:
-#      - id: pytest
-#        name: pytest
-#        description: Run Python integration tests
-#        entry: bash -c 'uv sync && uv run pytest tests/ -v'
-#        language: system
-#        types: [python]
-#        pass_filenames: false
-#        stages: [pre-commit]
+  # NOTE: This runs on pre-commit. Disable or narrow the scope if tests become slow.
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        description: Run Python tests with pytest
+        entry: uv run pytest tests
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-commit]

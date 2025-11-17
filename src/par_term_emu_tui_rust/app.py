@@ -16,6 +16,7 @@ from textual.widgets import Footer
 from par_term_emu_tui_rust import messages
 from par_term_emu_tui_rust.config import TuiConfig
 from par_term_emu_tui_rust.terminal_widget import TerminalWidget
+from par_term_emu_tui_rust.terminal_widget.screenshot import ScreenshotManager
 from par_term_emu_tui_rust.themes import list_themes
 from par_term_emu_tui_rust.utils import open_with_default_app
 from par_term_emu_tui_rust.widgets.flash_line import FlashLine
@@ -136,43 +137,36 @@ class TerminalApp(App):
     def _take_screenshot(self) -> None:
         """Take a screenshot of the terminal buffer after specified delay.
 
-        Uses the built-in terminal buffer screenshot method to capture the
-        current terminal state. This is cross-platform and works on all systems.
-        Saves screenshot to debug_logs/ with timestamp matching debug log format.
-        Uses configured screenshot_format (default: PNG).
-        Logs the screenshot path if debug mode is enabled.
+        Uses the shared ScreenshotManager logic to capture the current terminal
+        view, including scrollback offset, and saves it to the directory selected
+        by TuiConfig and shell integration:
+
+        1. Config screenshot_directory (if set)
+        2. Shell CWD from OSC 7 (if available)
+        3. XDG_PICTURES_DIR/Screenshots or ~/Pictures/Screenshots
+        4. Home directory
+
+        Logs the screenshot path if debug mode is enabled and optionally opens
+        it with the system default application.
         """
-        # Create debug directory if needed
-        debug_dir = Path("debug_logs")
-        debug_dir.mkdir(exist_ok=True)
-
-        # Get screenshot format from config
-        screenshot_format = self.config.screenshot_format
-
-        # Create timestamped screenshot filename
-        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-        screenshot_path = debug_dir / f"terminal_screenshot_{timestamp}.{screenshot_format}"
-
         try:
             # Get the terminal widget
             terminal = self.query_one(TerminalWidget)
 
-            # Save screenshot based on format
-            if screenshot_format == "html":
-                # Use export_html for HTML format
-                html_content = terminal.term.export_html(include_styles=True)
-                with screenshot_path.open("w", encoding="utf-8") as f:
-                    f.write(html_content)
-            else:
-                # Use screenshot_to_file for image formats
-                # Pass the scrollback offset to capture the currently visible view
-                terminal.term.screenshot_to_file(
-                    str(screenshot_path),
-                    format=screenshot_format,
-                    scrollback_offset=terminal.scroll_offset,
-                )
+            # Use the same screenshot path and format logic as the widget action
+            manager = ScreenshotManager(
+                term=terminal.term,
+                config=self.config,
+                get_scroll_offset=lambda: terminal.scroll_offset.y,
+            )
+            screenshot_str, error = manager.save()
+            if not screenshot_str or error:
+                if self.logger:
+                    self.logger.error("Failed to capture screenshot: %s", error or "unknown error")
+                return
 
-            # Store screenshot path for later display
+            screenshot_path = Path(screenshot_str)
+            # Store screenshot path for later display (e.g., on exit)
             self.screenshot_path = screenshot_path
 
             if self.logger:
@@ -187,10 +181,9 @@ class TerminalApp(App):
                 elif self.logger:
                     self.logger.error("Failed to open screenshot with default viewer")
 
-        except Exception as e:
-            error_msg = f"Failed to capture screenshot: {e}"
+        except Exception:
             if self.logger:
-                self.logger.exception(error_msg)
+                self.logger.exception("Failed to capture screenshot")
 
     def _auto_quit(self) -> None:
         """Automatically quit the application after specified delay.
@@ -399,12 +392,21 @@ def main(
                 return
 
         if args.list_themes:
-            for theme_name in list_themes():
+            try:
+                from rich.console import Console
+
+                console = Console()
+                console.print("[bold]Available themes:[/bold]")
+                for theme_name in list_themes():
+                    console.print(f" • {theme_name}")
+            except Exception:  # Printing theme list is best-effort; fall through to exit
                 pass
             return
 
         if args.export_theme:
             try:
+                from dataclasses import asdict
+
                 from .themes import get_theme
 
                 cfg_path = TuiConfig.default_config_path()
@@ -420,45 +422,69 @@ def main(
                 # Export theme to YAML file
                 import yaml
 
-                theme_data = {
-                    "name": args.export_theme,
-                    "palette": theme.palette,
-                    "background": theme.background,
-                    "foreground": theme.foreground,
-                    "cursor": theme.cursor,
-                    "cursor_text": theme.cursor_text,
-                    "selection": theme.selection,
-                    "selection_text": theme.selection_text,
-                }
+                # Export all theme fields so the file can be re-imported
+                theme_data = asdict(theme)
+                theme_data["name"] = args.export_theme
 
                 theme_path = themes_dir / f"{args.export_theme}.yaml"
                 with theme_path.open("w", encoding="utf-8") as f:
                     yaml.safe_dump(theme_data, f, default_flow_style=False, sort_keys=False)
 
+                try:
+                    from rich.console import Console
+
+                    console = Console()
+                    console.print(f"[green]Exported theme to:[/green] {theme_path}")
+                except Exception:
+                    # If rich isn't available, silently succeed
+                    pass
+
                 return
-            except Exception:
+            except Exception as e:
+                try:
+                    from rich.console import Console
+
+                    console = Console(stderr=True)
+                    console.print(f"[red]Failed to export theme:[/red] {e}")
+                except Exception:
+                    pass
                 return
 
         if args.apply_theme:
             try:
+                from rich.console import Console
+
                 from .themes import get_theme
 
                 cfg_path = TuiConfig.default_config_path()
                 cfg = TuiConfig.load(cfg_path) if cfg_path.exists() else TuiConfig()
 
                 # Validate theme exists
-                get_theme(args.apply_theme)
+                get_theme(args.apply_theme)  # Raises ValueError if not found
 
                 # Apply theme to config
                 cfg.theme = args.apply_theme
                 cfg.save(cfg_path)
+
+                console = Console()
+                console.print(
+                    f"[green]Applied theme '{args.apply_theme}' to config:[/green] {cfg_path}",
+                )
                 return
-            except Exception:
+            except Exception as e:
+                try:
+                    from rich.console import Console
+
+                    console = Console(stderr=True)
+                    console.print(f"[red]Failed to apply theme '{args.apply_theme}':[/red] {e}")
+                except Exception:
+                    pass
                 return
 
         if args.apply_theme_from:
             try:
                 import yaml
+                from rich.console import Console
 
                 from .themes import Theme
 
@@ -468,6 +494,8 @@ def main(
                 # Load theme from file
                 theme_file = Path(args.apply_theme_from)
                 if not theme_file.exists():
+                    console = Console(stderr=True)
+                    console.print(f"[red]Theme file not found:[/red] {theme_file}")
                     return
 
                 with theme_file.open(encoding="utf-8") as f:
@@ -475,20 +503,21 @@ def main(
 
                 # Validate theme data
                 if not isinstance(theme_data, dict):
+                    console = Console(stderr=True)
+                    console.print(f"[red]Theme file must contain a mapping (YAML object):[/red] {theme_file}")
                     return
 
-                required_keys = {
-                    "name",
-                    "palette",
-                    "background",
-                    "foreground",
-                    "cursor",
-                    "cursor_text",
-                    "selection",
-                    "selection_text",
-                }
+                # Require all Theme fields so we can fully validate and round-trip
+                from dataclasses import fields
+
+                required_keys = {field.name for field in fields(Theme)}
                 missing_keys = required_keys - set(theme_data.keys())
                 if missing_keys:
+                    console = Console(stderr=True)
+                    missing = ", ".join(sorted(missing_keys))
+                    console.print(
+                        f"[red]Theme file is missing required keys:[/red] {missing}\nFile: {theme_file}",
+                    )
                     return
 
                 # Validate theme
@@ -508,8 +537,25 @@ def main(
                 cfg.theme = theme_name
                 cfg.save(cfg_path)
 
+                # Inform user and exit
+                console = Console()
+                console.print(
+                    f"[green]Imported theme '{theme_data['name']}' "
+                    f"and saved as key '{theme_name}' in:[/green] {themes_dir}",
+                )
+                console.print(
+                    f"[green]Updated config theme to:[/green] {theme_name} ({cfg_path})",
+                )
+
                 return
-            except Exception:
+            except Exception as e:
+                try:
+                    from rich.console import Console
+
+                    console = Console(stderr=True)
+                    console.print(f"[red]Failed to apply theme from file:[/red] {e}")
+                except Exception:
+                    pass
                 return
 
         if shell_command is None:
@@ -548,8 +594,17 @@ def main(
     try:
         app.run()
     finally:
-        if log_file and app.screenshot_path:
-            pass
+        if log_file is not None:
+            try:
+                from rich.console import Console
+
+                console = Console()
+                console.print(f"[blue]Debug log:[/blue] {log_file}")
+                if app.screenshot_path:
+                    console.print(f"[blue]Last screenshot:[/blue] {app.screenshot_path}")
+            except Exception:
+                # If rich isn't available or the console fails, don't crash application shutdown
+                pass
 
 
 if __name__ == "__main__":

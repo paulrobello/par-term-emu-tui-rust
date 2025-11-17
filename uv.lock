@@ -394,15 +394,15 @@ wheels = [
 
 [[package]]
 name = "par-term-emu-core-rust"
-version = "0.3.0"
+version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/eb/62/e3c7b71349d116759a7ad161eb50a805490b58a9c5184c0feb97c5b92d17/par_term_emu_core_rust-0.3.0.tar.gz", hash = "sha256:07a47321944035ab52ae5aab679b88c5bde1a5b116fc29d7ea02691abddf2db3", size = 863279 }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/5a/d451b6df603712eba21122afef411511ca888de1b6339ccdf8073ce8e711/par_term_emu_core_rust-0.4.0.tar.gz", hash = "sha256:b6db25782810ace15ffeb144a6c6bc1a715bdc49e1c7822771f312f5bec86d16", size = 872285 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/cd/b9e49b7af2e78e05e5633fbc226f11ad3c1e0bda7a29c026fba43118e587/par_term_emu_core_rust-0.3.0-cp314-cp314-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:7d9ff6c5ab3b663dd73f3ac42e0d199ad3d8263f62a0fe6a7acdea60f39973aa", size = 3323299 },
-    { url = "https://files.pythonhosted.org/packages/01/ad/6c83e1db9052b2c8ebe190e526da1987aacbbece31ed61572ba857271b1f/par_term_emu_core_rust-0.3.0-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:3bd891f2015de67cfa3b856e9500386660852aea5baa53259f66939bc678c11f", size = 1704429 },
-    { url = "https://files.pythonhosted.org/packages/de/3c/c15e9fb1f3824daa704e4d71bc3d495d18119500f5f0f80673a246a349d7/par_term_emu_core_rust-0.3.0-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:643af23c552a5a149f653757fc74cd67a097883fa1432d79030d66d150fa976b", size = 1685823 },
-    { url = "https://files.pythonhosted.org/packages/a7/da/092ac2ef3d34acfb3a243c54112920c4ea902883b9e9d66ec1cf09ac041e/par_term_emu_core_rust-0.3.0-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b83ff275999edbda1dbf2da4e24f4005ebb60a8417019ff0305611a18efaa367", size = 1742564 },
-    { url = "https://files.pythonhosted.org/packages/ba/1b/298058d69e7512deb1fbf359d67b65aa635819b2170bc4b83638c4f2a91c/par_term_emu_core_rust-0.3.0-cp314-cp314-win_amd64.whl", hash = "sha256:371c42bbed6d71c7a8da47d55a093726e4ccdaac7c9e1e7cb82542d4ef752636", size = 1669211 },
+    { url = "https://files.pythonhosted.org/packages/b6/0d/284687b0ac945001dd3e17b3e3c5a57e4bf2d23d73fbd9be768d33e85f08/par_term_emu_core_rust-0.4.0-cp314-cp314-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:f29c34e0ef88c4f04454d3bdbf17dd3c04042e2aa558267ce5d22499d975975d", size = 3339383 },
+    { url = "https://files.pythonhosted.org/packages/88/a4/4e1224be8f6d9360991c46ff022ee8438bd233ff44a5a2326a0e0babbad2/par_term_emu_core_rust-0.4.0-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:8033a472ed8a1a65d0b25923b5b7f8091a7b33c0415369f8276d567e19764b2b", size = 1712013 },
+    { url = "https://files.pythonhosted.org/packages/81/62/670e1d5ef2359e58fdbb5dbe21797a8c6fd2f1d6074825c0892f46037883/par_term_emu_core_rust-0.4.0-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:94a243c8aa652e8fa8312806194f14149d70f76ccfd04715308d9b4562a04f89", size = 1692765 },
+    { url = "https://files.pythonhosted.org/packages/ea/13/f5a5bba29acb9076e629e2aa5868c4529d239fc6d95ea3d6bc325b5aa45a/par_term_emu_core_rust-0.4.0-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f77dfe30ba86f40d46fb6adb5fefe579c5cba56b9020d8c899e821f43a4d2307", size = 1750746 },
+    { url = "https://files.pythonhosted.org/packages/d5/bf/557524b1a63068c12dec3d467db1f70b8cc68e46acca42454a65d9e8b4f9/par_term_emu_core_rust-0.4.0-cp314-cp314-win_amd64.whl", hash = "sha256:2b678969095b44994739adb83c583ccc296ea51d42e01dd4d50c288d9f915a4b", size = 1679282 },
 ]
 
 [[package]]
@@ -422,6 +422,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "pytest-timeout" },
     { name = "ruff" },
     { name = "textual-dev" },
@@ -441,6 +442,7 @@ dev = [
     { name = "pre-commit", specifier = ">=4.4.0" },
     { name = "pyright", specifier = ">=1.1.407" },
     { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "ruff", specifier = ">=0.14.5" },
     { name = "textual-dev", specifier = ">=1.8.0" },
@@ -564,6 +566,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/07/56/f013048ac4bc4c1d9be45afd4ab209ea62822fb1598f40687e6bf45dcea4/pytest-9.0.1.tar.gz", hash = "sha256:3e9c069ea73583e255c3b21cf46b8d3c56f6e3a1a8f6da94ccb0fcf57b9d73c8", size = 1564125 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/8b/6300fb80f858cda1c51ffa17075df5d846757081d11ab4aa35cef9e6258b/pytest-9.0.1-py3-none-any.whl", hash = "sha256:67be0030d194df2dfa7b556f2e56fb3c3315bd5c8822c6951162b92b32ce7dad", size = 373668 },
+]
+
+[[package]]
+name = "pytest-asyncio"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/90/2c/8af215c0f776415f3590cac4f9086ccefd6fd463befeae41cd4d3f193e5a/pytest_asyncio-1.3.0.tar.gz", hash = "sha256:d7f52f36d231b80ee124cd216ffb19369aa168fc10095013c6b014a34d3ee9e5", size = 50087 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/35/f8b19922b6a25bc0880171a2f1a003eaeb93657475193ab516fd87cac9da/pytest_asyncio-1.3.0-py3-none-any.whl", hash = "sha256:611e26147c7f77640e6d0a92a38ed17c3e9848063698d5c93d5aa7aa11cebff5", size = 15075 },
 ]
 
 [[package]]

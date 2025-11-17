@@ -413,6 +413,8 @@ Control how clickable hyperlinks work in the terminal.
 | `clickable_urls` | `bool` | `true` | Enable clicking URLs to open in browser |
 | `link_color` | `tuple[int, int, int]` | `(100, 150, 255)` | RGB color for hyperlinks (blue) |
 | `url_modifier` | `str` | `"none"` | Modifier key required for URL clicks |
+| `allowed_url_schemes` | `list[str]` | `["http", "https", "ftp", "ftps", "file", "mailto"]` | URL schemes allowed for clickable links |
+| `warn_on_unknown_url_scheme` | `bool` | `true` | Warn when blocking URLs with unsupported schemes |
 
 **URL Detection:**
 - **OSC 8 Hyperlinks**: Properly formatted URLs with OSC 8 escape sequences
@@ -423,6 +425,16 @@ Control how clickable hyperlinks work in the terminal.
 - `"ctrl"` - Require Ctrl+Click to open URLs
 - `"shift"` - Require Shift+Click to open URLs
 - `"alt"` - Require Alt+Click to open URLs
+
+**Scheme Filtering & Safety:**
+- `allowed_url_schemes` controls which URL schemes can be opened via clickable links.
+  - Default allows common schemes: `http`, `https`, `ftp`, `ftps`, `file`, `mailto`.
+  - Schemes are case-insensitive.
+  - URLs without an explicit scheme (for example, plain host/path links) are treated as allowed
+    to preserve compatibility with existing output.
+- If a URL uses a scheme not in `allowed_url_schemes`:
+  - It is blocked from opening.
+  - When `warn_on_unknown_url_scheme` is `true`, a non-fatal warning is displayed in the TUI.
 
 ### Search Highlighting
 
@@ -442,6 +454,14 @@ Control how clickable hyperlinks work in the terminal.
 clickable_urls: true                 # Enable URL clicking
 link_color: [100, 150, 255]         # Blue hyperlinks
 url_modifier: "none"                # No modifier required (click directly)
+allowed_url_schemes:                # Allow common safe schemes
+  - http
+  - https
+  - ftp
+  - ftps
+  - file
+  - mailto
+warn_on_unknown_url_scheme: true    # Show warning when blocking unknown schemes
 
 # Search Highlighting
 search_match_color: [255, 255, 0]   # Yellow search matches
@@ -503,9 +523,11 @@ visual_bell_enabled: true    # Enable visual bell indicator (default)
 | `exit_on_shell_exit` | `bool` | `true` | Exit TUI application when shell exits |
 
 **Notes:**
-- When `true`: TUI exits immediately when the shell process exits
-- When `false`: Displays exit message and allows restart with Ctrl+Shift+R
-- Useful for reviewing output after shell exits or debugging
+- When `true`: TUI exits immediately when the shell process exits.
+- When `false`: The TUI remains open after the shell process exits so you can
+  inspect the final screen contents. To start a new shell session, restart the
+  application from the command line.
+- Useful for reviewing output after shell exits or debugging.
 
 ### Example Configuration
 

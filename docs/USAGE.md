@@ -374,9 +374,14 @@ par-term-emu-tui-rust --command "test-command" --debug
 ### Screenshot Workflow
 
 ```bash
-# 1. Configure preferred format
+# 1. Configure preferred format and directory
 cat >> ~/.config/par-term-emu-tui-rust/config.yaml <<EOF
 screenshot_format: "svg"
+# Use a dedicated directory; if not set, smart directory selection is used:
+# 1. screenshot_directory (if set)
+# 2. Shell CWD from OSC 7
+# 3. XDG_PICTURES_DIR/Screenshots or ~/Pictures/Screenshots
+# 4. Home directory
 screenshot_directory: ~/Screenshots
 EOF
 

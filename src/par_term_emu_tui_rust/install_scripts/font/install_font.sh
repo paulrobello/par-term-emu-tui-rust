@@ -4,6 +4,16 @@
 
 set -e
 
+if ! command -v curl >/dev/null 2>&1; then
+    echo "Error: 'curl' is required to download the Hack font." >&2
+    exit 1
+fi
+
+if ! command -v unzip >/dev/null 2>&1; then
+    echo "Error: 'unzip' is required to extract the Hack font archive." >&2
+    exit 1
+fi
+
 FONT_DIR="${HOME}/.local/share/fonts"
 FONT_NAME="Hack-Regular.ttf"
 FONT_URL="https://github.com/source-foundry/Hack/releases/download/v3.003/Hack-v3.003-ttf.zip"

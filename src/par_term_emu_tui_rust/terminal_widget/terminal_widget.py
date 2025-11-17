@@ -996,6 +996,38 @@ class TerminalWidget(Widget, can_focus=True):
         except Exception as e:
             self.log(f"Error sending mouse event: {e}")
 
+    def _is_url_allowed(self, url: str) -> bool:
+        """Return True if a URL should be opened based on config.
+
+        This checks the URL scheme against the allowed_url_schemes list. Schemes
+        are compared case-insensitively. URLs without an explicit scheme are
+        treated as allowed to preserve existing behavior for plain host/path
+        links detected by the terminal.
+
+        Args:
+            url: The URL string to check.
+
+        Returns:
+            True if the URL is allowed to be opened, False otherwise.
+        """
+        from urllib.parse import urlparse
+
+        try:
+            parsed = urlparse(url)
+            scheme = parsed.scheme.lower()
+        except Exception:
+            return False
+
+        if not scheme:
+            # No explicit scheme; treat as allowed (e.g., plain host/path URLs)
+            return True
+
+        if not isinstance(self.config.allowed_url_schemes, list):
+            return False
+
+        allowed = {s.lower() for s in self.config.allowed_url_schemes}
+        return scheme in allowed
+
     async def on_mouse_down(self, event: MouseDown) -> None:
         """Handle mouse button press.
 
@@ -1110,12 +1142,20 @@ class TerminalWidget(Widget, can_focus=True):
                         debug_log("HYPERLINKS", f"Plain URL detected at ({col}, {row}): {url}")
 
                 if url:
-                    # Open URL in browser
-                    try:
-                        webbrowser.open(url)
-                        debug_log("HYPERLINKS", f"Opened URL in browser: {url}")
-                    except Exception as e:
-                        debug_log("HYPERLINKS", f"Failed to open URL: {e}")
+                    if self._is_url_allowed(url):
+                        # Open URL in browser
+                        try:
+                            webbrowser.open(url)
+                            debug_log("HYPERLINKS", f"Opened URL in browser: {url}")
+                        except Exception as e:
+                            debug_log("HYPERLINKS", f"Failed to open URL: {e}")
+                    else:
+                        debug_log("HYPERLINKS", f"Blocked URL with unsupported scheme: {url}")
+                        if self.config.warn_on_unknown_url_scheme:
+                            self.notify(
+                                f"Blocked URL with unsupported scheme: {url}",
+                                severity="warning",
+                            )
 
                     event.stop()
                     return

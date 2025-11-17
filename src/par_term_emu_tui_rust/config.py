@@ -7,7 +7,7 @@ Handles loading and saving user preferences using YAML and XDG directories.
 from __future__ import annotations
 
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from xdg_base_dirs import xdg_config_home
@@ -126,7 +126,9 @@ class TuiConfig:
                                       (default: False)
         exit_on_shell_exit: Exit TUI when shell exits.
                            When True, the TUI application exits when the shell process exits.
-                           When False, displays exit message and allows restart with Ctrl+Shift+R.
+                           When False, the TUI remains open after the shell exits, allowing
+                           you to inspect the final screen contents. Restarting the shell
+                           requires restarting the application via the CLI.
                            (default: True)
         clickable_urls: Enable clicking URLs to open in browser.
                        When True, clicking on URLs (OSC 8 hyperlinks or plain text URLs)
@@ -142,6 +144,15 @@ class TuiConfig:
                      "shift" - Require Shift+Click to open URLs
                      "alt" - Require Alt+Click to open URLs
                      (default: "none")
+        allowed_url_schemes: List of URL schemes allowed to be opened via clickable
+                            links. Schemes are case-insensitive. Examples include
+                            "http", "https", "ftp", "ftps", "file", "mailto".
+                            (default: ["http", "https", "ftp", "ftps", "file", "mailto"])
+        warn_on_unknown_url_scheme: Warn when a URL is blocked because its scheme
+                                   is not in allowed_url_schemes. When True, a
+                                   non-fatal warning is displayed instead of opening
+                                   the URL.
+                                   (default: True)
         search_match_color: RGB color tuple for search match highlights.
                            Controls the visual appearance of search matches in the terminal.
                            Format: (red, green, blue) where each value is 0-255.
@@ -209,6 +220,10 @@ class TuiConfig:
     clickable_urls: bool = True  # Enable clicking URLs to open in browser
     link_color: tuple[int, int, int] = (100, 150, 255)  # RGB color for hyperlinks (blue)
     url_modifier: str = "none"  # Modifier key for URL clicks: "none", "ctrl", "shift", "alt"
+    allowed_url_schemes: list[str] = field(  # URL schemes allowed for clickable links
+        default_factory=lambda: ["http", "https", "ftp", "ftps", "file", "mailto"],
+    )
+    warn_on_unknown_url_scheme: bool = True  # Warn when blocking URLs with unsupported schemes
 
     # Search & Highlighting
     search_match_color: tuple[int, int, int] = (255, 255, 0)  # RGB color for search matches (yellow)

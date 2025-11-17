@@ -19,7 +19,9 @@ def open_with_default_app(file_path: Path | str) -> bool:
     - Windows: start
 
     Args:
-        file_path: Path to the file to open.
+        file_path: Path to the file to open. This function is intended for
+            application-generated paths (for example, logs and screenshots),
+            not for arbitrary untrusted user input.
 
     Returns:
         True if the file was successfully opened, False otherwise.
