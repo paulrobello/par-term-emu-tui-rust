@@ -458,7 +458,15 @@ Subcommands:
                 from .themes import get_theme
 
                 cfg_path = TuiConfig.default_config_path()
-                cfg = TuiConfig.load(cfg_path) if cfg_path.exists() else TuiConfig()
+                try:
+                    cfg = TuiConfig.load(cfg_path) if cfg_path.exists() else TuiConfig()
+                except RuntimeError as config_error:
+                    from rich.console import Console
+
+                    console = Console(stderr=True)
+                    console.print(f"[red]Failed to load config:[/red] {config_error}")
+                    console.print("[yellow]Using default configuration[/yellow]")
+                    cfg = TuiConfig()
 
                 # Get current theme from config
                 theme = get_theme(cfg.theme)
@@ -505,7 +513,15 @@ Subcommands:
                 from .themes import get_theme
 
                 cfg_path = TuiConfig.default_config_path()
-                cfg = TuiConfig.load(cfg_path) if cfg_path.exists() else TuiConfig()
+                try:
+                    cfg = TuiConfig.load(cfg_path) if cfg_path.exists() else TuiConfig()
+                except RuntimeError as config_error:
+                    from rich.console import Console
+
+                    console = Console(stderr=True)
+                    console.print(f"[red]Failed to load config:[/red] {config_error}")
+                    console.print("[yellow]Using default configuration[/yellow]")
+                    cfg = TuiConfig()
 
                 # Validate theme exists
                 get_theme(args.apply_theme)  # Raises ValueError if not found
@@ -537,7 +553,15 @@ Subcommands:
                 from .themes import Theme
 
                 cfg_path = TuiConfig.default_config_path()
-                cfg = TuiConfig.load(cfg_path) if cfg_path.exists() else TuiConfig()
+                try:
+                    cfg = TuiConfig.load(cfg_path) if cfg_path.exists() else TuiConfig()
+                except RuntimeError as config_error:
+                    from rich.console import Console
+
+                    console = Console(stderr=True)
+                    console.print(f"[red]Failed to load config:[/red] {config_error}")
+                    console.print("[yellow]Using default configuration[/yellow]")
+                    cfg = TuiConfig()
 
                 # Load theme from file
                 theme_file = Path(args.apply_theme_from)
@@ -634,7 +658,9 @@ Subcommands:
 
     # Load config if not provided
     if config is None:
-        config = TuiConfig.load()
+        # Use load_with_recovery for interactive user prompts on parse failures
+        interactive = sys.stdin.isatty() and sys.stdout.isatty()
+        config = TuiConfig.load_with_recovery(interactive=interactive)
 
     # Override theme from command line if provided
     if parsed_args and theme_override is not None:

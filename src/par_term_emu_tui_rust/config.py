@@ -501,9 +501,117 @@ class TuiConfig:
                     converted_data[field_info.name] = field_info.default
 
             return cls(**converted_data)
-        except Exception:
+        except Exception as e:
             logger.exception("Failed to load config from %s", config_path)
-            return cls()
+            # Re-raise with config path for better error handling upstream
+            msg = f"Failed to parse config file {config_path}: {e}"
+            raise RuntimeError(msg) from e
+
+    @classmethod
+    def load_with_recovery(cls, config_path: Path | None = None, interactive: bool = True) -> TuiConfig:
+        """Load configuration with error recovery options.
+
+        Args:
+            config_path: Optional path to config file. If None, uses XDG config directory.
+            interactive: If True, prompt user for recovery options on parse failure.
+
+        Returns:
+            TuiConfig instance with loaded settings or defaults.
+        """
+        if config_path is None:
+            config_path = cls.default_config_path()
+
+        try:
+            return cls.load(config_path)
+        except RuntimeError as e:
+            if not interactive:
+                logger.exception("Config parse failed (non-interactive)")
+                return cls()
+
+            # Find backup files
+            backup_files = sorted(config_path.parent.glob(f"{config_path.name}.backup.*"), reverse=True)
+
+            print(f"\n❌ Error: Failed to parse config file: {config_path}", file=__import__("sys").stderr)
+            print(f"   {e}", file=__import__("sys").stderr)
+            print("\nRecovery options:", file=__import__("sys").stderr)
+            print("  1. Reset to default configuration", file=__import__("sys").stderr)
+
+            if backup_files:
+                print(f"  2. Restore from most recent backup ({backup_files[0].name})", file=__import__("sys").stderr)
+                if len(backup_files) > 1:
+                    print(f"  3. Show all {len(backup_files)} backup files", file=__import__("sys").stderr)
+                    print("  4. Exit", file=__import__("sys").stderr)
+                else:
+                    print("  3. Exit", file=__import__("sys").stderr)
+            else:
+                print("  2. Exit", file=__import__("sys").stderr)
+
+            while True:
+                try:
+                    choice = input("\nSelect option [1]: ").strip() or "1"
+
+                    if choice == "1":
+                        # Reset to defaults
+                        print("✓ Using default configuration", file=__import__("sys").stderr)
+                        return cls()
+
+                    if backup_files and choice == "2":
+                        # Restore most recent backup
+                        backup_path = backup_files[0]
+                        try:
+                            # Copy backup to config file
+                            config_path.write_text(backup_path.read_text(encoding="utf-8"), encoding="utf-8")
+                            print(f"✓ Restored config from {backup_path.name}", file=__import__("sys").stderr)
+                            return cls.load(config_path)
+                        except Exception as restore_error:
+                            print(f"❌ Failed to restore backup: {restore_error}", file=__import__("sys").stderr)
+                            print("Falling back to default configuration", file=__import__("sys").stderr)
+                            return cls()
+
+                    if backup_files and len(backup_files) > 1 and choice == "3":
+                        # Show all backups
+                        print("\nAvailable backups:", file=__import__("sys").stderr)
+                        for i, backup in enumerate(backup_files, 1):
+                            size = backup.stat().st_size
+                            mtime = __import__("datetime").datetime.fromtimestamp(
+                                backup.stat().st_mtime, tz=__import__("datetime").UTC
+                            )
+                            print(
+                                f"  {i}. {backup.name} ({size} bytes, modified {mtime.strftime('%Y-%m-%d %H:%M:%S')})",
+                                file=__import__("sys").stderr,
+                            )
+
+                        backup_choice = input("\nSelect backup number (or Enter to go back): ").strip()
+                        if backup_choice and backup_choice.isdigit():
+                            idx = int(backup_choice) - 1
+                            if 0 <= idx < len(backup_files):
+                                backup_path = backup_files[idx]
+                                try:
+                                    config_path.write_text(backup_path.read_text(encoding="utf-8"), encoding="utf-8")
+                                    print(
+                                        f"✓ Restored config from {backup_path.name}",
+                                        file=__import__("sys").stderr,
+                                    )
+                                    return cls.load(config_path)
+                                except Exception as restore_error:
+                                    print(
+                                        f"❌ Failed to restore backup: {restore_error}",
+                                        file=__import__("sys").stderr,
+                                    )
+                                    print("Falling back to default configuration", file=__import__("sys").stderr)
+                                    return cls()
+                        continue
+
+                    # Exit option
+                    exit_option = "4" if (backup_files and len(backup_files) > 1) else ("3" if backup_files else "2")
+                    if choice == exit_option:
+                        print("Exiting...", file=__import__("sys").stderr)
+                        __import__("sys").exit(1)
+
+                    print(f"Invalid option: {choice}", file=__import__("sys").stderr)
+                except (KeyboardInterrupt, EOFError):
+                    print("\nExiting...", file=__import__("sys").stderr)
+                    __import__("sys").exit(1)
 
     def save(self, config_path: Path | None = None) -> None:
         """Save configuration to YAML file.
