@@ -90,7 +90,7 @@ class ConfigScreen(ModalScreen[bool]):
                 width: 7;
             }
 
-            Input.config_input_integer {
+            Input.config_input_number {
                 width: 10;
             }
 
@@ -489,8 +489,8 @@ class ConfigScreen(ModalScreen[bool]):
                 placeholder="(auto-detect)" if allow_empty else "",
             )
             input_widget.add_class("config_input")
-            if input_type == "integer":
-                input_widget.add_class("config_input_integer")
+            if input_type in ("integer", "number"):
+                input_widget.add_class("config_input_number")
             yield input_widget
         yield Static(help_text, classes="config_help")
 
