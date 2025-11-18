@@ -7,7 +7,7 @@ Handles loading and saving user preferences using YAML and XDG directories.
 from __future__ import annotations
 
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
 from xdg_base_dirs import xdg_config_home
@@ -310,11 +310,55 @@ class TuiConfig:
             with config_path.open(encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
 
-            # Only use keys that exist in our dataclass
-            valid_keys = set(cls.__annotations__)
-            filtered_data = {k: v for k, v in data.items() if k in valid_keys}
+            # Convert types to match dataclass field types
+            converted_data = {}
+            for field_info in fields(cls):
+                if field_info.name not in data:
+                    continue
 
-            return cls(**filtered_data)
+                value = data[field_info.name]
+                field_type = field_info.type
+                field_type_str = str(field_type)
+
+                try:
+                    # Handle None values
+                    if value is None:
+                        converted_data[field_info.name] = None
+                    # Handle bool (must come before int since bool is subclass of int)
+                    elif field_type is bool:
+                        converted_data[field_info.name] = bool(value) if not isinstance(value, bool) else value
+                    # Handle int
+                    elif field_type is int:
+                        converted_data[field_info.name] = int(value) if not isinstance(value, int) else value
+                    # Handle float
+                    elif field_type is float:
+                        converted_data[field_info.name] = float(value) if not isinstance(value, float) else value
+                    # Handle tuple[int, int, int] for colors
+                    elif "tuple" in field_type_str and "int" in field_type_str:
+                        if isinstance(value, (list, tuple)):
+                            converted_data[field_info.name] = tuple(int(v) for v in value)
+                        else:
+                            converted_data[field_info.name] = field_info.default
+                    # Handle list[str]
+                    elif "list" in field_type_str and "str" in field_type_str:
+                        if isinstance(value, list):
+                            converted_data[field_info.name] = [str(v) for v in value]
+                        else:
+                            converted_data[field_info.name] = field_info.default
+                    # Handle str and other types
+                    else:
+                        converted_data[field_info.name] = value
+                except (ValueError, TypeError):
+                    # Use default value if conversion fails
+                    logger.warning(
+                        "Failed to convert %s value %r to type %s, using default",
+                        field_info.name,
+                        value,
+                        field_type,
+                    )
+                    converted_data[field_info.name] = field_info.default
+
+            return cls(**converted_data)
         except Exception:
             logger.exception("Failed to load config from %s", config_path)
             return cls()
