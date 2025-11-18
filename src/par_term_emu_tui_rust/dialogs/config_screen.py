@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import fields
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, get_type_hints
 
 from ruamel.yaml import YAML
 from textual import on
@@ -19,6 +20,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from textual.app import ComposeResult
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigScreen(ModalScreen[bool]):
@@ -601,14 +604,18 @@ class ConfigScreen(ModalScreen[bool]):
             if yaml_data is None:
                 yaml_data = {}
 
+            # Get actual types (not string annotations) using get_type_hints
+            type_hints = get_type_hints(TuiConfig)
+
             # Update values from widgets
             for field in fields(TuiConfig):
                 widget_id = f"field_{field.name}"
+                field_type = type_hints.get(field.name, field.type)
 
                 try:
                     converted_value = None
 
-                    if field.type is bool:
+                    if field_type is bool:
                         widget = self.query_one(f"#{widget_id}", Checkbox)
                         converted_value = widget.value
                     elif "Select" in str(type(self.query_one(f"#{widget_id}"))):
@@ -639,15 +646,15 @@ class ConfigScreen(ModalScreen[bool]):
                             # Don't update allowed_url_schemes from widgets (too complex)
                             continue
                         # Handle integer types (including int and any union with int)
-                        elif field.type is int or (
-                            hasattr(field.type, "__origin__") and int in getattr(field.type, "__args__", ())
+                        elif field_type is int or (
+                            hasattr(field_type, "__origin__") and int in getattr(field_type, "__args__", ())
                         ):
                             converted_value = (
                                 int(value_str) if value_str else (field.default if field.default is not None else 0)
                             )
                         # Handle float types (including float and any union with float)
-                        elif field.type is float or (
-                            hasattr(field.type, "__origin__") and float in getattr(field.type, "__args__", ())
+                        elif field_type is float or (
+                            hasattr(field_type, "__origin__") and float in getattr(field_type, "__args__", ())
                         ):
                             converted_value = (
                                 float(value_str) if value_str else (field.default if field.default is not None else 0.0)
@@ -658,13 +665,26 @@ class ConfigScreen(ModalScreen[bool]):
 
                     # Apply validation if we have a non-None value
                     if converted_value is not None:
-                        converted_value = TuiConfig._validate_value(field.name, converted_value, field.type)
+                        converted_value = TuiConfig._validate_value(field.name, converted_value, field_type)
 
                     yaml_data[field.name] = converted_value
 
                 except Exception:
                     # Skip widgets that don't exist or can't be converted
                     continue
+
+            # Backup existing config file before overwriting
+            if self.config_path.exists():
+                from datetime import UTC, datetime
+
+                backup_path = self.config_path.with_suffix(
+                    f".yaml.backup.{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
+                )
+                try:
+                    backup_path.write_text(self.config_path.read_text(encoding="utf-8"), encoding="utf-8")
+                    logger.info("Backed up config to %s", backup_path)
+                except Exception as e:
+                    logger.warning("Failed to backup config: %s", e)
 
             # Save using ruamel.yaml to preserve comments and formatting
             self.config_path.parent.mkdir(parents=True, exist_ok=True)

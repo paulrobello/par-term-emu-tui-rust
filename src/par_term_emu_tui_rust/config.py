@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import asdict, dataclass, field, fields
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_type_hints
 
 from xdg_base_dirs import xdg_config_home
 
@@ -440,6 +440,9 @@ class TuiConfig:
             with config_path.open(encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
 
+            # Get actual types (not string annotations) using get_type_hints
+            type_hints = get_type_hints(cls)
+
             # Convert types to match dataclass field types
             converted_data = {}
             for field_info in fields(cls):
@@ -447,7 +450,7 @@ class TuiConfig:
                     continue
 
                 value = data[field_info.name]
-                field_type = field_info.type
+                field_type = type_hints.get(field_info.name, field_info.type)
                 field_type_str = str(field_type)
 
                 try:
