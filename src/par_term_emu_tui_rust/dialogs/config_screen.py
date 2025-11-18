@@ -87,7 +87,11 @@ class ConfigScreen(ModalScreen[bool]):
             }
 
             Checkbox.config_input {
-                width: 6;
+                width: 7;
+            }
+
+            Input.config_input_integer {
+                width: 10;
             }
 
             .config_help {
@@ -481,6 +485,8 @@ class ConfigScreen(ModalScreen[bool]):
                 placeholder="(auto-detect)" if allow_empty else "",
             )
             input_widget.add_class("config_input")
+            if input_type == "integer":
+                input_widget.add_class("config_input_integer")
             yield input_widget
         yield Static(help_text, classes="config_help")
 
