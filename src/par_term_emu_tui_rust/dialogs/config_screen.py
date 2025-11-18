@@ -82,7 +82,7 @@ class ConfigScreen(ModalScreen[bool]):
             }
 
             .config_input {
-                width: 1fr;
+                width: 20;
                 height: 3;
             }
 
@@ -95,7 +95,7 @@ class ConfigScreen(ModalScreen[bool]):
             }
 
             Select.config_input {
-                width: auto;
+                width: 45;
             }
 
             .config_help {
