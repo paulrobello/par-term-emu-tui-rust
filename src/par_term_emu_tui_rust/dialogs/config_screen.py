@@ -696,6 +696,8 @@ class ConfigScreen(ModalScreen[bool]):
             app = self.app
             if isinstance(app, TerminalApp):
                 app.flash(f"Config saved to {self.config_path}", style="success")
+                # Inform user that restart is required for changes to take effect
+                app.flash("Restart the TUI for changes to take effect", style="warning")
 
             self.dirty = False
             self.dismiss(True)
@@ -732,6 +734,8 @@ class ConfigScreen(ModalScreen[bool]):
             app = self.app
             if isinstance(app, TerminalApp):
                 app.flash(f"Config saved to {self.config_path}", style="success")
+                # Inform user that restart is required for changes to take effect
+                app.flash("Restart the TUI for changes to take effect", style="warning")
 
             self.dirty = False
             self.dismiss(True)

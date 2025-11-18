@@ -246,7 +246,7 @@ class TuiConfig:
 
     # Theme (Phase 6)
     theme: str = "dark-background"  # Color theme name
-    bold_brightening: bool = True  # Use bright colors (8-15) for bold text with colors 0-7
+    bold_brightening: bool = False  # Use bright colors (8-15) for bold text with colors 0-7
     minimum_contrast: float = 0.0  # Minimum contrast for display (0.0-1.0, iTerm2-compatible)
 
     # Notifications (OSC 9/777)
