@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Custom header widget for terminal emulator with visual bell indicator.
 """
+
+from __future__ import annotations
 
 from textual.reactive import reactive
 from textual.widgets import Header

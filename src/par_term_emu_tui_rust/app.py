@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Main Textual application for the terminal emulator demo.
 """
+
+from __future__ import annotations
 
 import argparse
 import logging

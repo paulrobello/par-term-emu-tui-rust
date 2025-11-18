@@ -86,6 +86,10 @@ class ConfigScreen(ModalScreen[bool]):
                 height: 3;
             }
 
+            Checkbox.config_input {
+                width: 3;
+            }
+
             .config_help {
                 color: $text-muted;
                 margin-left: 42;
@@ -602,11 +606,14 @@ class ConfigScreen(ModalScreen[bool]):
                         widget = self.query_one(f"#{widget_id}", Input)
                         value_str = widget.value.strip()
 
+                        # Get the field type as a string for robust checking
+                        field_type_str = str(field.type)
+
                         # Handle empty optional fields
                         if not value_str and field.default is None:
                             yaml_data[field.name] = None
                         # Handle tuple[int, int, int] for colors
-                        elif "tuple" in str(field.type) and "int" in str(field.type):
+                        elif "tuple" in field_type_str and "int" in field_type_str:
                             if value_str:
                                 parts = [int(p.strip()) for p in value_str.split(",")]
                                 if len(parts) != 3:
@@ -616,14 +623,24 @@ class ConfigScreen(ModalScreen[bool]):
                             else:
                                 yaml_data[field.name] = field.default
                         # Handle list[str]
-                        elif "list" in str(field.type):
+                        elif "list" in field_type_str:
                             # Don't update allowed_url_schemes from widgets (too complex)
                             continue
-                        # Handle numeric types
-                        elif field.type is int:
-                            yaml_data[field.name] = int(value_str) if value_str else field.default
-                        elif field.type is float:
-                            yaml_data[field.name] = float(value_str) if value_str else field.default
+                        # Handle integer types (including int and any union with int)
+                        elif field.type is int or (
+                            hasattr(field.type, "__origin__") and int in getattr(field.type, "__args__", ())
+                        ):
+                            yaml_data[field.name] = (
+                                int(value_str) if value_str else (field.default if field.default is not None else 0)
+                            )
+                        # Handle float types (including float and any union with float)
+                        elif field.type is float or (
+                            hasattr(field.type, "__origin__") and float in getattr(field.type, "__args__", ())
+                        ):
+                            yaml_data[field.name] = (
+                                float(value_str) if value_str else (field.default if field.default is not None else 0.0)
+                            )
+                        # String or unknown types
                         else:
                             yaml_data[field.name] = value_str if value_str else field.default
 
