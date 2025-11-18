@@ -43,16 +43,14 @@ class ConfigScreen(ModalScreen[bool]):
                 height: 1fr;
             }
 
-            #settings_tab {
+            TabPane {
+                height: 1fr;
                 padding: 0;
-            }
-
-            #raw_yaml_tab {
-                padding: 1;
             }
 
             VerticalScroll {
                 height: 100%;
+                width: 100%;
                 padding: 1;
             }
 
