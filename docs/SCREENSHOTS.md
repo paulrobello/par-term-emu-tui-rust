@@ -295,12 +295,55 @@ screenshot_directory: null
 # Default: "png"
 screenshot_format: "png"
 
+# Minimum contrast adjustment for screenshots (iTerm2-compatible)
+# Automatically adjusts text colors to ensure readability against backgrounds.
+# Uses NTSC perceived brightness formula to maintain hue while adjusting brightness.
+# Range: 0.0-1.0 where:
+#   - 0.0 = disabled (default, matches iTerm2 default)
+#   - 0.5 = moderate contrast (recommended for readability)
+#   - 1.0 = maximum contrast
+# Default: 0.0
+screenshot_minimum_contrast: 0.0
+
 # Automatically open screenshot after capture
 # When enabled, opens the screenshot file with the system's default viewer
 # (macOS: open, Linux: xdg-open, Windows: start) immediately after capturing.
 # Default: false
 open_screenshot_after_capture: false
 ```
+
+### Minimum Contrast Adjustment
+
+**New in v0.3.1**: Automatic contrast adjustment for improved readability (iTerm2-compatible).
+
+The minimum contrast feature ensures text remains readable by automatically adjusting colors when the brightness difference between text and background is too low.
+
+**Configuration:**
+```yaml
+# Enable moderate contrast adjustment (recommended)
+screenshot_minimum_contrast: 0.5
+```
+
+**How it works:**
+- Uses NTSC perceived brightness formula (30% red, 59% green, 11% blue)
+- Adjusts text brightness while preserving the original hue
+- Only applies when brightness difference < configured threshold
+- Matches iTerm2's minimum contrast algorithm
+
+**Example values:**
+- `0.0` - Disabled (default, matches iTerm2)
+- `0.3` - Subtle adjustment
+- `0.5` - Moderate adjustment (recommended)
+- `0.7` - Strong adjustment
+- `1.0` - Maximum contrast
+
+**Use cases:**
+- Documentation screenshots with guaranteed readability
+- Screenshots with dark-on-dark or light-on-light color schemes
+- Accessibility compliance
+- Ensuring contrast on various display types
+
+For more details, see the [par-term-emu-core-rust documentation](https://github.com/paulrobello/par-term-emu-core-rust).
 
 ## Automated Screenshots
 

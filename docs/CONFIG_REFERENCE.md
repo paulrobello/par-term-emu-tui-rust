@@ -103,6 +103,7 @@ par-term-emu-tui-rust --init-config  # Creates default config
 | Notification timeout | `notification_timeout` | `5` | Notification display duration (seconds) |
 | Screenshot directory | `screenshot_directory` | `None` | Directory for screenshots |
 | Screenshot format | `screenshot_format` | `"png"` | Format: png, jpeg, svg, bmp, html |
+| Screenshot minimum contrast | `screenshot_minimum_contrast` | `0.0` | Auto-contrast (0.0-1.0, iTerm2-compatible) |
 | Open screenshot after capture | `open_screenshot_after_capture` | `false` | Auto-open with system viewer |
 | Exit on shell exit | `exit_on_shell_exit` | `true` | Exit TUI when shell exits |
 | Clickable URLs | `clickable_urls` | `true` | Enable clicking URLs to open in browser |
@@ -383,7 +384,16 @@ notification_timeout: 5       # Auto-dismiss after 5 seconds
 |---------|------|---------|-------------|
 | `screenshot_directory` | `str \| None` | `None` | Directory to save screenshots (None = auto-detect) |
 | `screenshot_format` | `str` | `"png"` | File format: `"png"`, `"jpeg"`, `"bmp"`, `"svg"`, `"html"` |
+| `screenshot_minimum_contrast` | `float` | `0.0` | Minimum contrast adjustment (0.0-1.0, iTerm2-compatible) |
 | `open_screenshot_after_capture` | `bool` | `false` | Automatically open screenshot with system viewer |
+
+**Minimum Contrast Adjustment**:
+- **Range**: 0.0-1.0
+- **Default**: 0.0 (disabled, matches iTerm2 default)
+- **Algorithm**: NTSC perceived brightness formula (30% red, 59% green, 11% blue)
+- **Behavior**: Automatically adjusts text colors when brightness difference < threshold
+- **Recommended**: 0.5 for improved readability
+- **Use Cases**: Documentation, accessibility, dark-on-dark/light-on-light schemes
 
 **Screenshot Directory Auto-Detection** (when `None`):
 1. Shell's current working directory (from OSC 7)
@@ -404,6 +414,7 @@ notification_timeout: 5       # Auto-dismiss after 5 seconds
 # Screenshots
 screenshot_directory: null             # Auto-detect directory
 screenshot_format: "png"               # PNG format
+screenshot_minimum_contrast: 0.0       # Disabled (iTerm2 default), use 0.5 for readability
 open_screenshot_after_capture: false   # Don't auto-open
 ```
 

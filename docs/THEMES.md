@@ -38,7 +38,7 @@ Themes are applied **before the shell starts**, ensuring consistent colors from 
 Edit `~/.config/par-term-emu-tui-rust/config.yaml`:
 
 ```yaml
-theme: "iterm2-dark"
+theme: "dark-background"
 ```
 
 **Via Command Line:**
@@ -48,7 +48,10 @@ theme: "iterm2-dark"
 uv run par-term-emu-tui-rust --theme solarized-dark
 
 # Apply theme to config permanently
-uv run par-term-emu-tui-rust --apply-theme iterm2-dark
+uv run par-term-emu-tui-rust --apply-theme dark-background
+
+# Apply a custom theme from a YAML file
+uv run par-term-emu-tui-rust --apply-theme-from ~/mytheme.yaml
 ```
 
 ### Listing Available Themes
@@ -65,24 +68,24 @@ make themes
 
 ### Dark Themes
 
-#### iTerm2 Dark (Default)
+#### Dark Background (Default)
+**Key:** `dark-background`
+
+Traditional dark terminal with black background and standard ANSI colors.
+
+- **Background:** `#000000` (Black)
+- **Foreground:** `#bbbbbb` (Gray)
+- **Best for:** General use, compatibility
+
+#### iTerm2 Dark
 **Key:** `iterm2-dark`
 
 Classic iTerm2-style color scheme with pure black background. Perfect for OLED displays and users who prefer deep blacks.
 
 - **Background:** `#000000` (Pure black)
-- **Foreground:** `#d3d7cf` (Light gray)
-- **Palette:** Tango color scheme
-- **Best for:** OLED displays, dark environment, maximum contrast
-
-#### Dark Background
-**Key:** `dark-background`
-
-Traditional dark terminal with slightly lighter black background.
-
-- **Background:** `#000000` (Black)
-- **Foreground:** `#bbbbbb` (Gray)
-- **Best for:** General use, compatibility
+- **Foreground:** `#b2b2b2` (Light gray)
+- **Palette:** Custom vibrant color scheme
+- **Best for:** OLED displays, dark environment, vibrant colors
 
 #### Tango Dark
 **Key:** `tango-dark`
@@ -230,13 +233,15 @@ match: "#fce94f"           # Search match highlight
 
 ### Custom Theme Location
 
-Custom themes are stored in:
+When you import a custom theme using `--apply-theme-from`, it is saved to:
 
 ```
 ~/.config/par-term-emu-tui-rust/themes/
 ```
 
-Each theme is a separate YAML file named `{theme-name}.yaml`.
+Each theme is stored as a separate YAML file named `{theme-name}.yaml`.
+
+**Important Limitation:** Custom themes are currently **not fully supported**. While `--apply-theme-from` saves the theme file and updates your config, the application cannot load custom themes from the themes directory. Only the 12 built-in themes listed in `--list-themes` can be used. Custom theme support (loading themes from `~/.config/par-term-emu-tui-rust/themes/`) is planned for a future release.
 
 ### Theme File Format
 
@@ -302,49 +307,80 @@ badge: "#bf616a"
 match: "#ebcb8b"
 ```
 
-**Usage:**
+**Future Usage (Not Currently Implemented):**
+
+Custom themes will eventually be usable via:
 
 ```bash
+# This will work once custom theme loading is implemented
 uv run par-term-emu-tui-rust --theme nord-inspired
 ```
 
-Or in `config.yaml`:
+**Workaround:** Until custom theme loading is implemented, you can:
+1. Modify one of the built-in themes in `src/par_term_emu_tui_rust/themes.py`
+2. Or contribute a PR to add your theme as a built-in theme
 
-```yaml
-theme: "nord-inspired"
-```
+The `--apply-theme-from` command saves the structure for future use but custom themes cannot currently be loaded by the application.
 
 ## Theme Application
 
-Themes are applied in this order:
+Themes are applied early in the widget initialization lifecycle to ensure correct colors from the very first prompt:
 
 ```mermaid
-graph LR
-    A[Create PtyTerminal] --> B[Apply Theme]
-    B --> C[Set Renderer Background]
-    C --> D[Spawn Shell]
-    D --> E[Mount Widget]
-    E --> F[Set Widget Background]
+graph TD
+    A[TerminalWidget.__init__] --> B[Create PtyTerminal]
+    B --> C[Apply Theme]
+    C --> D[Configure Terminal Settings]
+    D --> E[Initialize Managers]
+    E --> F[on_mount: Resize Terminal]
+    F --> G[Spawn Shell]
+    G --> H[Start Polling]
 
-    style A fill:#2e3436,stroke:#eeeeec,color:#eeeeec
-    style B fill:#4e9a06,stroke:#eeeeec,color:#000000
-    style C fill:#4e9a06,stroke:#eeeeec,color:#000000
-    style D fill:#3465a4,stroke:#eeeeec,color:#eeeeec
-    style E fill:#2e3436,stroke:#eeeeec,color:#eeeeec
-    style F fill:#2e3436,stroke:#eeeeec,color:#eeeeec
+    style A fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
+    style B fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
+    style C fill:#2e7d32,stroke:#66bb6a,stroke-width:2px,color:#ffffff
+    style D fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
+    style E fill:#1a237e,stroke:#3f51b5,stroke-width:2px,color:#ffffff
+    style F fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
+    style G fill:#880e4f,stroke:#c2185b,stroke-width:2px,color:#ffffff
+    style H fill:#37474f,stroke:#78909c,stroke-width:2px,color:#ffffff
 ```
 
+### Application Flow
+
+**Initialization Phase (`__init__`):**
+1. Create PtyTerminal instance with configured dimensions
+2. **Apply theme colors** using `theme_manager.apply_theme()`
+   - Sets all 16 ANSI palette colors
+   - Sets default foreground and background
+   - Sets cursor, selection, link colors
+   - Sets special UI colors (badge, match, guide)
+3. Configure terminal feature settings (clipboard, OSC 7, security)
+4. Initialize managers (selection, clipboard, screenshot, renderer)
+
+**Mount Phase (`on_mount`):**
+1. Resize terminal to match actual widget size
+2. **Spawn shell process** (theme already applied)
+3. Start update polling timer
+
 **Key Points:**
-- Theme is applied **before shell spawns** (ensures correct colors from first prompt)
-- Renderer gets default background for cells without explicit colors
-- Widget background is set during mount to match theme
+- Theme is applied **before shell spawns** - ensures correct colors from first prompt
+- Theme colors are set on PtyTerminal, not on the renderer
+- Renderer reads colors from PtyTerminal for each cell
+- Widget background automatically matches theme background
 
-**Cell Background Logic:**
-- If cell has non-black background → use cell's color
-- If cell has black (`#000000`) and theme has different background → use theme background
-- If cell has no background → use theme background
+### Cell Rendering Logic
 
-This ensures theme backgrounds work correctly while preserving intentional black backgrounds from applications.
+The renderer uses this priority when determining cell colors:
+
+1. **Explicit cell color** - If cell has a specific color set by terminal application
+2. **Theme default** - If cell has no explicit color, use theme's default colors
+3. **Minimum contrast** - If enabled in config, adjust colors for readability
+
+This ensures:
+- Theme backgrounds work correctly
+- Applications can override colors when needed
+- Text remains readable with minimum_contrast setting
 
 ## Related Documentation
 

@@ -101,6 +101,15 @@ class TuiConfig:
                          variants 8-15 (like iTerm2's "Use Bright Bold" setting). When False,
                          bold text uses the original color without brightening.
                          (default: True)
+        minimum_contrast: Minimum contrast adjustment for live terminal display (iTerm2-compatible).
+                         Automatically adjusts text colors to ensure readability against backgrounds.
+                         Uses NTSC perceived brightness formula. Applied to both live display
+                         and screenshots unless screenshot_minimum_contrast is explicitly set.
+                         Range: 0.0-1.0 where:
+                         - 0.0 = disabled (default, matches iTerm2 default)
+                         - 0.5 = moderate contrast (recommended for readability)
+                         - 1.0 = maximum contrast
+                         (default: 0.0)
         show_notifications: Display OSC 9/777 notifications as toast messages.
                           When True, terminal applications can display desktop-style
                           notifications using OSC 9 (simple) or OSC 777 (title + message).
@@ -124,6 +133,14 @@ class TuiConfig:
                           - svg: Vector format, infinitely scalable with selectable text
                           - html: Full HTML document with inline styles, viewable in browsers
                           (default: "png")
+        screenshot_minimum_contrast: Minimum contrast adjustment for screenshots (iTerm2-compatible).
+                                    Automatically adjusts text colors to ensure readability
+                                    against backgrounds. Uses NTSC perceived brightness formula.
+                                    Range: 0.0-1.0 where:
+                                    - 0.0 = disabled (default, matches iTerm2 default)
+                                    - 0.5 = moderate contrast (recommended for readability)
+                                    - 1.0 = maximum contrast
+                                    (default: 0.0)
         open_screenshot_after_capture: Automatically open screenshot after capture.
                                       When True, opens the screenshot file with the system's
                                       default image viewer (macOS: open, Linux: xdg-open,
@@ -230,6 +247,7 @@ class TuiConfig:
     # Theme (Phase 6)
     theme: str = "dark-background"  # Color theme name
     bold_brightening: bool = True  # Use bright colors (8-15) for bold text with colors 0-7
+    minimum_contrast: float = 0.0  # Minimum contrast for display (0.0-1.0, iTerm2-compatible)
 
     # Notifications (OSC 9/777)
     show_notifications: bool = True  # Display OSC 9/777 notifications as toasts
@@ -238,6 +256,7 @@ class TuiConfig:
     # Screenshot
     screenshot_directory: str | None = None  # Directory to save screenshots
     screenshot_format: str = "png"  # Screenshot file format (png, jpeg, bmp, svg)
+    screenshot_minimum_contrast: float = 0.0  # Minimum contrast (0.0-1.0, iTerm2-compatible)
     open_screenshot_after_capture: bool = False  # Open screenshot with default viewer
 
     # Shell Behavior

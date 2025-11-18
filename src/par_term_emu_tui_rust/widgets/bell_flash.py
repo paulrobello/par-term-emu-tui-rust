@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Visual bell flash widget - displays a 3x3 bell icon overlay.
 

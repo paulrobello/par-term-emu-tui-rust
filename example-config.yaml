@@ -181,6 +181,17 @@ theme: "iterm2-dark"
 # Default: true
 bold_brightening: true
 
+# Minimum contrast adjustment for live terminal display (iTerm2-compatible)
+# Automatically adjusts text colors to ensure readability against backgrounds.
+# Uses NTSC perceived brightness formula. Applied to live terminal display.
+# For screenshots specifically, use screenshot_minimum_contrast below.
+# Range: 0.0-1.0 where:
+#   - 0.0 = disabled (default, matches iTerm2 default)
+#   - 0.5 = moderate contrast (recommended for readability)
+#   - 1.0 = maximum contrast
+# Default: 0.0
+minimum_contrast: 0.0
+
 # ============================================================================
 # Notifications
 # ============================================================================
@@ -219,6 +230,16 @@ screenshot_directory: null
 #   - html: Full HTML document with inline styles, viewable in browsers
 # Default: "png"
 screenshot_format: "png"
+
+# Minimum contrast adjustment for screenshots (iTerm2-compatible)
+# Automatically adjusts text colors to ensure readability against backgrounds.
+# Uses NTSC perceived brightness formula to maintain hue while adjusting brightness.
+# Range: 0.0-1.0 where:
+#   - 0.0 = disabled (default, matches iTerm2 default)
+#   - 0.5 = moderate contrast (recommended for readability)
+#   - 1.0 = maximum contrast
+# Default: 0.0
+screenshot_minimum_contrast: 0.0
 
 # Automatically open screenshot after capture
 # When enabled, opens the screenshot file with the system's default image viewer

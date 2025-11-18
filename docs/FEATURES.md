@@ -33,6 +33,8 @@ Par Term Emu TUI Rust is a modern terminal emulator TUI built with Textual and p
 | **Clipboard** | pyperclip | Cross-platform clipboard support |
 | **Paths** | xdg-base-dirs | XDG Base Directory compliance |
 
+> **📝 Note:** See `pyproject.toml` for current dependency versions.
+
 ## Core Features
 
 ### Custom Terminal Widget
@@ -173,6 +175,7 @@ graph TD
 - **DECSCUSR** - Cursor style control
 - **SGR** - Select Graphic Rendition
 - **CUP** - Cursor positioning
+- **KITTY Keyboard Protocol** - Enhanced keyboard input handling
 
 **Cursor control:**
 - Position (absolute and relative)
@@ -180,6 +183,12 @@ graph TD
 - Style (block, underline, bar)
 - Blink control
 - Visibility toggle
+
+**Keyboard protocol:**
+- Disambiguate ambiguous keys (Ctrl+I vs Tab, etc.)
+- Optional key release events
+- Alternate key representations
+- See [Keyboard Protocol Guide](KEYBOARD_PROTOCOL.md) for details
 
 ## Scrollback Buffer
 
@@ -488,15 +497,15 @@ par-term-emu-tui-rust install shell-integration --all
 |-------|-------------|----------|
 | `dark-background` | Classic dark terminal | General use (default) |
 | `high-contrast` | High contrast colors | Accessibility |
-| `iterm2-dark` | iTerm2 Dark theme | Terminal emulation |
+| `iterm2-dark` | iTerm2 Dark theme | macOS terminal users |
 | `light-background` | Classic light terminal | Bright environments |
 | `pastel-dark` | Soft pastel on dark | Reduced eye strain |
 | `regular` | Regular theme | Balanced colors |
 | `smoooooth` | Smooth dark theme | Easy on eyes |
 | `solarized` | Solarized theme | Consistent scheme |
-| `solarized-dark` | Solarized Dark | Consistent color scheme |
+| `solarized-dark` | Solarized Dark | Precise color matching |
 | `solarized-light` | Solarized Light | Bright, balanced |
-| `tango-dark` | Tango Dark | GNOME-style |
+| `tango-dark` | Tango Dark | GNOME-style dark |
 | `tango-light` | Tango Light | GNOME-style light |
 
 ### Theme Components
@@ -546,5 +555,7 @@ par-term-emu-tui-rust --apply-theme-from my-theme.yaml
 - [Installation Guide](INSTALLATION.md) - Install and setup
 - [Usage Guide](USAGE.md) - Command-line options and usage
 - [Key Bindings](KEY_BINDINGS.md) - Keyboard and mouse reference
+- [Keyboard Protocol](KEYBOARD_PROTOCOL.md) - KITTY keyboard protocol support
 - [Configuration Reference](CONFIG_REFERENCE.md) - All settings
 - [Screenshots Guide](SCREENSHOTS.md) - Screenshot functionality
+- [Theme Guide](THEMES.md) - Theme customization and management

@@ -358,22 +358,22 @@ THEMES: dict[str, Theme] = {
     "iterm2-dark": Theme(
         name="iTerm2 Dark",
         palette=[
-            "#14181c",  # Black (color-picked from iTerm2)
-            "#ab3525",  # Red (color-picked from iTerm2)
-            "#00ba00",  # Green (color-picked from iTerm2)
-            "#c0bd00",  # Yellow (color-picked from iTerm2)
-            "#233bc0",  # Blue (color-picked from iTerm2)
-            "#b838b6",  # Magenta (color-picked from iTerm2)
-            "#00bec0",  # Cyan (color-picked from iTerm2)
-            "#c0c0c0",  # White (color-picked from iTerm2)
-            "#5d5d5d",  # Bright Black (color-picked from iTerm2)
-            "#d86e6a",  # Bright Red (color-picked from iTerm2)
-            "#4ee385",  # Bright Green (color-picked from iTerm2)
-            "#e9dd00",  # Bright Yellow (color-picked from iTerm2)
-            "#9da1f0",  # Bright Blue (color-picked from iTerm2)
-            "#dd72dd",  # Bright Magenta (color-picked from iTerm2)
-            "#55fdff",  # Bright Cyan (color-picked from iTerm2)
-            "#ffffff",  # Bright White (color-picked from iTerm2)
+            "#a64431",  # Black
+            "#ab3525",  # Red
+            "#57bf37",  # Green
+            "#c6c43f",  # Yellow
+            "#2d42c0",  # Blue
+            "#b148b8",  # Magenta
+            "#58c2c5",  # Cyan
+            "#c7c7c7",  # White
+            "#676767",  # Bright Black
+            "#cf7e77",  # Bright Red
+            "#81e397",  # Bright Green
+            "#e9dd00",  # Bright Yellow
+            "#a7aaec",  # Bright Blue
+            "#d382db",  # Bright Magenta
+            "#8ef9fd",  # Bright Cyan
+            "#fefefe",  # Bright White
         ],
         background="#000000",
         foreground="#b2b2b2",
@@ -383,7 +383,7 @@ THEMES: dict[str, Theme] = {
         selection_text="#000000",
         link="#4d8ce7",
         bold="#ffffff",
-        cursor_guide="#5d5d5d",
+        cursor_guide="#676767",
         underline="#b2b2b2",
         badge="#ab3525",
         match="#e9dd00",

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 """Rendering logic for terminal widget."""
 
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
-from par_term_emu_core_rust import CursorStyle
+from par_term_emu_core_rust import CursorStyle, adjust_contrast_rgb
 from par_term_emu_core_rust.debug import (
     DebugLevel,
     debug_log,
@@ -538,17 +540,25 @@ class Renderer:
             has_reverse = attrs and attrs.reverse
             is_reverse = (is_cursor and cursor_as_reverse) or has_reverse or is_selected
 
+            # Apply minimum contrast adjustment if enabled
+            # This ensures text remains readable against backgrounds
+            adjusted_fg_rgb = fg_rgb
+            if self.config.minimum_contrast > 0.0 and fg_rgb and bg_rgb:
+                adjusted_fg_rgb = adjust_contrast_rgb(fg_rgb, bg_rgb, self.config.minimum_contrast)
+
             if is_reverse:
                 # Draw with reverse video (swap fg/bg)
                 style_kwargs["color"] = _rgb_to_hex(*bg_rgb) if bg_rgb else (self._default_bg_color or "#000000")
                 style_kwargs["bgcolor"] = (
-                    _rgb_to_hex(*fg_rgb) if fg_rgb else "#ffffff"  # Default to white if no fg specified
+                    _rgb_to_hex(*adjusted_fg_rgb)
+                    if adjusted_fg_rgb
+                    else "#ffffff"  # Default to white if no fg specified
                 )
             else:
                 # Normal cell rendering
-                if fg_rgb:
+                if adjusted_fg_rgb:
                     # Always honor explicit black (0,0,0). Treat absence only as default.
-                    style_kwargs["color"] = _rgb_to_hex(*fg_rgb)
+                    style_kwargs["color"] = _rgb_to_hex(*adjusted_fg_rgb)
 
                 # Check if cell has explicit background color
                 # Treat (0,0,0) as "use default" unless theme is actually black

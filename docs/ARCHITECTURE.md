@@ -45,6 +45,8 @@ Comprehensive architecture documentation for the par-term-emu-tui-rust terminal 
 - xdg-base-dirs (XDG directory compliance)
 - pyperclip (cross-platform clipboard)
 
+See `pyproject.toml` for current dependency versions.
+
 **Project Structure:**
 ```
 par-term-emu-tui-rust/
@@ -279,7 +281,7 @@ _get_cell_metrics()           # Get pixel metrics from environment
 
 **Configuration Integration:**
 
-The widget accepts a `TuiConfig` object and respects 30 configuration options including scrollback_lines, cursor settings, clipboard behavior, mouse handling, security options, theme selection, notifications, screenshots, and URL handling.
+The widget accepts a `TuiConfig` object and respects 39 configuration options including scrollback_lines, cursor settings, clipboard behavior, mouse handling, security options, theme selection, notifications, screenshots, URL handling, visual bell, keyboard protocol (KITTY), and search highlighting.
 
 **Message Production:**
 
@@ -504,8 +506,9 @@ class Theme:
 7. `solarized`
 8. `solarized-dark`
 9. `solarized-light`
-10. `tango-dark`
-11. `tango-light`
+10. `iterm2-dark`
+11. `tango-dark`
+12. `tango-light`
 
 Custom themes can be created in `~/.config/par-term-emu-tui-rust/themes/`
 
@@ -552,7 +555,7 @@ Manages application configuration with YAML persistence and XDG directory compli
 ~/.config/par-term-emu-tui-rust/config.yaml
 ```
 
-**30 Configuration Options:**
+**39 Configuration Options:**
 
 **Selection & Clipboard:**
 - `auto_copy_selection` - Copy on selection complete (default: true)
@@ -577,11 +580,11 @@ Manages application configuration with YAML persistence and XDG directory compli
 **Mouse & Focus:**
 - `focus_follows_mouse` - Auto-focus on hover (default: false)
 - `middle_click_paste` - Paste on middle click (default: true)
-- `mouse_wheel_scroll_lines` - Lines per wheel tick (default: 1)
+- `mouse_wheel_scroll_lines` - Lines per wheel tick (default: 3)
 
 **Security:**
 - `disable_insecure_sequences` - Filter risky sequences (default: false)
-- `accept_osc7` - Allow directory tracking (default: true)
+- `accept_osc7` - Allow directory tracking via OSC 7 (default: true)
 
 **Theme & Appearance:**
 - `theme` - Theme name (default: `"dark-background"`)
@@ -599,7 +602,27 @@ Manages application configuration with YAML persistence and XDG directory compli
 **Hyperlinks & URLs:**
 - `clickable_urls` - Enable URL clicking (default: true)
 - `link_color` - RGB tuple (default: `(100, 150, 255)`)
-- `url_modifier` - Required modifier (default: `"none"`)
+- `url_modifier` - Required modifier (default: `"ctrl"`)
+- `allowed_url_schemes` - List of allowed URL schemes (default: `["http", "https", "ftp", "ftps", "file", "mailto"]`)
+- `warn_on_unknown_url_scheme` - Warn when blocking unsupported schemes (default: true)
+
+**Theme & Appearance (continued):**
+- `bold_brightening` - Use bright ANSI colors (8-15) for bold text with normal colors (0-7) (default: true)
+- `minimum_contrast` - Minimum contrast adjustment for live terminal display, 0.0-1.0 (default: 0.0)
+
+**Screenshots (continued):**
+- `screenshot_minimum_contrast` - Minimum contrast adjustment for screenshots, 0.0-1.0 (default: 0.0)
+
+**Search & Highlighting:**
+- `search_match_color` - RGB tuple for search match highlights (default: `(255, 255, 0)`)
+
+**Visual Bell:**
+- `visual_bell_enabled` - Enable visual bell indicator in header (default: true)
+
+**Keyboard Protocol (KITTY):**
+- `keyboard_protocol_enabled` - Enable KITTY keyboard protocol for embedded apps (default: false)
+- `keyboard_protocol_flags` - KITTY protocol feature flags, bitwise OR combination (default: 1)
+- `keyboard_protocol_auto_detect` - Auto-detect and enable when apps request protocol (default: false)
 
 **Shell Behavior:**
 - `exit_on_shell_exit` - Exit TUI when shell exits (default: true)
@@ -1368,7 +1391,7 @@ The architecture successfully demonstrates how to integrate a high-performance R
 ## Related Documentation
 
 - [README](../README.md) - Project overview and quickstart
-- [CONFIG_REFERENCE](CONFIG_REFERENCE.md) - Complete configuration reference
+- [CONFIG_REFERENCE](CONFIG_REFERENCE.md) - Complete configuration reference (39 options)
 - [DEBUG](DEBUG.md) - Debugging guide and troubleshooting
 - [DOCUMENTATION_STYLE_GUIDE](DOCUMENTATION_STYLE_GUIDE.md) - Documentation standards
 - [KEYBOARD_PROTOCOL](KEYBOARD_PROTOCOL.md) - KITTY keyboard protocol support
@@ -1378,5 +1401,5 @@ The architecture successfully demonstrates how to integrate a high-performance R
 - [QUICK_START](QUICK_START.md) - Getting started guide
 - [INSTALLATION](INSTALLATION.md) - Installation instructions
 - [TROUBLESHOOTING](TROUBLESHOOTING.md) - Common issues and solutions
-- [THEMES](THEMES.md) - Theme system documentation
+- [THEMES](THEMES.md) - Theme system documentation (12 built-in themes)
 - [SCREENSHOTS](SCREENSHOTS.md) - Screenshot gallery and examples

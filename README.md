@@ -13,15 +13,40 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/probello3)
 
-## What's New in v0.3.0
+## What's New in v0.3.1
 
-### New Features
-- **Visual Bell Flash**: Added animated bell icon overlay when terminal receives BEL character (🔔)
-- **Install Command Discoverability**: Added `install` subcommand to `--help` output for easier discovery
+### New Color System Features
+- **Automatic Contrast Adjustment**: iTerm2-compatible minimum contrast system
+  - `minimum_contrast` (0.0-1.0) - Automatic contrast adjustment for live terminal display
+  - `screenshot_minimum_contrast` (0.0-1.0) - Independent contrast setting for screenshots
+  - Uses NTSC perceived brightness formula for accurate readability
+  - Range: 0.0 (disabled, default) to 1.0 (maximum contrast)
+  - Recommended: 0.5 for moderate readability improvements
+  - Ensures text remains readable on any background color
+
+- **Bold Text Brightening**: Enhanced bold text rendering
+  - `bold_brightening` (default: true) - Use bright ANSI colors (8-15) for bold text with normal colors (0-7)
+  - Matches iTerm2's "Use Bright Bold" setting
+  - When enabled: Bold red (1) automatically renders as bright red (9)
+  - When disabled: Bold text uses original color without brightening
+
+### Configuration Example
+```yaml
+# Live terminal contrast adjustment
+minimum_contrast: 0.5  # Moderate contrast for display
+
+# Screenshot-specific contrast (overrides minimum_contrast for screenshots)
+screenshot_minimum_contrast: 0.7  # Higher contrast for screenshots
+
+# Bold text appearance
+bold_brightening: true  # Use bright colors for bold text
+```
+
+### Previous Release (v0.3.0)
+- **Visual Bell Flash**: Animated bell icon overlay when terminal receives BEL character (🔔)
+- **Install Command Discoverability**: `install` subcommand now visible in `--help` output
 - **KITTY Keyboard Protocol Documentation**: Comprehensive guide for enhanced keyboard handling
-
-### Configuration Updates
-- **Mouse wheel scrolling**: Changed default from 3 lines to 1 line per tick for finer control
+- **Configuration Expansion**: 39 configuration options (up from 30) including new color system features
 
 ### Improvements
 - **Better CLI Help**: Install subcommand now visible in main help output
@@ -61,14 +86,16 @@ See the [Quick Start Guide](docs/QUICK_START.md) for detailed instructions.
 
 - **Efficient Rendering** - Textual Line API for optimal performance
 - **Full ANSI Support** - 16/256/true color, bold, italic, underline, and more
+- **Advanced Color System** - Bold brightening and automatic contrast adjustment (iTerm2-compatible)
 - **Scrollback Buffer** - Navigate history with keyboard and mouse
 - **Mouse Support** - Text selection, clickable URLs, and mouse tracking
 - **Hyperlinks** - OSC 8 hyperlinks and auto-detected plain text URLs
 - **Notifications** - OSC 9/777 notification support with toast messages
 - **Shell Integration** - Working directory tracking, prompt navigation
-- **Screenshots** - Multiple formats (PNG, SVG, HTML) with auto-capture
+- **Screenshots** - Multiple formats (PNG, SVG, HTML) with auto-capture and contrast control
 - **Themes** - 12 built-in themes with custom theme support
 - **Clipboard** - Cross-platform copy/paste with OSC 52 support
+- **KITTY Protocol** - Enhanced keyboard protocol with auto-detection
 
 See [Features](docs/FEATURES.md) for complete feature documentation.
 
@@ -82,7 +109,8 @@ See [Features](docs/FEATURES.md) for complete feature documentation.
 ### Reference
 - [Features](docs/FEATURES.md) - Complete feature descriptions
 - [Key Bindings](docs/KEY_BINDINGS.md) - Keyboard shortcuts and mouse actions
-- [Configuration Reference](docs/CONFIG_REFERENCE.md) - All configuration options
+- [Configuration Reference](docs/CONFIG_REFERENCE.md) - All 39 configuration options
+- [Themes Guide](docs/THEMES.md) - Theme system and 12 built-in themes
 - [Screenshots Guide](docs/SCREENSHOTS.md) - Screenshot functionality
 
 ### Advanced
@@ -154,8 +182,10 @@ par-term-emu-tui-rust --init-config
 
 **Essential settings:**
 ```yaml
-# Theme
+# Theme & Colors
 theme: "dark-background"
+bold_brightening: true           # Use bright colors for bold text
+minimum_contrast: 0.0            # Display contrast (0.0=off, 0.5=moderate, 1.0=max)
 
 # Scrollback
 scrollback_lines: 10000
@@ -166,6 +196,11 @@ middle_click_paste: true
 
 # Screenshots
 screenshot_format: "png"
+screenshot_minimum_contrast: 0.0  # Screenshot contrast (overrides minimum_contrast)
+
+# Keyboard Protocol
+keyboard_protocol_enabled: false
+keyboard_protocol_auto_detect: false
 ```
 
 See [Configuration Reference](docs/CONFIG_REFERENCE.md) for all options.

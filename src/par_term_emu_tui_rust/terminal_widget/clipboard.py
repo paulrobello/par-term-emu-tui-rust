@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Clipboard operations for terminal widget."""
 
 import sys

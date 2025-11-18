@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Screenshot capture and management for terminal widget."""
 
 import os
@@ -124,10 +126,12 @@ class ScreenshotManager:
                     str(filepath),
                     format=screenshot_format,
                     scrollback_offset=scroll_offset,
+                    minimum_contrast=self.config.screenshot_minimum_contrast if self.config else 0.0,
                 )
                 debug_log(
                     "SCREENSHOT",
-                    f"Capturing screenshot with scroll_offset={scroll_offset}",
+                    f"Capturing screenshot with scroll_offset={scroll_offset}, "
+                    f"minimum_contrast={self.config.screenshot_minimum_contrast if self.config else 0.0}",
                 )
 
             debug_log("SCREENSHOT", f"Saved screenshot to {filepath}")

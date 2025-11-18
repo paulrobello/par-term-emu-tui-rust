@@ -1,5 +1,7 @@
 """Theme management for terminal widget."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from par_term_emu_core_rust import CursorStyle, PtyTerminal
