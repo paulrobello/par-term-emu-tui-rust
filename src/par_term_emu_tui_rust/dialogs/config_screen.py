@@ -13,7 +13,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, Static, TabbedContent, TabPane, TextArea
 
 from par_term_emu_tui_rust.config import TuiConfig
-from par_term_emu_tui_rust.themes import list_themes
+from par_term_emu_tui_rust.themes import THEMES
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -271,7 +271,7 @@ class ConfigScreen(ModalScreen[bool]):
             with Container(classes="config_section"):
                 yield Label("Theme & Colors", classes="section_title")
 
-                theme_choices = [(name.replace("-", " ").title(), name) for name in list_themes()]
+                theme_choices = [(theme.name, key) for key, theme in sorted(THEMES.items())]
                 yield from self._create_select_row("theme", "Theme:", "Color theme to use for terminal", theme_choices)
                 yield from self._create_checkbox_row(
                     "bold_brightening",
@@ -487,6 +487,11 @@ class ConfigScreen(ModalScreen[bool]):
     ) -> ComposeResult:
         """Create a select configuration row."""
         value = getattr(self.config, field_name)
+
+        # Check if value exists in choices, if not use first choice
+        choice_values = [choice[1] for choice in choices]
+        if value not in choice_values and choices:
+            value = choices[0][1]
 
         with Horizontal(classes="config_row"):
             yield Label(label, classes="config_label")
