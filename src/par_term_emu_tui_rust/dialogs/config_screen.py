@@ -517,12 +517,24 @@ class ConfigScreen(ModalScreen[bool]):
         except Exception as e:
             self.raw_yaml_content = f"# Error loading config: {e}\n"
 
-        # Set content in raw YAML editor
+        # Populate raw YAML editor after a short delay to ensure it's mounted
+        self.set_timer(0.1, self._populate_raw_yaml_editor)
+
+    def _populate_raw_yaml_editor(self) -> None:
+        """Populate the raw YAML editor with content."""
         try:
             text_area = self.query_one("#raw_yaml_editor", TextArea)
             text_area.text = self.raw_yaml_content
         except Exception:
-            pass  # Tab may not be mounted yet
+            # Widget not found or not mounted yet, will try again on tab change
+            pass
+
+    @on(TabbedContent.TabActivated)
+    def on_tab_activated(self, event: TabbedContent.TabActivated) -> None:
+        """Handle tab activation to ensure content is loaded."""
+        event.stop()
+        if event.pane.id == "raw_yaml_tab":
+            self._populate_raw_yaml_editor()
 
     @on(Checkbox.Changed)
     def mark_dirty_checkbox(self, event: Checkbox.Changed) -> None:
