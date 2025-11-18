@@ -260,10 +260,10 @@ class TerminalApp(App):
         self.query_one(FlashLine).flash(content, duration=duration, style=style, location="top")
 
     async def action_edit_config(self) -> None:
-        """Open the config file editor dialog."""
-        from par_term_emu_tui_rust.dialogs import ConfigEditDialog
+        """Open the config file editor screen."""
+        from par_term_emu_tui_rust.dialogs import ConfigScreen
 
-        await self.push_screen(ConfigEditDialog())
+        await self.push_screen(ConfigScreen())
 
 
 def main(
