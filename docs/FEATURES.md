@@ -103,6 +103,34 @@ A built-in modal dialog for editing configuration files directly within the TUI:
 - Testing configuration changes on the fly
 - Safe editing with syntax validation
 
+### Configuration Safety & Recovery (v0.4.0+)
+
+**Automatic Backups:**
+- Every config save creates timestamped backup: `config.yaml.backup.YYYYMMDD_HHMMSS`
+- Stored alongside config file in `~/.config/par-term-emu-tui-rust/`
+- UTC timestamps ensure consistency across timezones
+- Enables easy rollback to previous working configurations
+
+**Comprehensive Validation:**
+- **Type Safety**: All values validated for correct types (int, float, bool, str, list, tuple)
+- **Type Conversion**: Numeric values automatically converted from YAML strings
+- **Range Validation**: Float values clamped to valid ranges (e.g., 0.0-1.0 for contrast settings)
+- **Enum Validation**: Theme names and screenshot formats validated against allowed values
+- **RGB Validation**: Color tuples checked for proper format and ranges
+- **Auto-Correction**: Invalid values automatically corrected with user warnings
+
+**Interactive Recovery:**
+When config parsing fails (invalid YAML, corrupted file), interactive prompt offers:
+1. Reset to defaults - Fresh start with factory settings
+2. Restore from backup - Choose from timestamped backups
+3. View all backups - List available backup files
+4. Exit - Cancel and exit application
+
+**User Notifications:**
+- Warning toast after save: "Restart the TUI for changes to take effect"
+- Clear feedback about validation corrections
+- Parse failure messages with recovery options
+
 ```mermaid
 graph TD
     Trigger[Press Alt+Ctrl+Shift+C]

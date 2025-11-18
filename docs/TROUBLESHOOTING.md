@@ -159,17 +159,50 @@ par-term-emu-tui-rust --shell /bin/zsh
 **Problem:**
 ```
 yaml.scanner.ScannerError: while scanning
+Failed to parse config: invalid YAML syntax
 ```
 
-**Solution:**
+**Solution (v0.4.0+):**
+
+The TUI now provides **interactive recovery** when config parsing fails:
+
+1. **Automatic Prompt** - When started in interactive mode (terminal), you'll see:
+   ```
+   Failed to parse config: invalid YAML syntax
+
+   Choose recovery option:
+   1. Reset to defaults
+   2. Restore from backup
+   3. View all backups
+   4. Exit
+   ```
+
+2. **Restore from Backup** - Select option 2 to choose from timestamped backups:
+   ```
+   Available backups:
+   1. config.yaml.backup.20250118_143022 (2025-01-18 14:30:22 UTC)
+   2. config.yaml.backup.20250118_120015 (2025-01-18 12:00:15 UTC)
+   ```
+
+3. **Reset to Defaults** - Select option 1 for fresh start with factory settings
+
+**Manual Recovery:**
 ```bash
 # Validate YAML syntax
 python3 -c "import yaml, os; yaml.safe_load(open(os.path.expanduser('~/.config/par-term-emu-tui-rust/config.yaml'), encoding='utf-8'))"
+
+# Or manually restore backup
+cp ~/.config/par-term-emu-tui-rust/config.yaml.backup.YYYYMMDD_HHMMSS ~/.config/par-term-emu-tui-rust/config.yaml
 
 # Or recreate default config
 mv ~/.config/par-term-emu-tui-rust/config.yaml ~/.config/par-term-emu-tui-rust/config.yaml.backup
 par-term-emu-tui-rust --init-config
 ```
+
+**Automatic Backups:**
+- Every config save creates timestamped backup: `config.yaml.backup.YYYYMMDD_HHMMSS`
+- Stored in `~/.config/par-term-emu-tui-rust/`
+- Use these for recovery if config becomes corrupted
 
 ## Display Problems
 

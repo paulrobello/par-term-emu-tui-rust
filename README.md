@@ -13,9 +13,48 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/probello3)
 
-## What's New in v0.3.1
+## What's New in v0.4.0
 
-### New Color System Features
+### Enhanced Configuration Management
+- **Automatic Config Backup**: Every config save creates timestamped backup (`config.yaml.backup.YYYYMMDD_HHMMSS`)
+- **Interactive Recovery**: When config parsing fails, prompts for recovery options:
+  - Reset to defaults
+  - Restore from backup
+  - View all available backups
+  - Exit gracefully
+- **Comprehensive Validation**: All config values validated for proper types, ranges, and formats
+  - Numeric values (int/float) properly converted from YAML strings
+  - Range clamping for float values (0.0-1.0) like `minimum_contrast`
+  - Positive/non-negative validation for numeric settings
+  - RGB tuple validation for color values
+  - Enum validation for theme and screenshot format settings
+- **Config UI Improvements**: Optimized widget widths for better layout
+  - Checkboxes: width 7
+  - Number inputs: width 10
+  - Text inputs: width 20
+  - Select boxes: width 45
+- **Restart Notification**: Toast message after saving config reminds user to restart TUI
+- **Bold Brightening Default**: Changed `bold_brightening` default from `true` to `false` for better color accuracy
+
+### Configuration Safety
+```yaml
+# Before save: automatic backup created
+# ~/.config/par-term-emu-tui-rust/config.yaml.backup.20250118_143022
+
+# Invalid values automatically clamped/corrected
+minimum_contrast: 1.5  # Automatically clamped to 1.0
+scrollback_lines: -100  # Automatically corrected to 0
+
+# Parse failures trigger interactive recovery:
+# 1. Reset to defaults
+# 2. Restore from backup
+# 3. View all backups
+# 4. Exit
+```
+
+### Previous Release (v0.3.1)
+
+#### New Color System Features
 - **Automatic Contrast Adjustment**: iTerm2-compatible minimum contrast system
   - `minimum_contrast` (0.0-1.0) - Automatic contrast adjustment for live terminal display
   - `screenshot_minimum_contrast` (0.0-1.0) - Independent contrast setting for screenshots
@@ -25,12 +64,12 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
   - Ensures text remains readable on any background color
 
 - **Bold Text Brightening**: Enhanced bold text rendering
-  - `bold_brightening` (default: true) - Use bright ANSI colors (8-15) for bold text with normal colors (0-7)
+  - `bold_brightening` (default: false) - Use bright ANSI colors (8-15) for bold text with normal colors (0-7)
   - Matches iTerm2's "Use Bright Bold" setting
   - When enabled: Bold red (1) automatically renders as bright red (9)
   - When disabled: Bold text uses original color without brightening
 
-### Configuration Example
+#### Configuration Example
 ```yaml
 # Live terminal contrast adjustment
 minimum_contrast: 0.5  # Moderate contrast for display
@@ -39,10 +78,10 @@ minimum_contrast: 0.5  # Moderate contrast for display
 screenshot_minimum_contrast: 0.7  # Higher contrast for screenshots
 
 # Bold text appearance
-bold_brightening: true  # Use bright colors for bold text
+bold_brightening: false  # Use original colors for bold text
 ```
 
-### Previous Release (v0.3.0)
+#### Previous Release (v0.3.0)
 - **Visual Bell Flash**: Animated bell icon overlay when terminal receives BEL character (🔔)
 - **Install Command Discoverability**: `install` subcommand now visible in `--help` output
 - **KITTY Keyboard Protocol Documentation**: Comprehensive guide for enhanced keyboard handling
@@ -184,7 +223,7 @@ par-term-emu-tui-rust --init-config
 ```yaml
 # Theme & Colors
 theme: "dark-background"
-bold_brightening: true           # Use bright colors for bold text
+bold_brightening: false          # Use bright colors for bold text
 minimum_contrast: 0.0            # Display contrast (0.0=off, 0.5=moderate, 1.0=max)
 
 # Scrollback

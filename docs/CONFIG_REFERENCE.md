@@ -68,6 +68,47 @@ $EDITOR ~/.config/par-term-emu-tui-rust/config.yaml
 par-term-emu-tui-rust --init-config  # Creates default config
 ```
 
+### Configuration Safety & Backup
+
+**Automatic Backups (v0.4.0+):**
+- Every config save creates a timestamped backup: `config.yaml.backup.YYYYMMDD_HHMMSS`
+- Backups stored in same directory as config file
+- UTC timestamps for consistency across timezones
+- Useful for recovering from configuration errors
+
+**Validation & Type Safety:**
+- All values validated for proper types (int, float, bool, str, list, tuple)
+- Numeric values automatically converted from YAML strings
+- Range validation and clamping:
+  - Float ranges (0.0-1.0) for `minimum_contrast`, `screenshot_minimum_contrast`
+  - Positive/non-negative validation for numeric settings
+  - RGB tuple validation for color values
+  - Enum validation for `theme` and `screenshot_format`
+- Invalid values automatically corrected with warnings
+
+**Interactive Recovery (v0.4.0+):**
+
+When config parsing fails, the TUI prompts for recovery options (in interactive mode):
+1. **Reset to defaults** - Start fresh with default configuration
+2. **Restore from backup** - Select from available timestamped backups
+3. **View all backups** - List all available backup files
+4. **Exit** - Exit without loading config
+
+Example:
+```
+Failed to parse config: invalid YAML syntax
+
+Choose recovery option:
+1. Reset to defaults
+2. Restore from backup
+3. View all backups
+4. Exit
+```
+
+**Restart Notification:**
+- After saving config, a warning toast appears: "Restart the TUI for changes to take effect"
+- Ensures users are aware that config changes require application restart
+
 ---
 
 ## Currently Implemented Settings
@@ -98,7 +139,7 @@ par-term-emu-tui-rust --init-config  # Creates default config
 | Accept OSC 7 | `accept_osc7` | `true` | Directory tracking via shell integration |
 | Visual bell enabled | `visual_bell_enabled` | `true` | Shows bell icon (🔔) in header on BEL character |
 | Theme | `theme` | `"dark-background"` | Color theme name |
-| Bold brightening | `bold_brightening` | `true` | Use bright colors (8-15) for bold text with colors 0-7 |
+| Bold brightening | `bold_brightening` | `false` | Use bright colors (8-15) for bold text with colors 0-7 |
 | Show notifications | `show_notifications` | `true` | Display OSC 9/777 notifications |
 | Notification timeout | `notification_timeout` | `5` | Notification display duration (seconds) |
 | Screenshot directory | `screenshot_directory` | `None` | Directory for screenshots |
@@ -329,7 +370,7 @@ accept_osc7: true                   # Enable directory tracking (default)
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `theme` | `str` | `"dark-background"` | Color theme name to use for terminal colors |
-| `bold_brightening` | `bool` | `true` | Use bright ANSI colors (8-15) for bold text with normal colors (0-7) |
+| `bold_brightening` | `bool` | `false` | Use bright ANSI colors (8-15) for bold text with normal colors (0-7) |
 
 **Available Themes:**
 - Use `par-term-emu-tui-rust --list-themes` to see all available themes
@@ -346,7 +387,7 @@ accept_osc7: true                   # Enable directory tracking (default)
 ```yaml
 # Theme
 theme: "dark-background"       # Default dark theme
-bold_brightening: true         # Use bright colors for bold text (iTerm2 behavior)
+bold_brightening: false        # Use bright colors for bold text (iTerm2 behavior)
 ```
 
 ---
