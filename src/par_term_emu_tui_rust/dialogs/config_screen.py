@@ -94,6 +94,10 @@ class ConfigScreen(ModalScreen[bool]):
                 width: 10;
             }
 
+            Select.config_input {
+                width: auto;
+            }
+
             .config_help {
                 color: $text-muted;
                 margin-left: 42;
