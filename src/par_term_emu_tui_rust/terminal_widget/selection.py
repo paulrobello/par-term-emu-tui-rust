@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Text selection logic for terminal widget."""
+
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 

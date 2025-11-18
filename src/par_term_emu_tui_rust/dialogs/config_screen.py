@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import fields
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, get_type_hints
 
 from ruamel.yaml import YAML
 from textual import on
@@ -19,6 +20,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from textual.app import ComposeResult
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigScreen(ModalScreen[bool]):
@@ -82,8 +85,20 @@ class ConfigScreen(ModalScreen[bool]):
             }
 
             .config_input {
-                width: 1fr;
+                width: 20;
                 height: 3;
+            }
+
+            Checkbox.config_input {
+                width: 7;
+            }
+
+            Input.config_input_number {
+                width: 10;
+            }
+
+            Select.config_input {
+                width: 45;
             }
 
             .config_help {
@@ -477,6 +492,8 @@ class ConfigScreen(ModalScreen[bool]):
                 placeholder="(auto-detect)" if allow_empty else "",
             )
             input_widget.add_class("config_input")
+            if input_type in ("integer", "number"):
+                input_widget.add_class("config_input_number")
             yield input_widget
         yield Static(help_text, classes="config_help")
 
@@ -587,49 +604,87 @@ class ConfigScreen(ModalScreen[bool]):
             if yaml_data is None:
                 yaml_data = {}
 
+            # Get actual types (not string annotations) using get_type_hints
+            type_hints = get_type_hints(TuiConfig)
+
             # Update values from widgets
             for field in fields(TuiConfig):
                 widget_id = f"field_{field.name}"
+                field_type = type_hints.get(field.name, field.type)
 
                 try:
-                    if field.type is bool:
+                    converted_value = None
+
+                    if field_type is bool:
                         widget = self.query_one(f"#{widget_id}", Checkbox)
-                        yaml_data[field.name] = widget.value
+                        converted_value = widget.value
                     elif "Select" in str(type(self.query_one(f"#{widget_id}"))):
                         widget = self.query_one(f"#{widget_id}", Select)
-                        yaml_data[field.name] = widget.value
+                        converted_value = widget.value
                     else:
                         widget = self.query_one(f"#{widget_id}", Input)
                         value_str = widget.value.strip()
 
+                        # Get the field type as a string for robust checking
+                        field_type_str = str(field.type)
+
                         # Handle empty optional fields
                         if not value_str and field.default is None:
-                            yaml_data[field.name] = None
+                            converted_value = None
                         # Handle tuple[int, int, int] for colors
-                        elif "tuple" in str(field.type) and "int" in str(field.type):
+                        elif "tuple" in field_type_str and "int" in field_type_str:
                             if value_str:
                                 parts = [int(p.strip()) for p in value_str.split(",")]
                                 if len(parts) != 3:
                                     msg = f"Color must have 3 values (R,G,B), got {len(parts)}"
                                     raise ValueError(msg)
-                                yaml_data[field.name] = parts
+                                converted_value = parts
                             else:
-                                yaml_data[field.name] = field.default
+                                converted_value = field.default
                         # Handle list[str]
-                        elif "list" in str(field.type):
+                        elif "list" in field_type_str:
                             # Don't update allowed_url_schemes from widgets (too complex)
                             continue
-                        # Handle numeric types
-                        elif field.type is int:
-                            yaml_data[field.name] = int(value_str) if value_str else field.default
-                        elif field.type is float:
-                            yaml_data[field.name] = float(value_str) if value_str else field.default
+                        # Handle integer types (including int and any union with int)
+                        elif field_type is int or (
+                            hasattr(field_type, "__origin__") and int in getattr(field_type, "__args__", ())
+                        ):
+                            converted_value = (
+                                int(value_str) if value_str else (field.default if field.default is not None else 0)
+                            )
+                        # Handle float types (including float and any union with float)
+                        elif field_type is float or (
+                            hasattr(field_type, "__origin__") and float in getattr(field_type, "__args__", ())
+                        ):
+                            converted_value = (
+                                float(value_str) if value_str else (field.default if field.default is not None else 0.0)
+                            )
+                        # String or unknown types
                         else:
-                            yaml_data[field.name] = value_str if value_str else field.default
+                            converted_value = value_str if value_str else field.default
+
+                    # Apply validation if we have a non-None value
+                    if converted_value is not None:
+                        converted_value = TuiConfig._validate_value(field.name, converted_value, field_type)
+
+                    yaml_data[field.name] = converted_value
 
                 except Exception:
                     # Skip widgets that don't exist or can't be converted
                     continue
+
+            # Backup existing config file before overwriting
+            if self.config_path.exists():
+                from datetime import UTC, datetime
+
+                backup_path = self.config_path.with_suffix(
+                    f".yaml.backup.{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
+                )
+                try:
+                    backup_path.write_text(self.config_path.read_text(encoding="utf-8"), encoding="utf-8")
+                    logger.info("Backed up config to %s", backup_path)
+                except Exception as e:
+                    logger.warning("Failed to backup config: %s", e)
 
             # Save using ruamel.yaml to preserve comments and formatting
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -641,6 +696,8 @@ class ConfigScreen(ModalScreen[bool]):
             app = self.app
             if isinstance(app, TerminalApp):
                 app.flash(f"Config saved to {self.config_path}", style="success")
+                # Inform user that restart is required for changes to take effect
+                app.flash("Restart the TUI for changes to take effect", style="warning")
 
             self.dirty = False
             self.dismiss(True)
@@ -677,6 +734,8 @@ class ConfigScreen(ModalScreen[bool]):
             app = self.app
             if isinstance(app, TerminalApp):
                 app.flash(f"Config saved to {self.config_path}", style="success")
+                # Inform user that restart is required for changes to take effect
+                app.flash("Restart the TUI for changes to take effect", style="warning")
 
             self.dirty = False
             self.dismiss(True)

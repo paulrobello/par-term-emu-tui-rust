@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Rendering logic for terminal widget."""
+
+from __future__ import annotations
 
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any

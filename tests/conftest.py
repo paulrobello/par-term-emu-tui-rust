@@ -89,6 +89,21 @@ def _install_par_term_core_stub() -> None:
     core.PtyTerminal = DummyPtyTerminal  # type: ignore[attr-defined]
     core.CursorStyle = DummyCursorStyle  # type: ignore[attr-defined]
 
+    # Add stub for adjust_contrast_rgb used by rendering.py
+    def adjust_contrast_rgb(
+        fg_r: int,
+        fg_g: int,
+        fg_b: int,
+        bg_r: int,  # noqa: ARG001
+        bg_g: int,  # noqa: ARG001
+        bg_b: int,  # noqa: ARG001
+        min_contrast: float,  # noqa: ARG001
+    ) -> tuple[int, int, int]:
+        """Stub for adjust_contrast_rgb - returns input color unchanged."""
+        return (fg_r, fg_g, fg_b)
+
+    core.adjust_contrast_rgb = adjust_contrast_rgb  # type: ignore[attr-defined]
+
     debug = types.ModuleType("par_term_emu_core_rust.debug")
 
     def _noop(*_args, **_kwargs) -> None:  # noqa: ANN002, ANN003

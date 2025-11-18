@@ -607,7 +607,7 @@ Manages application configuration with YAML persistence and XDG directory compli
 - `warn_on_unknown_url_scheme` - Warn when blocking unsupported schemes (default: true)
 
 **Theme & Appearance (continued):**
-- `bold_brightening` - Use bright ANSI colors (8-15) for bold text with normal colors (0-7) (default: true)
+- `bold_brightening` - Use bright ANSI colors (8-15) for bold text with normal colors (0-7) (default: false)
 - `minimum_contrast` - Minimum contrast adjustment for live terminal display, 0.0-1.0 (default: 0.0)
 
 **Screenshots (continued):**

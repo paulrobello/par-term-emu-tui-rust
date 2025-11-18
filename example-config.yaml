@@ -178,8 +178,8 @@ theme: "iterm2-dark"
 # When enabled, bold text with ANSI colors 0-7 automatically uses bright
 # variants 8-15 (like iTerm2's "Use Bright Bold" setting). When disabled,
 # bold text uses the original color without brightening.
-# Default: true
-bold_brightening: true
+# Default: false
+bold_brightening: false
 
 # Minimum contrast adjustment for live terminal display (iTerm2-compatible)
 # Automatically adjusts text colors to ensure readability against backgrounds.

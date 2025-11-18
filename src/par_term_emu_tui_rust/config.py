@@ -7,8 +7,8 @@ Handles loading and saving user preferences using YAML and XDG directories.
 from __future__ import annotations
 
 import logging
-from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any
+from dataclasses import asdict, dataclass, field, fields
+from typing import TYPE_CHECKING, Any, get_type_hints
 
 from xdg_base_dirs import xdg_config_home
 
@@ -246,7 +246,7 @@ class TuiConfig:
 
     # Theme (Phase 6)
     theme: str = "dark-background"  # Color theme name
-    bold_brightening: bool = True  # Use bright colors (8-15) for bold text with colors 0-7
+    bold_brightening: bool = False  # Use bright colors (8-15) for bold text with colors 0-7
     minimum_contrast: float = 0.0  # Minimum contrast for display (0.0-1.0, iTerm2-compatible)
 
     # Notifications (OSC 9/777)
@@ -287,6 +287,136 @@ class TuiConfig:
     )
     keyboard_protocol_auto_detect: bool = False  # Auto-detect and enable when apps request protocol
 
+    @staticmethod
+    def _validate_value(field_name: str, value: Any, field_type: Any) -> Any:
+        """Validate and clamp config values to valid ranges.
+
+        Args:
+            field_name: Name of the field being validated
+            value: Value to validate
+            field_type: Expected type of the field
+
+        Returns:
+            Validated and potentially clamped value
+
+        Raises:
+            ValueError: If value cannot be validated
+        """
+        # Validate float ranges (0.0-1.0)
+        if field_name in ("minimum_contrast", "screenshot_minimum_contrast"):
+            if field_type is float:
+                val = float(value)
+                if val < 0.0:
+                    logger.warning("%s value %s is below 0.0, clamping to 0.0", field_name, val)
+                    return 0.0
+                if val > 1.0:
+                    logger.warning("%s value %s is above 1.0, clamping to 1.0", field_name, val)
+                    return 1.0
+                return val
+
+        # Validate positive float values
+        if field_name == "cursor_blink_rate":
+            if field_type is float:
+                val = float(value)
+                if val <= 0.0:
+                    logger.warning("%s value %s must be positive, using default 0.5", field_name, val)
+                    return 0.5
+                return val
+
+        # Validate non-negative integers
+        if field_name in (
+            "scrollback_lines",
+            "max_scrollback_lines",
+            "paste_chunk_size",
+            "paste_chunk_delay_ms",
+            "paste_warn_size",
+            "notification_timeout",
+            "keyboard_protocol_flags",
+        ):
+            if field_type is int:
+                val = int(value)
+                if val < 0:
+                    logger.warning("%s value %s is negative, clamping to 0", field_name, val)
+                    return 0
+                return val
+
+        # Validate positive integers
+        if field_name == "mouse_wheel_scroll_lines":
+            if field_type is int:
+                val = int(value)
+                if val < 1:
+                    logger.warning("%s value %s must be at least 1, using default 3", field_name, val)
+                    return 3
+                return val
+
+        # Validate RGB tuples (0-255)
+        if field_name in ("link_color", "search_match_color"):
+            if isinstance(value, (list, tuple)) and len(value) == 3:
+                clamped = []
+                for i, component in enumerate(value):
+                    val = int(component)
+                    if val < 0:
+                        logger.warning("%s[%d] value %s is below 0, clamping to 0", field_name, i, val)
+                        clamped.append(0)
+                    elif val > 255:
+                        logger.warning("%s[%d] value %s is above 255, clamping to 255", field_name, i, val)
+                        clamped.append(255)
+                    else:
+                        clamped.append(val)
+                return tuple(clamped)
+
+        # Validate cursor_style values
+        if field_name == "cursor_style":
+            valid_styles = {
+                "blinking_block",
+                "steady_block",
+                "blinking_underline",
+                "steady_underline",
+                "blinking_bar",
+                "steady_bar",
+            }
+            val = str(value).lower()
+            if val not in valid_styles:
+                logger.warning(
+                    "%s value %r is invalid, using default 'blinking_block'. Valid values: %s",
+                    field_name,
+                    value,
+                    valid_styles,
+                )
+                return "blinking_block"
+            return val
+
+        # Validate url_modifier values
+        if field_name == "url_modifier":
+            valid_modifiers = {"none", "ctrl", "shift", "alt"}
+            val = str(value).lower()
+            if val not in valid_modifiers:
+                logger.warning(
+                    "%s value %r is invalid, using default 'ctrl'. Valid values: %s",
+                    field_name,
+                    value,
+                    valid_modifiers,
+                )
+                return "ctrl"
+            return val
+
+        # Validate screenshot_format values
+        if field_name == "screenshot_format":
+            valid_formats = {"png", "jpeg", "bmp", "svg", "html"}
+            val = str(value).lower()
+            if val not in valid_formats:
+                logger.warning(
+                    "%s value %r is invalid, using default 'png'. Valid values: %s",
+                    field_name,
+                    value,
+                    valid_formats,
+                )
+                return "png"
+            return val
+
+        # No specific validation needed
+        return value
+
     @classmethod
     def load(cls, config_path: Path | None = None) -> TuiConfig:
         """Load configuration from YAML file.
@@ -310,14 +440,178 @@ class TuiConfig:
             with config_path.open(encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
 
-            # Only use keys that exist in our dataclass
-            valid_keys = set(cls.__annotations__)
-            filtered_data = {k: v for k, v in data.items() if k in valid_keys}
+            # Get actual types (not string annotations) using get_type_hints
+            type_hints = get_type_hints(cls)
 
-            return cls(**filtered_data)
-        except Exception:
+            # Convert types to match dataclass field types
+            converted_data = {}
+            for field_info in fields(cls):
+                if field_info.name not in data:
+                    continue
+
+                value = data[field_info.name]
+                field_type = type_hints.get(field_info.name, field_info.type)
+                field_type_str = str(field_type)
+
+                try:
+                    converted_value = None
+
+                    # Handle None values
+                    if value is None:
+                        converted_value = None
+                    # Handle bool (must come before int since bool is subclass of int)
+                    elif field_type is bool:
+                        converted_value = bool(value) if not isinstance(value, bool) else value
+                    # Handle int
+                    elif field_type is int:
+                        converted_value = int(value) if not isinstance(value, int) else value
+                    # Handle float
+                    elif field_type is float:
+                        converted_value = float(value) if not isinstance(value, float) else value
+                    # Handle tuple[int, int, int] for colors
+                    elif "tuple" in field_type_str and "int" in field_type_str:
+                        if isinstance(value, (list, tuple)):
+                            converted_value = tuple(int(v) for v in value)
+                        else:
+                            converted_value = field_info.default
+                    # Handle list[str]
+                    elif "list" in field_type_str and "str" in field_type_str:
+                        if isinstance(value, list):
+                            converted_value = [str(v) for v in value]
+                        else:
+                            converted_value = field_info.default
+                    # Handle str and other types
+                    else:
+                        converted_value = value
+
+                    # Apply validation if we have a non-None value
+                    if converted_value is not None:
+                        converted_value = cls._validate_value(field_info.name, converted_value, field_type)
+
+                    converted_data[field_info.name] = converted_value
+
+                except (ValueError, TypeError):
+                    # Use default value if conversion fails
+                    logger.warning(
+                        "Failed to convert %s value %r to type %s, using default",
+                        field_info.name,
+                        value,
+                        field_type,
+                    )
+                    converted_data[field_info.name] = field_info.default
+
+            return cls(**converted_data)
+        except Exception as e:
             logger.exception("Failed to load config from %s", config_path)
-            return cls()
+            # Re-raise with config path for better error handling upstream
+            msg = f"Failed to parse config file {config_path}: {e}"
+            raise RuntimeError(msg) from e
+
+    @classmethod
+    def load_with_recovery(cls, config_path: Path | None = None, interactive: bool = True) -> TuiConfig:
+        """Load configuration with error recovery options.
+
+        Args:
+            config_path: Optional path to config file. If None, uses XDG config directory.
+            interactive: If True, prompt user for recovery options on parse failure.
+
+        Returns:
+            TuiConfig instance with loaded settings or defaults.
+        """
+        if config_path is None:
+            config_path = cls.default_config_path()
+
+        try:
+            return cls.load(config_path)
+        except RuntimeError as e:
+            if not interactive:
+                logger.exception("Config parse failed (non-interactive)")
+                return cls()
+
+            # Find backup files
+            backup_files = sorted(config_path.parent.glob(f"{config_path.name}.backup.*"), reverse=True)
+
+            print(f"\n❌ Error: Failed to parse config file: {config_path}", file=__import__("sys").stderr)
+            print(f"   {e}", file=__import__("sys").stderr)
+            print("\nRecovery options:", file=__import__("sys").stderr)
+            print("  1. Reset to default configuration", file=__import__("sys").stderr)
+
+            if backup_files:
+                print(f"  2. Restore from most recent backup ({backup_files[0].name})", file=__import__("sys").stderr)
+                if len(backup_files) > 1:
+                    print(f"  3. Show all {len(backup_files)} backup files", file=__import__("sys").stderr)
+                    print("  4. Exit", file=__import__("sys").stderr)
+                else:
+                    print("  3. Exit", file=__import__("sys").stderr)
+            else:
+                print("  2. Exit", file=__import__("sys").stderr)
+
+            while True:
+                try:
+                    choice = input("\nSelect option [1]: ").strip() or "1"
+
+                    if choice == "1":
+                        # Reset to defaults
+                        print("✓ Using default configuration", file=__import__("sys").stderr)
+                        return cls()
+
+                    if backup_files and choice == "2":
+                        # Restore most recent backup
+                        backup_path = backup_files[0]
+                        try:
+                            # Copy backup to config file
+                            config_path.write_text(backup_path.read_text(encoding="utf-8"), encoding="utf-8")
+                            print(f"✓ Restored config from {backup_path.name}", file=__import__("sys").stderr)
+                            return cls.load(config_path)
+                        except Exception as restore_error:
+                            print(f"❌ Failed to restore backup: {restore_error}", file=__import__("sys").stderr)
+                            print("Falling back to default configuration", file=__import__("sys").stderr)
+                            return cls()
+
+                    if backup_files and len(backup_files) > 1 and choice == "3":
+                        # Show all backups
+                        print("\nAvailable backups:", file=__import__("sys").stderr)
+                        for i, backup in enumerate(backup_files, 1):
+                            size = backup.stat().st_size
+                            mtime = __import__("datetime").datetime.fromtimestamp(
+                                backup.stat().st_mtime, tz=__import__("datetime").UTC
+                            )
+                            print(
+                                f"  {i}. {backup.name} ({size} bytes, modified {mtime.strftime('%Y-%m-%d %H:%M:%S')})",
+                                file=__import__("sys").stderr,
+                            )
+
+                        backup_choice = input("\nSelect backup number (or Enter to go back): ").strip()
+                        if backup_choice and backup_choice.isdigit():
+                            idx = int(backup_choice) - 1
+                            if 0 <= idx < len(backup_files):
+                                backup_path = backup_files[idx]
+                                try:
+                                    config_path.write_text(backup_path.read_text(encoding="utf-8"), encoding="utf-8")
+                                    print(
+                                        f"✓ Restored config from {backup_path.name}",
+                                        file=__import__("sys").stderr,
+                                    )
+                                    return cls.load(config_path)
+                                except Exception as restore_error:
+                                    print(
+                                        f"❌ Failed to restore backup: {restore_error}",
+                                        file=__import__("sys").stderr,
+                                    )
+                                    print("Falling back to default configuration", file=__import__("sys").stderr)
+                                    return cls()
+                        continue
+
+                    # Exit option
+                    exit_option = "4" if (backup_files and len(backup_files) > 1) else ("3" if backup_files else "2")
+                    if choice == exit_option:
+                        print("Exiting...", file=__import__("sys").stderr)
+                        __import__("sys").exit(1)
+
+                    print(f"Invalid option: {choice}", file=__import__("sys").stderr)
+                except (KeyboardInterrupt, EOFError):
+                    print("\nExiting...", file=__import__("sys").stderr)
+                    __import__("sys").exit(1)
 
     def save(self, config_path: Path | None = None) -> None:
         """Save configuration to YAML file.

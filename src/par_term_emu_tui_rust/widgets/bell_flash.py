@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 Visual bell flash widget - displays a 3x3 bell icon overlay.
 
 Shows a bell icon (🔔) in the center of the screen for 1 second when
 the terminal receives a bell character (BEL/\x07).
 """
+
+from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
