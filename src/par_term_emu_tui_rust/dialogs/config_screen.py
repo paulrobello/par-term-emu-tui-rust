@@ -87,7 +87,7 @@ class ConfigScreen(ModalScreen[bool]):
             }
 
             Checkbox.config_input {
-                width: 5;
+                width: 6;
             }
 
             .config_help {
