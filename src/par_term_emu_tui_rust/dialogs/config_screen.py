@@ -59,35 +59,39 @@ class ConfigScreen(ModalScreen[bool]):
                 padding: 1;
                 margin-bottom: 1;
                 background: $surface-darken-1;
+                height: auto;
             }
 
             .section_title {
                 text-style: bold;
                 color: $accent;
                 margin-bottom: 1;
+                height: 1;
             }
 
             .config_row {
-                height: auto;
-                margin-bottom: 1;
+                height: 3;
+                margin-bottom: 0;
             }
 
             .config_label {
                 width: 40;
-                height: auto;
+                height: 3;
                 padding-right: 2;
                 content-align: right middle;
             }
 
             .config_input {
                 width: 1fr;
+                height: 3;
             }
 
             .config_help {
                 color: $text-muted;
                 margin-left: 42;
                 margin-top: 0;
-                margin-bottom: 1;
+                margin-bottom: 2;
+                height: auto;
             }
 
             #button_bar {
