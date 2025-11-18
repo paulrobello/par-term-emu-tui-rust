@@ -314,7 +314,7 @@ open_screenshot_after_capture: false
 
 ### Minimum Contrast Adjustment
 
-**New in v0.3.1**: Automatic contrast adjustment for improved readability (iTerm2-compatible).
+Automatic contrast adjustment for improved readability (iTerm2-compatible).
 
 The minimum contrast feature ensures text remains readable by automatically adjusting colors when the brightness difference between text and background is too low.
 
@@ -343,7 +343,7 @@ screenshot_minimum_contrast: 0.5
 - Accessibility compliance
 - Ensuring contrast on various display types
 
-For more details, see the [par-term-emu-core-rust documentation](https://github.com/paulrobello/par-term-emu-core-rust).
+For more details, see the par-term-emu-core-rust documentation at https://github.com/paulrobello/par-term-emu-core-rust
 
 ## Automated Screenshots
 

@@ -13,6 +13,9 @@ This document describes the comprehensive debugging infrastructure for par-term-
 - [Using Debug Snapshots from Python](#using-debug-snapshots-from-python)
 - [Debugging the TUI Corruption Issue](#debugging-the-tui-corruption-issue)
 - [Running the TUI with Debug Mode](#running-the-tui-with-debug-mode)
+  - [Using Makefile (Recommended)](#using-makefile-recommended)
+  - [Manual Execution](#manual-execution)
+  - [Managing Debug Logs](#managing-debug-logs)
 - [Tips and Best Practices](#tips-and-best-practices)
 - [Performance Impact](#performance-impact)
 - [Troubleshooting the Debug System](#troubleshooting-the-debug-system)
@@ -20,36 +23,64 @@ This document describes the comprehensive debugging infrastructure for par-term-
 - [FAQ](#faq)
 - [Which Log Should I Check?](#which-log-should-i-check)
 - [Related Files](#related-files)
+- [Makefile Debug Targets](#makefile-debug-targets)
 - [See Also](#see-also)
 
 ## Overview
 
-The debugging system provides extensive logging capabilities across both Rust and Python components, controlled by a single `DEBUG_LEVEL` environment variable. Rust and Python components write to **separate log files** to avoid interfering with TUI applications:
+The debugging system provides extensive logging capabilities across Rust and Python components. There are **three separate log sources**:
 
-- **Rust core**: `/tmp/par_term_emu_core_rust_debug_rust.log` - Terminal emulation, VT parsing, PTY operations
-- **Python TUI**: `/tmp/par_term_emu_core_rust_debug_python.log` - Widget lifecycle, rendering, event handling
+1. **Rust core debug logs**: `/tmp/par_term_emu_core_rust_debug_rust.log`
+   - Terminal emulation, VT parsing, PTY operations
+   - Controlled by `DEBUG_LEVEL` environment variable (0-4)
+   - From par-term-emu-core-rust Rust backend
 
-This separation makes it easier to identify whether issues originate in the core terminal emulation layer (Rust) or the TUI presentation layer (Python).
+2. **Python core debug logs**: `/tmp/par_term_emu_core_rust_debug_python.log`
+   - Core Python bindings debug output
+   - Controlled by `DEBUG_LEVEL` environment variable (0-4)
+   - From par-term-emu-core-rust Python module
+
+3. **Python TUI application logs**: `debug_logs/terminal_debug_YYYYMMDD_HHMMSS.log`
+   - TUI application logic, widget lifecycle, user interactions
+   - Enabled via `--debug` CLI flag
+   - Created in current working directory
+   - Timestamped for multiple debugging sessions
+
+This three-layer separation makes it easier to identify whether issues originate in:
+- The core terminal emulation layer (Rust)
+- The Python bindings layer (Python core)
+- The TUI application layer (Python TUI)
 
 ## Quick Start
 
 ```bash
-# Set debug level (0-4)
+# Set debug level (0-4) and run application with debug mode enabled
 export DEBUG_LEVEL=3
+python -m par_term_emu_tui_rust --debug
 
-# Run your application
-python -m par_term_emu_tui_rust
+# Or use Makefile shortcuts
+make debug          # DEBUG_LEVEL=2 (info)
+make debug-verbose  # DEBUG_LEVEL=3 (debug)
+make debug-trace    # DEBUG_LEVEL=4 (trace)
 
-# View debug output in real-time (both logs)
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
+# View debug output in real-time (all three log sources)
+tail -f /tmp/par_term_emu_core_rust_debug_rust.log \
+        /tmp/par_term_emu_core_rust_debug_python.log \
+        debug_logs/terminal_debug_*.log
 
 # Or view individually
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log   # Rust core only
-tail -f /tmp/par_term_emu_core_rust_debug_python.log # Python TUI only
+tail -f /tmp/par_term_emu_core_rust_debug_rust.log    # Rust core only
+tail -f /tmp/par_term_emu_core_rust_debug_python.log  # Python core only
+tail -f debug_logs/terminal_debug_*.log                # Python TUI application only
 
 # Or after the fact
 less /tmp/par_term_emu_core_rust_debug_rust.log
 less /tmp/par_term_emu_core_rust_debug_python.log
+less debug_logs/terminal_debug_*.log
+
+# Or use Makefile shortcuts
+make debug-tail  # Tail Rust and Python core logs
+make debug-view  # View Rust and Python core logs with less
 ```
 
 ## Debug Levels
@@ -310,26 +341,75 @@ grep -A 10 -B 10 "CORRUPTION" /tmp/par_term_emu_core_rust_debug_python.log
 
 ## Running the TUI with Debug Mode
 
-Set the `DEBUG_LEVEL` environment variable before running the TUI:
+### Using Makefile (Recommended)
+
+The Makefile provides convenient shortcuts for running with different debug levels:
 
 ```bash
-# Run TUI with debug level 2 (info)
-DEBUG_LEVEL=2 python -m par_term_emu_tui_rust
+# Run with DEBUG_LEVEL=2 (info) + TUI logging
+make debug
 
-# Run TUI with debug level 3 (debug)
+# Run with DEBUG_LEVEL=3 (debug) + TUI logging
+make debug-verbose
+
+# Run with DEBUG_LEVEL=4 (trace) + TUI logging - WARNING: huge logs
+make debug-trace
+
+# Clear all debug logs before running
+make debug-clear
+
+# View debug logs in real-time (Rust + Python core only)
+make debug-tail
+
+# View debug logs with less (Rust + Python core only)
+make debug-view
+```
+
+### Manual Execution
+
+You can also run directly with environment variables and CLI flags:
+
+```bash
+# Run TUI with core debug level 2 (info) + TUI application logging
+DEBUG_LEVEL=2 python -m par_term_emu_tui_rust --debug
+
+# Run TUI with core debug level 3 (debug) + TUI application logging
+DEBUG_LEVEL=3 python -m par_term_emu_tui_rust --debug
+
+# Run TUI with core debug level 4 (trace) + TUI application logging - WARNING: huge logs
+DEBUG_LEVEL=4 python -m par_term_emu_tui_rust --debug
+
+# Run TUI with only application logging (no core debug logs)
+python -m par_term_emu_tui_rust --debug
+
+# Run TUI with only core debug logs (no application logging)
 DEBUG_LEVEL=3 python -m par_term_emu_tui_rust
+```
 
-# Run TUI with debug level 4 (trace) - WARNING: huge logs
-DEBUG_LEVEL=4 python -m par_term_emu_tui_rust
+### Managing Debug Logs
 
-# Clear the debug log files
+```bash
+# Clear core debug log files (Rust + Python)
 rm -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
 
-# Show the debug logs in real-time
+# Clear TUI application logs
+rm -rf debug_logs/
+
+# Clear all debug logs
+make debug-clear
+
+# View core debug logs in real-time
 tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
 
-# Show the debug logs in less
-less /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
+# View TUI application logs in real-time
+tail -f debug_logs/terminal_debug_*.log
+
+# View core debug logs with less
+less /tmp/par_term_emu_core_rust_debug_rust.log
+less /tmp/par_term_emu_core_rust_debug_python.log
+
+# View TUI application logs with less
+less debug_logs/terminal_debug_*.log
 ```
 
 ## Tips and Best Practices
@@ -337,13 +417,19 @@ less /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debu
 ### 1. Start with Lower Levels
 Begin with `DEBUG_LEVEL=2` and increase only if needed. Higher levels generate massive amounts of data.
 
-### 2. Clear the Log Between Runs
+### 2. Clear Logs Between Runs
 ```bash
-# Clear both logs
+# Clear core logs (Rust + Python bindings)
 rm -f /tmp/par_term_emu_core_rust_debug_*.log
 
-# Or use make target
+# Clear TUI application logs
+rm -rf debug_logs/
+
+# Or use make target to clear core logs
 make debug-clear
+
+# Note: TUI application logs are timestamped, so each run creates a new file
+# The debug-clear make target only clears core logs, not TUI logs
 ```
 
 ### 3. Use Grep Effectively
@@ -353,22 +439,30 @@ grep "\[VT_INPUT\]" /tmp/par_term_emu_core_rust_debug_rust.log
 grep "\[CSI\]" /tmp/par_term_emu_core_rust_debug_rust.log
 grep "\[SCREEN_SWITCH\]" /tmp/par_term_emu_core_rust_debug_rust.log
 
-# Find specific categories in Python log (rendering, widgets)
+# Find specific categories in Python core log (rendering, widgets)
 grep "\[RENDER\]" /tmp/par_term_emu_core_rust_debug_python.log
 grep "\[LIFECYCLE\]" /tmp/par_term_emu_core_rust_debug_python.log
 
-# Check both for corruption
-grep "\[CORRUPTION\]" /tmp/par_term_emu_core_rust_debug_*.log
+# Search TUI application logs (standard Python logging format)
+grep "INFO" debug_logs/terminal_debug_*.log
+grep "WARNING" debug_logs/terminal_debug_*.log
+grep "ERROR" debug_logs/terminal_debug_*.log
 
-# Find time ranges (timestamps are in seconds since epoch)
+# Check all logs for corruption
+grep "\[CORRUPTION\]" /tmp/par_term_emu_core_rust_debug_*.log
+grep "corruption" debug_logs/terminal_debug_*.log
+
+# Find time ranges (timestamps are in seconds since epoch for core logs)
 awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' /tmp/par_term_emu_core_rust_debug_rust.log
 awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' /tmp/par_term_emu_core_rust_debug_python.log
 
 # Count event types in each log
-echo "Rust events:"
+echo "Rust core events:"
 grep -o "\[.*\]" /tmp/par_term_emu_core_rust_debug_rust.log | sort | uniq -c
-echo "Python events:"
+echo "Python core events:"
 grep -o "\[.*\]" /tmp/par_term_emu_core_rust_debug_python.log | sort | uniq -c
+echo "TUI application log levels:"
+grep -o "\[.*\]" debug_logs/terminal_debug_*.log | sort | uniq -c
 ```
 
 ### 4. Correlate with Behavior
@@ -382,19 +476,22 @@ When corruption appears:
 ```bash
 # Good run
 export DEBUG_LEVEL=3
-python -m par_term_emu_tui_rust
+python -m par_term_emu_tui_rust --debug
 # Exit cleanly
 mv /tmp/par_term_emu_core_rust_debug_rust.log /tmp/good_run_rust.log
 mv /tmp/par_term_emu_core_rust_debug_python.log /tmp/good_run_python.log
+cp debug_logs/terminal_debug_*.log /tmp/good_run_tui.log
 
 # Bad run (reproduce corruption)
-python -m par_term_emu_tui_rust
+python -m par_term_emu_tui_rust --debug
 mv /tmp/par_term_emu_core_rust_debug_rust.log /tmp/bad_run_rust.log
 mv /tmp/par_term_emu_core_rust_debug_python.log /tmp/bad_run_python.log
+cp debug_logs/terminal_debug_*.log /tmp/bad_run_tui.log
 
 # Compare
 diff /tmp/good_run_rust.log /tmp/bad_run_rust.log
 diff /tmp/good_run_python.log /tmp/bad_run_python.log
+diff /tmp/good_run_tui.log /tmp/bad_run_tui.log
 ```
 
 ### 6. Use Buffer Snapshots Strategically
@@ -430,50 +527,75 @@ Debug logging has minimal impact at lower levels:
 
 ## Troubleshooting the Debug System
 
-### Debug log file not being created
+### Debug log files not being created
 
 ```bash
-# Check permissions for both log files
+# Check permissions for core log files
 ls -la /tmp/par_term_emu_core_rust_debug_rust.log
 ls -la /tmp/par_term_emu_core_rust_debug_python.log
 
-# Check environment variable
+# Check TUI application log directory
+ls -la debug_logs/
+
+# Check environment variable for core logging
 echo $DEBUG_LEVEL
 
-# Verify it's set before running
+# Verify DEBUG_LEVEL is set before running
 DEBUG_LEVEL=3 python -c "import os; print(os.environ.get('DEBUG_LEVEL'))"
+
+# Check if --debug flag was used for TUI application logging
+# TUI logs only appear when --debug flag is passed
 ```
 
-### No output in debug log
+### No output in debug logs
 
+**For core logs** (Rust/Python bindings):
 - Ensure `DEBUG_LEVEL` is set and exported
 - Check that it's a valid value (0-4)
+- Level 0 disables all debug logging
 - Verify the application is actually running
 
-### Log file growing too large
+**For TUI application logs**:
+- Ensure `--debug` flag was passed to the application
+- Check that `debug_logs/` directory was created
+- Verify permissions on the `debug_logs/` directory
+
+### Log files growing too large
 
 ```bash
-# Truncate the logs
+# Truncate the core logs
 > /tmp/par_term_emu_core_rust_debug_rust.log
 > /tmp/par_term_emu_core_rust_debug_python.log
 
-# Or delete and recreate
-rm /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
-
-# Or use make target
+# Or delete core logs
 rm -f /tmp/par_term_emu_core_rust_debug_*.log
+
+# Or use make target (core logs only)
+make debug-clear
+
+# Clean up old TUI application logs
+rm -rf debug_logs/
+
+# Keep only the most recent TUI log
+cd debug_logs && ls -t | tail -n +2 | xargs rm -f
 ```
 
-### Can't read log file (TUI corrupted)
+### Can't read log files (TUI corrupted)
 
 Debug output goes to files specifically so you can read them from another terminal:
 
 ```bash
-# In a separate terminal window/pane
+# In a separate terminal window/pane - view core logs
 tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
 
-# Or use make target
-tail -f /tmp/par_term_emu_core_rust_debug_*.log
+# View TUI application logs
+tail -f debug_logs/terminal_debug_*.log
+
+# Or use make target for core logs
+make debug-tail
+
+# View all logs together
+tail -f /tmp/par_term_emu_core_rust_debug_*.log debug_logs/terminal_debug_*.log
 ```
 
 ## Advanced Usage
@@ -542,12 +664,19 @@ A: This would be valuable information! It might suggest a timing-sensitive issue
 A: Set `DEBUG_LEVEL` and use the Python debug module directly. The Rust side will respect the same environment variable.
 
 **Q: Can I change the debug output location?**
-A: Yes, edit the file paths in:
-  - Rust: `src/debug.rs` in the par-term-emu-core-rust package (uses `std::env::temp_dir()` to get platform-specific temp directory)
-  - Python: `python/par_term_emu_core_rust/debug.py` in the par-term-emu-core-rust package (uses `tempfile.gettempdir()`)
+A: For core logs (Rust/Python bindings), edit the file paths in the par-term-emu-core-rust package:
+  - Rust: `src/debug.rs` (uses `std::env::temp_dir()` to get platform-specific temp directory)
+  - Python: `python/par_term_emu_core_rust/debug.py` (uses `tempfile.gettempdir()`)
 
-**Q: Why are there two separate log files?**
-A: Separating Rust (core terminal emulation) and Python (TUI widget) logs makes it easier to identify whether issues originate in the terminal emulation layer or the presentation layer. It also avoids race conditions when both components write simultaneously.
+For TUI application logs, they are always created in `debug_logs/` subdirectory of the current working directory. To change this, edit `setup_debug_logging()` in `src/par_term_emu_tui_rust/app.py`.
+
+**Q: Why are there three separate log files?**
+A: The three-layer separation serves different purposes:
+  - **Rust core log**: Terminal emulation, VT parsing, PTY operations (lowest level)
+  - **Python core log**: Python bindings and widget integration (middle level)
+  - **TUI application log**: Application logic, user interactions, high-level flow (highest level)
+
+This separation makes it easier to identify which layer issues originate from and avoids race conditions when components write simultaneously.
 
 ## Which Log Should I Check?
 
@@ -555,14 +684,18 @@ Understanding where to look for different types of issues:
 
 | Issue Type | Check This Log | Look For |
 |------------|----------------|----------|
-| **VT sequence corruption** | Rust (`_rust.log`) | `[VT_INPUT]`, `[CSI]`, `[OSC]` patterns |
-| **Screen buffer issues** | Rust (`_rust.log`) | `[SCREEN_SWITCH]`, `[GRID_OP]`, `[SCROLL]` |
-| **Device query problems** | Rust (`_rust.log`) | `[DEVICE_QUERY]` responses |
-| **PTY communication** | Rust (`_rust.log`) | `[PTY_READ]`, `[PTY_WRITE]` operations |
-| **Rendering corruption** | Python (`_python.log`) | `[CORRUPTION]`, `[RENDER]`, `[SNAPSHOT]` |
-| **Widget lifecycle** | Python (`_python.log`) | `[LIFECYCLE]` mount/unmount/resize |
-| **Generation tracking** | Both logs | `[GENERATION]` counter changes |
-| **Timing issues** | Both logs (merged sort) | Correlate timestamps between logs |
+| **VT sequence corruption** | Rust core (`_rust.log`) | `[VT_INPUT]`, `[CSI]`, `[OSC]` patterns |
+| **Screen buffer issues** | Rust core (`_rust.log`) | `[SCREEN_SWITCH]`, `[GRID_OP]`, `[SCROLL]` |
+| **Device query problems** | Rust core (`_rust.log`) | `[DEVICE_QUERY]` responses |
+| **PTY communication** | Rust core (`_rust.log`) | `[PTY_READ]`, `[PTY_WRITE]` operations |
+| **Rendering corruption** | Python core (`_python.log`) | `[CORRUPTION]`, `[RENDER]`, `[SNAPSHOT]` |
+| **Widget lifecycle** | Python core (`_python.log`) | `[LIFECYCLE]` mount/unmount/resize |
+| **Application flow** | TUI app (`terminal_debug_*.log`) | INFO/WARNING/ERROR messages |
+| **Configuration issues** | TUI app (`terminal_debug_*.log`) | Config loading, validation errors |
+| **Screenshot capture** | TUI app (`terminal_debug_*.log`) | Screenshot save paths, errors |
+| **User interactions** | TUI app (`terminal_debug_*.log`) | Key bindings, mouse events |
+| **Generation tracking** | Core logs (Rust + Python) | `[GENERATION]` counter changes |
+| **Timing issues** | All logs (merged sort) | Correlate timestamps across logs |
 
 ## Related Files
 
@@ -574,13 +707,40 @@ All Rust debug infrastructure is in the **par-term-emu-core-rust** package (loca
 - **`src/grid.rs`** - Grid snapshot methods (`debug_snapshot()`)
 
 ### Python Debug Infrastructure
-- **`python/par_term_emu_core_rust/debug.py`** (in par-term-emu-core-rust package) - Python debug logging system (outputs to `_python.log`)
-- **`src/par_term_emu_tui_rust/terminal_widget/`** - TUI widget modules with lifecycle and rendering logging
 
-### TUI Application
-- **`src/par_term_emu_tui_rust/`** - TUI application package
+**Core Python bindings** (in par-term-emu-core-rust package):
+- **`python/par_term_emu_core_rust/debug.py`** - Python core debug logging system (outputs to `_python.log`)
+
+**TUI Application** (in this repository):
+- **`src/par_term_emu_tui_rust/app.py`** - Main application with `setup_debug_logging()` function
+  - Creates `debug_logs/` directory
+  - Generates timestamped log files: `terminal_debug_YYYYMMDD_HHMMSS.log`
+  - Configures Python standard logging module
+  - Activated via `--debug` CLI flag
+- **`src/par_term_emu_tui_rust/terminal_widget/`** - TUI widget modules with lifecycle and rendering logging
+- **`src/par_term_emu_tui_rust/dialogs/config_screen.py`** - Configuration dialog with backup logging
+
+## Makefile Debug Targets
+
+The project Makefile provides convenient targets for debugging:
+
+| Target | Description | Environment | Output |
+|--------|-------------|-------------|--------|
+| `make debug` | Run with INFO level logging | `DEBUG_LEVEL=2` + `--debug` flag | All three log files |
+| `make debug-verbose` | Run with DEBUG level logging | `DEBUG_LEVEL=3` + `--debug` flag | All three log files |
+| `make debug-trace` | Run with TRACE level logging | `DEBUG_LEVEL=4` + `--debug` flag | All three log files (HUGE!) |
+| `make debug-clear` | Clear core debug logs | N/A | Removes `/tmp/*_rust.log` and `/tmp/*_python.log` |
+| `make debug-tail` | Tail core logs in real-time | N/A | Shows Rust + Python core logs |
+| `make debug-view` | View core logs with less | N/A | Opens Rust + Python core logs |
+
+**Note**:
+- The `make debug-clear` target only clears core logs, not TUI application logs
+- TUI application logs are timestamped, so each run creates a new file in `debug_logs/`
+- All `make debug*` targets automatically run `make debug-clear` first to start with clean logs
 
 ## See Also
 
 - **[CONFIG_REFERENCE.md](CONFIG_REFERENCE.md)** - TUI configuration options
+- **[Makefile](../Makefile)** - Build and debug targets
 - **[README.md](../README.md)** - TUI application overview
+- **[CLAUDE.md](../CLAUDE.md)** - Development guidelines including debug workflows

@@ -29,10 +29,6 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
   - RGB tuple validation for color values
   - Enum validation for theme and screenshot format settings
 - **Config UI Improvements**: Optimized widget widths for better layout
-  - Checkboxes: width 7
-  - Number inputs: width 10
-  - Text inputs: width 20
-  - Select boxes: width 45
 - **Restart Notification**: Toast message after saving config reminds user to restart TUI
 - **Bold Brightening Default**: Changed `bold_brightening` default from `true` to `false` for better color accuracy
 

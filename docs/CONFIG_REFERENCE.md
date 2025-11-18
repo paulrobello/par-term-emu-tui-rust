@@ -20,6 +20,7 @@ Comprehensive reference for par-term-emu-tui-rust TUI application configuration 
 - [Hyperlinks & URLs](#hyperlinks--urls)
 - [UI Elements](#ui-elements)
 - [Shell Behavior](#shell-behavior)
+- [Keyboard Protocol (KITTY)](#keyboard-protocol-kitty)
 - [Related Documentation](#related-documentation)
 
 ---
@@ -113,8 +114,8 @@ Choose recovery option:
 
 ## Currently Implemented Settings
 
-**Implementation Status** (Last Updated: 2025-11-17):
-- ✅ **33 options fully implemented**
+**Implementation Status** (Last Updated: 2025-11-18):
+- ✅ **36 options fully implemented**
 
 | Setting | Config Key | Default | Notes |
 |---------|-----------|---------|-------|
@@ -138,8 +139,9 @@ Choose recovery option:
 | Disable insecure sequences | `disable_insecure_sequences` | `false` | Blocks OSC 8/52/9/777 and Sixel when enabled |
 | Accept OSC 7 | `accept_osc7` | `true` | Directory tracking via shell integration |
 | Visual bell enabled | `visual_bell_enabled` | `true` | Shows bell icon (🔔) in header on BEL character |
-| Theme | `theme` | `"dark-background"` | Color theme name |
+| Theme | `theme` | `"iterm2-dark"` | Color theme name |
 | Bold brightening | `bold_brightening` | `false` | Use bright colors (8-15) for bold text with colors 0-7 |
+| Minimum contrast | `minimum_contrast` | `0.0` | Live display contrast adjustment (0.0-1.0, iTerm2-compatible) |
 | Show notifications | `show_notifications` | `true` | Display OSC 9/777 notifications |
 | Notification timeout | `notification_timeout` | `5` | Notification display duration (seconds) |
 | Screenshot directory | `screenshot_directory` | `None` | Directory for screenshots |
@@ -150,8 +152,13 @@ Choose recovery option:
 | Clickable URLs | `clickable_urls` | `true` | Enable clicking URLs to open in browser |
 | Link color | `link_color` | `[100, 150, 255]` | RGB color for hyperlinks (blue) |
 | URL modifier key | `url_modifier` | `"ctrl"` | Required modifier: none, ctrl, shift, alt |
+| Allowed URL schemes | `allowed_url_schemes` | `["http", "https", ...]` | Permitted URL schemes for clickable links |
+| Warn on unknown scheme | `warn_on_unknown_url_scheme` | `true` | Warn when blocking unsupported schemes |
 | Search match color | `search_match_color` | `[255, 255, 0]` | RGB color for search highlights (yellow) |
 | Show status bar | `show_status_bar` | `true` | Show/hide status bar at bottom |
+| Keyboard protocol enabled | `keyboard_protocol_enabled` | `false` | Enable KITTY keyboard protocol |
+| Keyboard protocol flags | `keyboard_protocol_flags` | `1` | KITTY protocol feature flags (1=disambiguate) |
+| Keyboard protocol auto-detect | `keyboard_protocol_auto_detect` | `false` | Auto-enable when apps request protocol |
 
 ---
 
@@ -369,25 +376,37 @@ accept_osc7: true                   # Enable directory tracking (default)
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `theme` | `str` | `"dark-background"` | Color theme name to use for terminal colors |
+| `theme` | `str` | `"iterm2-dark"` | Color theme name to use for terminal colors |
 | `bold_brightening` | `bool` | `false` | Use bright ANSI colors (8-15) for bold text with normal colors (0-7) |
+| `minimum_contrast` | `float` | `0.0` | Minimum contrast adjustment for live terminal display (0.0-1.0) |
 
 **Available Themes:**
 - Use `par-term-emu-tui-rust --list-themes` to see all available themes
+- Default theme is `iterm2-dark` (iTerm2-style colors with pure black background)
 - Themes control the terminal's color palette and appearance
 
 **Bold Brightening:**
-- When enabled (default), bold text with ANSI colors 0-7 automatically uses bright variants 8-15
+- When enabled, bold text with ANSI colors 0-7 automatically uses bright variants 8-15
 - This matches iTerm2's "Use Bright Bold" setting
-- When disabled, bold text keeps its original color (0-7) without brightening
+- When disabled (default), bold text keeps its original color (0-7) without brightening
 - Useful for matching color appearance across different terminal emulators
+
+**Minimum Contrast (Live Display):**
+- **Range**: 0.0-1.0
+- **Default**: 0.0 (disabled, matches iTerm2 default)
+- **Algorithm**: NTSC perceived brightness formula (30% red, 59% green, 11% blue)
+- **Behavior**: Automatically adjusts text colors when brightness difference < threshold
+- **Recommended**: 0.5 for improved readability
+- **Use Cases**: Accessibility, dark-on-dark/light-on-light color schemes
+- **Note**: This affects live terminal display; use `screenshot_minimum_contrast` for screenshots
 
 ### Example Configuration
 
 ```yaml
 # Theme
-theme: "dark-background"       # Default dark theme
-bold_brightening: false        # Use bright colors for bold text (iTerm2 behavior)
+theme: "iterm2-dark"           # Default iTerm2-style theme
+bold_brightening: false        # Don't use bright colors for bold text (default)
+minimum_contrast: 0.0          # Disabled (iTerm2 default), use 0.5 for readability
 ```
 
 ---
@@ -599,8 +618,148 @@ exit_on_shell_exit: true  # Exit immediately when shell exits
 
 ---
 
+## Keyboard Protocol (KITTY)
+
+### Overview
+
+The KITTY keyboard protocol is an enhanced keyboard encoding scheme that provides applications with more detailed keyboard information than traditional terminal protocols. This enables modern terminal applications to distinguish between key combinations that were previously ambiguous (e.g., Ctrl+I vs Tab, Ctrl+M vs Enter).
+
+### Keyboard Protocol Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `keyboard_protocol_enabled` | `bool` | `false` | Enable KITTY keyboard protocol for embedded applications |
+| `keyboard_protocol_flags` | `int` | `1` | KITTY protocol feature flags (bitwise OR combination) |
+| `keyboard_protocol_auto_detect` | `bool` | `false` | Auto-detect and enable when applications request protocol |
+
+### Protocol Flags
+
+The `keyboard_protocol_flags` setting controls which features of the KITTY protocol are enabled. These flags can be combined using bitwise OR:
+
+| Flag | Value | Description | Status |
+|------|-------|-------------|--------|
+| **Disambiguate** | `1` | Disambiguate escape codes (Ctrl+I ≠ Tab, Ctrl+M ≠ Enter) | ✅ Supported |
+| **Report Events** | `2` | Report key press and release events | ⚠️ Requires Textual enhancement |
+| **Alternate Keys** | `4` | Report alternate key representations | ⚠️ Requires Textual enhancement |
+| **Report All** | `8` | Report all keys as escape codes | ⚠️ Requires Textual enhancement |
+| **Associated Text** | `16` | Include associated text with events | ⚠️ Requires Textual enhancement |
+
+**Common Flag Combinations:**
+- `1` - Just disambiguation (recommended default)
+- `3` - Disambiguation + key release events (1 + 2)
+- `7` - Disambiguation + events + alternate keys (1 + 2 + 4)
+
+**Note**: Currently, only flag `1` (disambiguate) is fully supported. Flags 2, 4, 8, and 16 require upstream enhancements to the Textual framework.
+
+### Operating Modes
+
+**Mode 1: Manual (keyboard_protocol_enabled = true)**
+- Always use enhanced keyboard sequences
+- Application must support KITTY protocol to interpret sequences correctly
+- Suitable for testing or when all applications support the protocol
+
+**Mode 2: Auto-Detect (keyboard_protocol_auto_detect = true)**
+- Monitors PTY output for protocol activation sequences (CSI >flags u)
+- Automatically enables protocol when application requests it
+- Automatically disables when application sends deactivation sequence (CSI <u)
+- **Recommended** for seamless operation with mixed applications
+
+### How Auto-Detection Works
+
+```mermaid
+sequenceDiagram
+    participant App as Terminal Application
+    participant TUI as TUI Terminal
+    participant PTY as PTY/Shell
+
+    App->>PTY: CSI >1 u (Request KITTY protocol)
+    PTY->>TUI: Forward sequence
+    TUI->>TUI: Detect activation, enable protocol
+    Note over TUI: Enhanced sequences active
+
+    TUI->>PTY: Enhanced keyboard sequences
+    PTY->>App: Receives enhanced input
+
+    App->>PTY: CSI <u (Disable KITTY protocol)
+    PTY->>TUI: Forward sequence
+    TUI->>TUI: Detect deactivation, disable protocol
+    Note over TUI: Legacy sequences active
+```
+
+### Protocol Benefits
+
+**Disambiguation**:
+- Applications can distinguish Ctrl+I from Tab
+- Applications can distinguish Ctrl+M from Enter
+- Prevents key binding conflicts in editors and applications
+
+**Enhanced Input**:
+- Key release events (flag 2)
+- Alternate representations (e.g., shifted variants)
+- Full key event metadata
+
+### Example Configuration
+
+```yaml
+# Keyboard Protocol (KITTY)
+
+# Manual mode (always enabled)
+keyboard_protocol_enabled: false     # Disabled by default
+keyboard_protocol_flags: 1           # Just disambiguation
+
+# Auto-detect mode (recommended)
+keyboard_protocol_auto_detect: false # Enable for seamless operation
+```
+
+**Recommended Setup for Best Compatibility:**
+```yaml
+keyboard_protocol_enabled: false        # Don't force protocol
+keyboard_protocol_flags: 1              # Support disambiguation
+keyboard_protocol_auto_detect: true     # Enable auto-detection
+```
+
+### Application Support
+
+Applications that support KITTY keyboard protocol:
+- Vim/Neovim (with appropriate configuration)
+- Kakoune
+- Helix
+- Modern terminal-based text editors
+
+**Checking Application Support:**
+Most supporting applications will request the protocol automatically when `keyboard_protocol_auto_detect` is enabled.
+
+### Troubleshooting
+
+#### Issue: Keys not working correctly in applications
+**Symptom**: Strange characters or unexpected behavior when pressing keys
+**Solution**: Ensure application supports KITTY protocol or disable `keyboard_protocol_enabled`
+
+#### Issue: Ctrl+I and Tab still behave the same
+**Symptom**: No disambiguation despite protocol being enabled
+**Solution**:
+1. Verify application supports KITTY protocol
+2. Check `keyboard_protocol_flags` includes flag `1`
+3. Enable `keyboard_protocol_auto_detect` for automatic activation
+
+#### Issue: Protocol not activating automatically
+**Symptom**: Auto-detect not working
+**Solution**:
+1. Ensure `keyboard_protocol_auto_detect: true`
+2. Verify application is requesting protocol (check PTY output)
+3. Some applications may need explicit configuration to request protocol
+
+### Related Documentation
+
+- [KEYBOARD_PROTOCOL.md](KEYBOARD_PROTOCOL.md) - Detailed KITTY protocol documentation
+- [Textual Framework](https://textual.textualize.io/) - Underlying TUI framework
+- [KITTY Terminal Documentation](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) - Original protocol specification
+
+---
+
 ## Related Documentation
 
 - [README.md](../README.md) - TUI application overview and usage guide
 - [DEBUG.md](DEBUG.md) - TUI debugging guide
+- [KEYBOARD_PROTOCOL.md](KEYBOARD_PROTOCOL.md) - KITTY keyboard protocol details
 - [Core Library Documentation](https://github.com/paulrobello/par-term-emu-core-rust) - Terminal emulator core features

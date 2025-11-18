@@ -22,7 +22,11 @@ Complete reference for keyboard shortcuts and mouse interactions in Par Term Emu
 | **Ctrl+Shift+Q** | Quit application | Exit the TUI immediately |
 | **Ctrl+Shift+S** | Take screenshot | Capture current terminal view |
 | **Ctrl+Shift+C** | Copy selection | Copy selected text to clipboard |
+| **Ctrl+C** | Smart copy | Copy if text is selected, otherwise send SIGINT |
+| **Cmd+C** (macOS) | Copy selection | Copy selected text to clipboard |
 | **Ctrl+Shift+V** | Paste | Paste clipboard content to terminal |
+| **Ctrl+V** | Paste | Paste clipboard content to terminal |
+| **Cmd+V** (macOS) | Paste | Paste clipboard content to terminal |
 | **Alt+Ctrl+Shift+C** | Edit config | Open config file editor dialog |
 
 ### Navigation Shortcuts
@@ -66,7 +70,7 @@ graph TD
 
 **Configuration:**
 ```yaml
-mouse_wheel_scroll_lines: 1  # Lines per wheel tick
+mouse_wheel_scroll_lines: 3  # Lines per wheel tick (default)
 ```
 
 ### Click Actions on Special Elements
@@ -165,8 +169,8 @@ copy_trailing_newline: false        # Include \n in line copy
 
 | Action | Distance | Description |
 |--------|----------|-------------|
-| **Wheel Up** | 3 lines | Scroll up (configurable) |
-| **Wheel Down** | 3 lines | Scroll down (configurable) |
+| **Wheel Up** | 3 lines (default) | Scroll up (configurable) |
+| **Wheel Down** | 3 lines (default) | Scroll down (configurable) |
 
 ### Scrollback Indicators
 
@@ -190,6 +194,8 @@ max_scrollback_lines: 100000    # Safety limit for unlimited
 |--------|----------|-------------|
 | **Auto-copy** | Selection release | Automatic on selection end |
 | **Manual copy** | Ctrl+Shift+C | Copy current selection |
+| **Smart copy** | Ctrl+C | Copy if text selected, else SIGINT |
+| **macOS copy** | Cmd+C | Copy current selection (macOS) |
 | **Word copy** | Double-click | Select and copy word |
 | **Line copy** | Triple-click | Select and copy line |
 
@@ -197,7 +203,8 @@ max_scrollback_lines: 100000    # Safety limit for unlimited
 
 | Method | Shortcut | Description |
 |--------|----------|-------------|
-| **Keyboard paste** | Ctrl+Shift+V | Paste clipboard content |
+| **Keyboard paste** | Ctrl+Shift+V, Ctrl+V | Paste clipboard content |
+| **macOS paste** | Cmd+V | Paste clipboard content (macOS) |
 | **Middle click** | Middle button | Paste (PRIMARY on Linux) |
 | **Application paste** | Shift+Insert | Forwarded to application |
 
@@ -293,13 +300,13 @@ less --mouse  # Enable mouse wheel scrolling
 Control when URLs are clickable:
 
 ```yaml
-url_modifier: "none"   # Options: none, ctrl, shift, alt
+url_modifier: "ctrl"   # Default: ctrl. Options: none, ctrl, shift, alt
 ```
 
 | Setting | Click Behavior |
 |---------|----------------|
 | `none` | Click URL directly |
-| `ctrl` | Ctrl+Click to open |
+| `ctrl` | Ctrl+Click to open (default) |
 | `shift` | Shift+Click to open |
 | `alt` | Alt+Click to open |
 

@@ -19,7 +19,7 @@ Before installing Par Term Emu TUI Rust, ensure your system meets these requirem
 
 | Requirement | Minimum Version | Check Command |
 |-------------|----------------|---------------|
-| Python | 3.12 | `python --version` |
+| Python | 3.12+ | `python --version` |
 | uv | Latest | `uv --version` |
 | Terminal | True color support | See below |
 
@@ -51,7 +51,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Install uv if not already installed
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install clipboard support dependencies (optional)
+# Install clipboard support (optional, for PRIMARY selection on Linux)
 sudo apt-get install xclip  # Debian/Ubuntu
 sudo dnf install xclip      # Fedora
 sudo pacman -S xclip        # Arch
@@ -82,12 +82,15 @@ make install
 
 ### Install from PyPI
 
-> **📝 Note:** PyPI installation coming soon. Currently install from source.
-
 ```bash
-# Future: Install from PyPI (not yet available)
+# Install from PyPI
 uv pip install par-term-emu-tui-rust
+
+# Or using pip directly
+pip install par-term-emu-tui-rust
 ```
+
+> **📝 Note:** The package is available on PyPI. For development work or testing latest features, install from source instead.
 
 ### Development Installation
 
@@ -105,6 +108,8 @@ uv sync
 uv run pre-commit install
 ```
 
+> **📝 Note:** This project depends on `par-term-emu-core-rust`, which is automatically fetched from PyPI during installation. For local development of the Rust backend, the `pyproject.toml` can be configured to use a local path dependency.
+
 ## Post-Installation Setup
 
 After installation, install additional components for enhanced functionality.
@@ -119,9 +124,9 @@ par-term-emu-tui-rust install all
 ```
 
 This installs:
-- Terminfo definition for optimal compatibility
-- Shell integration for enhanced features
-- Hack font for screenshot support
+- Terminfo definition for optimal terminal compatibility
+- Shell integration for directory tracking and enhanced features
+- Hack font for high-quality screenshot rendering
 
 ### Verify Installation
 
@@ -131,6 +136,9 @@ par-term-emu-tui-rust --version
 
 # Test basic functionality
 par-term-emu-tui-rust --auto-quit 2
+
+# You can also use the shorter alias 'ptr'
+ptr --version
 ```
 
 ## Component Installation
@@ -206,15 +214,24 @@ par-term-emu-tui-rust install shell-integration fish
 ```
 
 **Activate integration:**
-```bash
-# Restart shell
-exec $SHELL
 
-# Or manually source (bash/zsh)
+After installation, restart your shell to activate the integration:
+
+```bash
+# Restart current shell
+exec $SHELL
+```
+
+Or manually source the integration file:
+
+```bash
+# Bash
 source ~/.par_term_emu_core_rust_shell_integration.bash
+
+# Zsh
 source ~/.par_term_emu_core_rust_shell_integration.zsh
 
-# Fish automatically loads from config
+# Fish - automatically loaded from config directory
 ```
 
 **Features provided:**
@@ -242,13 +259,10 @@ par-term-emu-tui-rust install font
 
 **Verify installation:**
 ```bash
-# List installed fonts (macOS)
+# List installed fonts (macOS/Linux)
 fc-list | grep Hack
 
-# List installed fonts (Linux)
-fc-list | grep Hack
-
-# Windows: Check Fonts in Control Panel
+# Windows: Check Fonts in Control Panel or Settings
 ```
 
 ### Installation Help
@@ -301,11 +315,14 @@ par-term-emu-tui-rust --init-config
 ```
 
 **Verify config location:**
+
+The configuration file is stored using XDG Base Directory specification:
+
 ```bash
-# macOS/Linux
+# macOS/Linux - XDG_CONFIG_HOME or ~/.config
 cat ~/.config/par-term-emu-tui-rust/config.yaml
 
-# Windows
+# Windows - APPDATA
 type %APPDATA%\par-term-emu-tui-rust\config.yaml
 ```
 
@@ -313,7 +330,7 @@ type %APPDATA%\par-term-emu-tui-rust\config.yaml
 
 ### Python Version Issues
 
-**Problem:** `python: command not found` or wrong version
+**Problem:** `python: command not found` or version below 3.12
 
 **Solution:**
 ```bash
@@ -323,14 +340,14 @@ python3 --version
 # If 3.12+, create alias
 alias python=python3
 
-# Or install Python 3.12+
+# Or install Python 3.12 or later
 # macOS (using Homebrew)
 brew install python@3.12
 
 # Linux (using apt)
 sudo apt-get install python3.12
 
-# Windows: Download from python.org
+# Windows: Download installer from python.org
 ```
 
 ### UV Not Found
@@ -367,16 +384,19 @@ chmod +x ~/.local/bin/par-term-emu-tui-rust
 
 ### Dependency Conflicts
 
-**Problem:** Conflicting package versions
+**Problem:** Conflicting package versions or corrupt virtual environment
 
 **Solution:**
 ```bash
-# Clean and reinstall
+# Clean virtual environment and reinstall
 rm -rf .venv
 uv sync
 
-# Or force reinstall
+# Force reinstall all packages
 uv sync --reinstall
+
+# Clear uv cache if issues persist
+uv cache clean
 ```
 
 ### Shell Integration Not Loading
@@ -413,7 +433,7 @@ fc-cache -f -v
 ## Related Documentation
 
 - [Quick Start Guide](QUICK_START.md) - Get started in 5 minutes
-- [Configuration Reference](CONFIG_REFERENCE.md) - All configuration options
-- [Usage Guide](USAGE.md) - Running and using the TUI
+- [Configuration Reference](CONFIG_REFERENCE.md) - Complete configuration options
+- [Usage Guide](USAGE.md) - Running and using the terminal emulator
 - [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
-- [Contributing](CONTRIBUTING.md) - Development setup
+- [Contributing](../CONTRIBUTING.md) - Development setup and contribution guidelines

@@ -17,9 +17,10 @@ Get started with Par Term Emu TUI Rust in under 5 minutes. This guide covers ins
 
 Before installing Par Term Emu TUI Rust, ensure you have:
 
-- **Python 3.12 or higher** - Check with `python --version`
+- **Python 3.12 or higher** - Check with `python --version` (development requires Python 3.14)
 - **uv package manager** - Install from [astral.sh/uv](https://astral.sh/uv)
 - **Terminal with true color support** - Most modern terminals (iTerm2, Alacritty, Wezterm, etc.)
+- **par-term-emu-core-rust** - Local Rust dependency (located at `../par-term-emu-core-rust`)
 
 ## Installation
 
@@ -34,9 +35,6 @@ cd par-term-emu-tui-rust
 
 # Install dependencies
 uv sync
-
-# Or use make
-make install
 ```
 
 ### Post-Installation Setup
@@ -124,8 +122,8 @@ keep_selection_after_copy: true
 # Scrollback
 scrollback_lines: 10000
 
-# Theme
-theme: "dark-background"
+# Theme (use exact name from --list-themes)
+theme: "Dark Background"
 
 # Notifications
 show_notifications: true
@@ -148,8 +146,8 @@ screenshot_directory: null  # Auto-detect best location
 | **Ctrl+Shift+S** | Take screenshot |
 | **Ctrl+Shift+C** | Copy selection |
 | **Alt+Ctrl+Shift+C** | Edit config |
-| **Ctrl+Shift+PageUp/Down** | Scroll history |
-| **Shift+Home/End** | Jump to top/bottom |
+| **PageUp/Down** | Scroll history |
+| **Home/End** | Jump to top/bottom |
 
 ### Mouse Actions
 
@@ -160,7 +158,7 @@ screenshot_directory: null  # Auto-detect best location
 | **Triple-Click** | Select line |
 | **Click URL** | Open in browser |
 | **Mouse Wheel** | Scroll history (when mouse tracking off) |
-| **Middle Click** | Paste clipboard |
+| **Middle Click** | Paste PRIMARY selection (Linux) or clipboard (macOS/Windows) |
 
 ## Common Tasks
 
@@ -168,22 +166,26 @@ screenshot_directory: null  # Auto-detect best location
 
 **Temporary (session only):**
 ```bash
-# Use theme for this session
-par-term-emu-tui-rust --theme solarized-dark
+# Use theme for this session (use exact display name from --list-themes)
+par-term-emu-tui-rust --theme "Solarized Dark"
 ```
 
 **Permanent:**
 ```bash
-# Apply theme to config file
-par-term-emu-tui-rust --apply-theme solarized-dark
+# Apply theme to config file (use exact display name)
+par-term-emu-tui-rust --apply-theme "Solarized Dark"
 ```
 
 **List available themes:**
 ```bash
 par-term-emu-tui-rust --list-themes
+# Or using make
+make themes
 ```
 
-Available themes: `dark-background`, `high-contrast`, `iterm2-dark`, `light-background`, `pastel-dark`, `regular`, `smoooooth`, `solarized`, `solarized-dark`, `solarized-light`, `tango-dark`, `tango-light`
+Available themes: Dark Background, High Contrast, iTerm2 Dark, Light Background, Pastel (Dark Background), Regular, Smoooooth, Solarized, Solarized Dark, Solarized Light, Tango Dark, Tango Light
+
+**Note:** Use exact theme names as shown by `--list-themes` (case-sensitive)
 
 ### Take Screenshots
 
@@ -203,6 +205,8 @@ par-term-emu-tui-rust --screenshot 3 --auto-quit 5
 # In config.yaml
 screenshot_format: "svg"  # Options: png, jpeg, bmp, svg, html
 ```
+
+**Note:** Screenshots are saved with timestamped filenames in the configured directory
 
 ### Custom Shell
 
@@ -226,6 +230,12 @@ par-term-emu-tui-rust --command "neofetch"
 par-term-emu-tui-rust --debug
 
 # Logs location: debug_logs/terminal_debug_YYYYMMDD_HHMMSS.log
+
+# Or use make commands for different debug levels
+make debug           # DEBUG_LEVEL=2 (info)
+make debug-verbose   # DEBUG_LEVEL=3 (debug)
+make debug-trace     # DEBUG_LEVEL=4 (trace - HUGE logs!)
+make debug-tail      # Tail logs in real-time
 ```
 
 ## Next Steps
@@ -245,12 +255,14 @@ See [README.md](../README.md) for comprehensive feature documentation.
 
 **Create custom theme:**
 ```bash
-# Export current theme
+# Export current theme to ~/.config/par-term-emu-tui-rust/themes/
 par-term-emu-tui-rust --export-theme my-theme
 
-# Edit my-theme.yaml to customize colors
-# Apply your theme
-par-term-emu-tui-rust --apply-theme-from my-theme.yaml
+# This creates ~/.config/par-term-emu-tui-rust/themes/my-theme.yaml
+# Edit the YAML file to customize colors
+
+# Apply your custom theme from file
+par-term-emu-tui-rust --apply-theme-from ~/.config/par-term-emu-tui-rust/themes/my-theme.yaml
 ```
 
 **Configure shell integration:**
@@ -270,9 +282,9 @@ Shell integration provides:
 ### Extend the TUI
 
 For developers:
-- Review [ARCHITECTURE.md](ARCHITECTURE.md) for system design
+- Review [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive system design
 - See [Contributing](../CONTRIBUTING.md) for development setup
-- Explore [ARCHITECTURE.md](ARCHITECTURE.md) for technical implementation details
+- Check [DEBUG.md](DEBUG.md) for debugging guidance
 
 ## Troubleshooting
 
@@ -338,13 +350,19 @@ rm ~/Pictures/Screenshots/test.txt
 **Reduce scrollback buffer:**
 ```yaml
 # In config.yaml
-scrollback_lines: 1000  # Reduce from 10000
+scrollback_lines: 1000  # Reduce from 10000 (default)
 ```
 
 **Disable cursor blinking:**
 ```yaml
 # In config.yaml
-cursor_blink_enabled: false
+cursor_blink_enabled: false  # Already disabled by default
+```
+
+**Adjust mouse wheel scroll speed:**
+```yaml
+# In config.yaml
+mouse_wheel_scroll_lines: 1  # Reduce from 3 (default)
 ```
 
 ## Related Documentation

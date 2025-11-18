@@ -54,12 +54,13 @@ par-term-emu-tui-rust/
 │   ├── app.py                          # Main Textual application
 │   ├── config.py                       # Configuration management (TuiConfig)
 │   ├── messages.py                     # Custom Textual messages
-│   ├── themes.py                       # Color theme definitions (11 built-in themes)
+│   ├── themes.py                       # Color theme definitions (12 built-in themes)
 │   ├── utils.py                        # Utility functions
 │   ├── installer.py                    # Installation script handler
 │   ├── dialogs/
 │   │   ├── __init__.py
-│   │   └── config_edit_dialog.py       # Config editor dialog
+│   │   ├── config_edit_dialog.py       # Config editor dialog (deprecated)
+│   │   └── config_screen.py            # Configuration screen with tabbed interface
 │   ├── terminal_widget/
 │   │   ├── __init__.py
 │   │   ├── terminal_widget.py          # Main TerminalWidget class
@@ -473,7 +474,7 @@ def capture_screenshot(format) -> str
 
 **File:** `themes.py`
 
-Defines the `Theme` dataclass and 11 built-in color themes compatible with iTerm2.
+Defines the `Theme` dataclass and 12 built-in color themes compatible with iTerm2.
 
 **Theme Components:**
 
@@ -497,7 +498,7 @@ class Theme:
 ```
 
 **Built-in Themes:**
-1. `dark-background` (default)
+1. `dark-background` (default in config.py)
 2. `high-contrast`
 3. `light-background`
 4. `pastel-dark`
@@ -506,9 +507,11 @@ class Theme:
 7. `solarized`
 8. `solarized-dark`
 9. `solarized-light`
-10. `iterm2-dark`
+10. `iterm2-dark` (DEFAULT_THEME in themes.py)
 11. `tango-dark`
 12. `tango-light`
+
+Total: 12 built-in themes
 
 Custom themes can be created in `~/.config/par-term-emu-tui-rust/themes/`
 
@@ -555,7 +558,7 @@ Manages application configuration with YAML persistence and XDG directory compli
 ~/.config/par-term-emu-tui-rust/config.yaml
 ```
 
-**39 Configuration Options:**
+**Configuration Options (39 total):**
 
 **Selection & Clipboard:**
 - `auto_copy_selection` - Copy on selection complete (default: true)
@@ -1274,12 +1277,14 @@ app = TerminalApp(config=config, ...)
 Set `DEBUG_LEVEL` environment variable:
 
 ```bash
+DEBUG_LEVEL=3 par-term-emu-tui-rust
+# or
 DEBUG_LEVEL=3 python -m par_term_emu_tui_rust
 ```
 
 **Logs to separate files:**
-- `/tmp/par_term_emu_debug_rust.log` - Core terminal emulation (Rust)
-- `/tmp/par_term_emu_debug_python.log` - TUI widget operations (Python)
+- `/tmp/par_term_emu_core_rust_debug_rust.log` - Core terminal emulation (Rust)
+- `/tmp/par_term_emu_core_rust_debug_python.log` - TUI widget operations (Python)
 
 ### Available Debug Methods
 
@@ -1401,5 +1406,5 @@ The architecture successfully demonstrates how to integrate a high-performance R
 - [QUICK_START](QUICK_START.md) - Getting started guide
 - [INSTALLATION](INSTALLATION.md) - Installation instructions
 - [TROUBLESHOOTING](TROUBLESHOOTING.md) - Common issues and solutions
-- [THEMES](THEMES.md) - Theme system documentation (12 built-in themes)
+- [THEMES](THEMES.md) - Theme system documentation
 - [SCREENSHOTS](SCREENSHOTS.md) - Screenshot gallery and examples

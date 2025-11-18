@@ -30,16 +30,16 @@ keyboard_protocol_flags: 1         # Flag 1 = disambiguate (recommended)
 
 ```bash
 # Enable with default flags (1 = disambiguate)
-par-term-emu-tui --keyboard-protocol
+par-term-emu-tui-rust --keyboard-protocol
 
 # Disable (override config file)
-par-term-emu-tui --no-keyboard-protocol
+par-term-emu-tui-rust --no-keyboard-protocol
 
 # Enable with specific flags
-par-term-emu-tui --keyboard-protocol --keyboard-protocol-flags 3
+par-term-emu-tui-rust --keyboard-protocol --keyboard-protocol-flags 3
 
 # Flags 3 = 1 + 2 (disambiguate + key release events)
-par-term-emu-tui --keyboard-protocol --keyboard-protocol-flags 3
+par-term-emu-tui-rust --keyboard-protocol --keyboard-protocol-flags 3
 ```
 
 ### Mode 2: Auto-Detect (Option B) - RECOMMENDED
@@ -60,10 +60,10 @@ keyboard_protocol_flags: 1             # Default flags to use (optional)
 
 ```bash
 # Enable auto-detection
-par-term-emu-tui --keyboard-protocol-auto-detect
+par-term-emu-tui-rust --keyboard-protocol-auto-detect
 
 # Disable auto-detection (override config)
-par-term-emu-tui --no-keyboard-protocol-auto-detect
+par-term-emu-tui-rust --no-keyboard-protocol-auto-detect
 ```
 
 **How Auto-Detect Works:**
@@ -86,28 +86,30 @@ par-term-emu-tui --no-keyboard-protocol-auto-detect
 
 Protocol features are controlled by combining flag values:
 
-| Flag Value | Feature | Description | Recommended |
-|------------|---------|-------------|-------------|
-| 1 | Disambiguate | Distinguish Ctrl+I from Tab, Ctrl+M from Enter, etc. | ✅ **Yes** |
-| 2 | Report Events | Report both key press AND release events | ⚠️ Only if apps support |
-| 4 | Alternate Keys | Report alternate key representations | ❌ Rarely needed |
-| 8 | Report All | Report all keys as escape codes | ❌ Not recommended |
-| 16 | Associated Text | Include associated text with events | ❌ Not implemented in Textual |
+| Flag Value | Feature | Description | Support Status |
+|------------|---------|-------------|----------------|
+| 1 | Disambiguate | Distinguish Ctrl+I from Tab, Ctrl+M from Enter, etc. | ✅ **Fully Supported** |
+| 2 | Report Events | Report both key press AND release events | ❌ Not supported (Textual limitation) |
+| 4 | Alternate Keys | Report alternate key representations | ❌ Not supported (Textual limitation) |
+| 8 | Report All | Report all keys as escape codes | ✅ Supported via flag 1 |
+| 16 | Associated Text | Include associated text with events | ❌ Not supported (Textual limitation) |
 
 ### Combining Flags
 
-Add flag values together to enable multiple features:
+Add flag values together to enable multiple features. Note that due to Textual framework limitations, only flag 1 (disambiguation) is currently effective:
 
 ```yaml
-# Just disambiguation (recommended default)
+# Just disambiguation (recommended and fully supported)
 keyboard_protocol_flags: 1
 
-# Disambiguation + key release events
+# Disambiguation + key release events (flag 2 has no effect due to Textual limitation)
 keyboard_protocol_flags: 3   # 1 + 2
 
-# Disambiguation + events + alternate keys
+# Disambiguation + events + alternate keys (flags 2 and 4 have no effect)
 keyboard_protocol_flags: 7   # 1 + 2 + 4
 ```
+
+**Note**: While you can configure flags 2, 4, 8, and 16, they will not have any effect due to Textual framework constraints. Only flag 1 (disambiguation) is currently functional.
 
 ## How It Works
 
@@ -143,7 +145,7 @@ With KITTY protocol enabled, each key gets a unique sequence:
 
 These applications can take advantage of enhanced keyboard input:
 
-- **Neovim 0.9+** (requires `vim.o.kitty_keyboard_protocol = true` in config)
+- **Neovim** (requires `vim.o.kitty_keyboard_protocol = true` in config)
 - **Kakoune** editor
 - **Helix** editor
 - Custom TUI applications that query and use KITTY protocol
@@ -167,7 +169,7 @@ The simplest way to test if the protocol is working:
 
 ```bash
 # Start terminal with protocol enabled
-par-term-emu-tui --keyboard-protocol
+par-term-emu-tui-rust --keyboard-protocol
 
 # Inside the terminal, run:
 cat -v
@@ -186,7 +188,7 @@ cat -v
 
 ```bash
 # Start terminal WITHOUT protocol (default)
-par-term-emu-tui
+par-term-emu-tui-rust
 
 # Inside terminal:
 cat -v
@@ -204,7 +206,7 @@ cat -v
 
 ```bash
 # Start terminal with auto-detect enabled
-par-term-emu-tui --keyboard-protocol-auto-detect --debug
+par-term-emu-tui-rust --keyboard-protocol-auto-detect --debug
 
 # Inside terminal, manually request protocol (simulate what nvim does)
 printf '\x1b[>1u'  # Request protocol with flag 1
@@ -247,7 +249,7 @@ printf '\x1b[?u'
 
 ## Neovim Configuration
 
-To enable KITTY protocol support in Neovim 0.9+:
+To enable KITTY protocol support in Neovim:
 
 **Lua config** (`~/.config/nvim/init.lua`):
 
@@ -318,10 +320,10 @@ cat ~/.config/par-term-emu-tui-rust/config.yaml | grep keyboard
 **Check CLI override**:
 ```bash
 # Explicitly enable
-par-term-emu-tui --keyboard-protocol
+par-term-emu-tui-rust --keyboard-protocol
 
 # Explicitly disable (overrides config)
-par-term-emu-tui --no-keyboard-protocol
+par-term-emu-tui-rust --no-keyboard-protocol
 ```
 
 ## Use Cases
@@ -345,16 +347,12 @@ vim.keymap.set('n', '<Tab>', ':AnotherAction<CR>')
 
 **Problem**: Games need to detect when keys are released (for movement, etc.).
 
-**Solution**: Enable protocol with flags 3 (disambiguate + events).
+**Current Limitation**: Key release events (flag 2) are not supported due to Textual framework constraints. The terminal emulator cannot report key releases because Textual's Key events only capture key presses.
 
-```yaml
-keyboard_protocol_enabled: true
-keyboard_protocol_flags: 3  # 1 + 2
-```
-
-Applications receive both press and release events:
-- Press: `\x1b[97;5u` (Ctrl+A pressed)
-- Release: `\x1b[97;5;2u` (Ctrl+A released)
+**Workaround**: Applications must use alternative input methods:
+- Polling-based movement (query key state repeatedly)
+- Toggle-based controls (press once to start, press again to stop)
+- Mouse-based input for games requiring precise control
 
 ### Advanced Key Bindings
 
@@ -373,6 +371,47 @@ Applications receive both press and release events:
 ```
 
 ## Technical Details
+
+### Architecture Overview
+
+The following diagram illustrates how keyboard events flow from your physical terminal through the system to the embedded application:
+
+```mermaid
+graph TD
+    PhysicalTerminal[Physical Terminal<br/>iTerm2, Kitty, etc.]
+    Textual[Textual Framework<br/>Key Event Processing]
+    TermWidget[TerminalWidget<br/>Key Handler]
+    Protocol{Protocol<br/>Enabled?}
+    KittyConvert[Convert to KITTY<br/>Sequence]
+    LegacyConvert[Convert to Legacy<br/>Sequence]
+    PTY[PTY Terminal<br/>par-term-emu-core-rust]
+    App[Embedded Application<br/>Shell, Neovim, etc.]
+
+    PhysicalTerminal -->|User presses key| Textual
+    Textual -->|Key event| TermWidget
+    TermWidget --> Protocol
+    Protocol -->|Yes| KittyConvert
+    Protocol -->|No| LegacyConvert
+    KittyConvert -->|CSI unicode ; mods u| PTY
+    LegacyConvert -->|Traditional escape| PTY
+    PTY -->|Read from PTY| App
+
+    style PhysicalTerminal fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
+    style Textual fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
+    style TermWidget fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
+    style Protocol fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
+    style KittyConvert fill:#2e7d32,stroke:#66bb6a,stroke-width:2px,color:#ffffff
+    style LegacyConvert fill:#37474f,stroke:#78909c,stroke-width:2px,color:#ffffff
+    style PTY fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
+    style App fill:#880e4f,stroke:#c2185b,stroke-width:2px,color:#ffffff
+```
+
+**Key Points**:
+- Your physical terminal (iTerm2, Kitty, etc.) sends keyboard events to Textual
+- Textual processes these into Key events with information about the key and modifiers
+- TerminalWidget receives Key events and decides whether to use KITTY or legacy encoding
+- KITTY sequences provide disambiguation (Ctrl+I ≠ Tab), legacy sequences do not
+- The PTY forwards sequences to the embedded application (shell, Neovim, etc.)
 
 ### Sequence Format
 
@@ -428,30 +467,37 @@ Example:
 
 ### Current Implementation
 
-The TUI currently supports what Textual framework provides:
+The TUI implements KITTY keyboard protocol with the following support:
 
-✅ **Supported** (Textual provides flag 1):
-- Key disambiguation (Ctrl+I ≠ Tab, etc.)
-- All modifier combinations
+✅ **Fully Supported**:
+- **Flag 1 (Disambiguation)**: Ctrl+I ≠ Tab, Ctrl+M ≠ Enter, etc.
+- **All modifier combinations**: Shift, Alt, Ctrl, Super, Hyper, Meta
+- **Function keys**: F1-F12 with modifiers
+- **Arrow keys**: Up, Down, Left, Right with modifiers
+- **Special keys**: Home, End, PageUp, PageDown, Insert, Delete
+- **Manual mode**: Explicit enable/disable via config or CLI
+- **Auto-detect mode**: Automatic protocol activation when apps request it
 
-❌ **Not Supported** (requires Textual enhancements):
-- Key release events (flag 2) - Textual doesn't report releases
-- Alternate keys (flag 4) - Textual doesn't provide alternates
-- Associated text (flag 16) - Textual doesn't include text
+⚠️ **Limitations** (Textual framework constraints):
+- **Flag 2 (Key release events)**: Not supported - Textual doesn't report key releases
+- **Flag 4 (Alternate keys)**: Not supported - Textual doesn't provide alternate representations
+- **Flag 8 (Report all keys)**: Supported through flag 1 implementation
+- **Flag 16 (Associated text)**: Not supported - Textual doesn't include associated text
 
 ### Why These Limitations?
 
-The terminal emulator reads keyboard input from **Textual framework**, which:
-1. Receives KITTY protocol from your physical terminal (iTerm2, etc.)
-2. Enables flag 1 (disambiguation) only
-3. Provides Key events to the TUI
+The terminal emulator receives keyboard input from **Textual framework**, which:
+1. Receives KITTY protocol from your physical terminal (iTerm2, Kitty, etc.)
+2. Processes keyboard events internally
+3. Provides Key events to the TUI application
+4. Does not expose key release or alternate key information
 
-To forward more flags (2, 4, 8, 16) would require:
-- Textual framework enhancements
-- Enhanced Key event structure
-- Upstream contribution to Textual project
+**Workaround**: These limitations are inherent to Textual's event model. To support flags 2, 4, and 16 would require:
+- Upstream enhancements to Textual framework
+- Modified Key event structure to include release state and alternates
+- Changes to Textual's event processing pipeline
 
-**Current recommendation**: Use flag 1 (default) for maximum compatibility and immediate value.
+**Current recommendation**: Use flag 1 (default) for maximum compatibility and immediate value. This provides the most significant benefit (disambiguation) without compatibility issues.
 
 ## FAQ
 
@@ -465,7 +511,7 @@ A: No. Legacy apps ignore the enhanced sequences and work normally. The protocol
 A: Start with `1` (disambiguation only). This provides the most value with minimal risk.
 
 **Q: Can I use flag 2 for key release events?**
-A: Currently no - Textual framework doesn't report key releases. This would require upstream changes.
+A: No - Textual framework doesn't report key releases to applications. This is a fundamental limitation of Textual's event model and would require upstream framework changes to support.
 
 **Q: How do I know if my app supports KITTY protocol?**
 A: Check the app's documentation, or test with `cat -v` to see if it generates enhanced sequences. With auto-detect enabled, you can also check the debug logs to see when apps request the protocol.
@@ -490,7 +536,8 @@ A: To maintain backward compatibility and predictable behavior. Users opt-in to 
 - [VT100 Escape Sequences](https://vt100.net/docs/vt100-ug/chapter3.html)
 - [Xterm Control Sequences](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)
 
-## Version History
+## Related Documentation
 
-- **0.3.0**: Improved mouse wheel scrolling (default changed from 3 to 1 line per tick)
-- **0.2.0**: Added smart protocol detection (auto-detect mode) and initial KITTY keyboard protocol support (manual mode, flag 1 - disambiguation)
+- [Configuration Reference](CONFIG_REFERENCE.md) - All keyboard protocol configuration options
+- [Key Bindings](KEY_BINDINGS.md) - Terminal keyboard shortcuts
+- [Features](FEATURES.md) - Overview of all terminal features

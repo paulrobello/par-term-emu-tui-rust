@@ -19,7 +19,7 @@ Solutions to common issues and problems with Par Term Emu TUI Rust.
 
 **Problem:**
 ```
-ERROR: Python 3.14 or higher required
+ERROR: Python 3.12 or higher required
 ```
 
 **Solution:**
@@ -27,17 +27,18 @@ ERROR: Python 3.14 or higher required
 # Check Python version
 python3 --version
 
+# Ensure you have Python 3.12 or higher
 # macOS (using Homebrew)
-brew install python@3.14
+brew install python@3.12
 
 # Linux (Ubuntu/Debian)
-sudo apt-get install python3.14
+sudo apt-get install python3.12
 
 # Linux (Fedora)
-sudo dnf install python3.14
+sudo dnf install python3.12
 
-# Create alias
-alias python=python3.14
+# Or use uv to manage Python versions
+uv python install 3.12
 ```
 
 ### UV Not Found
@@ -107,29 +108,42 @@ sudo par-term-emu-tui-rust install terminfo --system  # System install
 
 **Diagnosis:**
 ```bash
-# Enable debug logging
+# Enable debug logging (TUI application logs)
 par-term-emu-tui-rust --debug
 
-# Check debug log
+# Check TUI application debug log
 cat debug_logs/terminal_debug_*.log
+
+# Enable debug logging for core (Rust + Python bindings)
+DEBUG_LEVEL=3 par-term-emu-tui-rust --debug
+
+# Check core debug logs
+cat /tmp/par_term_emu_core_rust_debug_rust.log
+cat /tmp/par_term_emu_core_rust_debug_python.log
 ```
 
-**Common causes:**
+**Common Causes:**
 1. Missing dependencies
-2. Configuration file syntax errors
+2. Configuration file syntax errors (see interactive recovery above)
 3. Terminal compatibility issues
+4. Rust backend library not found
 
 **Solutions:**
 ```bash
 # Reinstall dependencies
 uv sync
 
-# Reset configuration
+# Reset configuration (interactive recovery will prompt)
 rm ~/.config/par-term-emu-tui-rust/config.yaml
+
+# Or manually create default config
 par-term-emu-tui-rust --init-config
 
-# Test with minimal config
+# Test with minimal config and auto-quit
 par-term-emu-tui-rust --auto-quit 2
+
+# Verify Rust backend is available
+python3 -c "import par_term_emu_core_rust; print(par_term_emu_core_rust.__version__)"
 ```
 
 ### Shell Not Starting
@@ -162,47 +176,61 @@ yaml.scanner.ScannerError: while scanning
 Failed to parse config: invalid YAML syntax
 ```
 
-**Solution (v0.4.0+):**
+**Interactive Recovery:**
 
-The TUI now provides **interactive recovery** when config parsing fails:
+When started in interactive mode (terminal with stdin/stdout), the TUI provides automatic recovery:
 
-1. **Automatic Prompt** - When started in interactive mode (terminal), you'll see:
+1. **Automatic Prompt** - You'll see recovery options:
    ```
-   Failed to parse config: invalid YAML syntax
+   ❌ Error: Failed to parse config file: /path/to/config.yaml
+      Failed to parse config file /path/to/config.yaml: ...
 
-   Choose recovery option:
-   1. Reset to defaults
-   2. Restore from backup
-   3. View all backups
-   4. Exit
+   Recovery options:
+     1. Reset to default configuration
+     2. Restore from most recent backup (config.yaml.backup.20250118_143022)
+     3. Show all backup files
+     4. Exit
+
+   Select option [1]:
    ```
 
-2. **Restore from Backup** - Select option 2 to choose from timestamped backups:
+2. **Option 1: Reset to Defaults** - Creates fresh config with factory settings
+3. **Option 2: Restore Most Recent** - Restores from latest backup automatically
+4. **Option 3: View All Backups** - Shows all available backups with timestamps and sizes:
    ```
    Available backups:
-   1. config.yaml.backup.20250118_143022 (2025-01-18 14:30:22 UTC)
-   2. config.yaml.backup.20250118_120015 (2025-01-18 12:00:15 UTC)
+     1. config.yaml.backup.20250118_143022 (534 bytes, modified 2025-01-18 14:30:22)
+     2. config.yaml.backup.20250118_120015 (521 bytes, modified 2025-01-18 12:00:15)
+
+   Select backup number (or Enter to go back):
    ```
 
-3. **Reset to Defaults** - Select option 1 for fresh start with factory settings
+**Non-Interactive Mode:**
+
+When run without a TTY (scripts, automation), the TUI automatically uses default configuration without prompts.
 
 **Manual Recovery:**
 ```bash
 # Validate YAML syntax
 python3 -c "import yaml, os; yaml.safe_load(open(os.path.expanduser('~/.config/par-term-emu-tui-rust/config.yaml'), encoding='utf-8'))"
 
-# Or manually restore backup
-cp ~/.config/par-term-emu-tui-rust/config.yaml.backup.YYYYMMDD_HHMMSS ~/.config/par-term-emu-tui-rust/config.yaml
+# Manually restore specific backup
+cp ~/.config/par-term-emu-tui-rust/config.yaml.backup.20250118_143022 \
+   ~/.config/par-term-emu-tui-rust/config.yaml
 
-# Or recreate default config
-mv ~/.config/par-term-emu-tui-rust/config.yaml ~/.config/par-term-emu-tui-rust/config.yaml.backup
+# Recreate default config
+mv ~/.config/par-term-emu-tui-rust/config.yaml \
+   ~/.config/par-term-emu-tui-rust/config.yaml.backup.manual
 par-term-emu-tui-rust --init-config
 ```
 
 **Automatic Backups:**
-- Every config save creates timestamped backup: `config.yaml.backup.YYYYMMDD_HHMMSS`
+
+Config backups are created automatically when saving configuration from the config screen (Ctrl+Alt+Shift+C):
+- Timestamped format: `config.yaml.backup.YYYYMMDD_HHMMSS`
 - Stored in `~/.config/par-term-emu-tui-rust/`
-- Use these for recovery if config becomes corrupted
+- Created before overwriting the existing config file
+- Useful for recovery if changes cause issues
 
 ## Display Problems
 
@@ -527,28 +555,82 @@ New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name
 
 ## Debug Mode
 
+The application has three levels of debug logging:
+
+1. **TUI Application Logs** - High-level application logic
+2. **Python Core Logs** - Python bindings and widget integration
+3. **Rust Core Logs** - Terminal emulation and PTY operations
+
+See [DEBUG.md](DEBUG.md) for comprehensive debugging guide.
+
 ### Enable Debug Logging
 
+**TUI Application Logs:**
 ```bash
-# Start with debug logging
+# Enable TUI application debug logging
 par-term-emu-tui-rust --debug
 
-# Log location (timestamped files)
+# Log location (timestamped files in current directory)
 ls -l debug_logs/terminal_debug_*.log
 ```
 
+**Core Debug Logs (Rust + Python Bindings):**
+```bash
+# Enable core debug logging with environment variable
+DEBUG_LEVEL=3 par-term-emu-tui-rust --debug
+
+# Rust core log location (terminal emulation, VT parsing, PTY)
+/tmp/par_term_emu_core_rust_debug_rust.log
+
+# Python core log location (bindings, widget integration)
+/tmp/par_term_emu_core_rust_debug_python.log
+```
+
+**Makefile Shortcuts:**
+```bash
+make debug           # DEBUG_LEVEL=2 (info)
+make debug-verbose   # DEBUG_LEVEL=3 (debug)
+make debug-trace     # DEBUG_LEVEL=4 (trace - WARNING: huge logs)
+make debug-tail      # View core logs in real-time
+make debug-clear     # Clear core debug logs
+```
+
+### Debug Levels (Core Logs)
+
+| Level | Name  | What's Logged |
+|-------|-------|---------------|
+| 0     | OFF   | Nothing (default) |
+| 1     | ERROR | Critical issues, corruption detection |
+| 2     | INFO  | Screen switches, device queries, widget lifecycle |
+| 3     | DEBUG | VT sequences, generation tracking, render calls |
+| 4     | TRACE | Every operation, full content, buffer snapshots |
+
 ### Debug Log Contents
 
-**Useful information in logs:**
-- Configuration loading
-- Terminal initialization
-- Key events
-- Mouse events
-- Screenshot operations
+**TUI Application Log (`debug_logs/terminal_debug_*.log`):**
+- Configuration loading and validation
+- Terminal initialization and lifecycle
+- Key bindings and mouse events
+- Screenshot operations and paths
 - Error stack traces
+- User interactions
+
+**Python Core Log (`/tmp/par_term_emu_core_rust_debug_python.log`):**
+- Widget lifecycle (mount, unmount, resize)
+- Render operations and generation tracking
+- Corruption detection warnings
+- Frame snapshot creation
+
+**Rust Core Log (`/tmp/par_term_emu_core_rust_debug_rust.log`):**
+- VT sequence parsing (CSI, OSC, ESC)
+- PTY read/write operations
+- Screen buffer switches (primary ↔ alternate)
+- Terminal state changes
+- Generation counter updates
 
 ### Analyzing Debug Logs
 
+**TUI Application Logs:**
 ```bash
 # Search for errors
 grep -i error debug_logs/terminal_debug_*.log
@@ -563,21 +645,46 @@ tail -50 debug_logs/terminal_debug_*.log
 tail -f debug_logs/terminal_debug_*.log
 ```
 
+**Core Debug Logs:**
+```bash
+# Monitor both core logs in real-time
+tail -f /tmp/par_term_emu_core_rust_debug_rust.log \
+        /tmp/par_term_emu_core_rust_debug_python.log
+
+# Search for specific patterns
+grep "SCREEN_SWITCH" /tmp/par_term_emu_core_rust_debug_rust.log
+grep "CORRUPTION" /tmp/par_term_emu_core_rust_debug_python.log
+grep "VT_INPUT" /tmp/par_term_emu_core_rust_debug_rust.log
+
+# Or use make shortcuts
+make debug-tail  # Tail core logs
+make debug-view  # View core logs with less
+```
+
 ### Common Error Patterns
 
-**Configuration errors:**
+**Configuration Errors (TUI Application Log):**
 ```
 ERROR: Failed to load config: ...
+Failed to parse config file: invalid YAML syntax
 ```
 
-**Terminal errors:**
+**Terminal Errors (Core Logs):**
 ```
-ERROR: Terminal initialization failed
+[ERROR] [PTY] Failed to spawn shell: ...
+[ERROR] Terminal initialization failed
 ```
 
-**Screenshot errors:**
+**Rendering Corruption (Python Core Log):**
 ```
-ERROR: Screenshot failed: ...
+[ERROR] [CORRUPTION] widget=terminal line=0 suspicious_content=[...]
+[WARNING] rendering with stale generation
+```
+
+**Screenshot Errors (TUI Application Log):**
+```
+ERROR: Screenshot failed: Permission denied
+Failed to create screenshot directory: ...
 ```
 
 ## Getting Help
@@ -647,7 +754,7 @@ cat ~/.config/par-term-emu-tui-rust/config.yaml
 
 **Documentation:**
 - Review all documentation in `docs/`
-- Check [FAQ](#) for common questions
+- Check [Debug FAQ](DEBUG.md#faq) for debugging questions
 - See examples in README
 
 ## Related Documentation
@@ -657,4 +764,4 @@ cat ~/.config/par-term-emu-tui-rust/config.yaml
 - [Configuration Reference](CONFIG_REFERENCE.md) - All settings
 - [Debug Guide](DEBUG.md) - Advanced debugging
 - [Features](FEATURES.md) - Complete feature list
-- [Contributing](CONTRIBUTING.md) - Development setup
+- [Architecture](ARCHITECTURE.md) - System design and development guide

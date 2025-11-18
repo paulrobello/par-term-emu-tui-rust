@@ -1,6 +1,6 @@
 # Documentation Index
 
-Complete documentation for Par Term Emu TUI Rust.
+Complete documentation for Par Term Emu TUI Rust - a modern terminal emulator TUI built with Textual and par-term-emu-core-rust.
 
 ## Getting Started
 
@@ -21,7 +21,7 @@ Start here if you're new to Par Term Emu TUI Rust:
 3. **[Usage Guide](USAGE.md)** - Command-line options and workflows
    - Running the TUI
    - Command-line options
-   - Theme management
+   - Install command
    - Common workflows
 
 ## Reference Documentation
@@ -47,7 +47,7 @@ Detailed reference for all features and configuration:
    - Clipboard operations
    - Special keys
 
-3. **[Configuration Reference](CONFIG_REFERENCE.md)** - All configuration options
+3. **[Configuration Reference](CONFIG_REFERENCE.md)** - All 40 configuration options
    - Selection & clipboard
    - Scrollback & cursor
    - Paste enhancement
@@ -57,10 +57,11 @@ Detailed reference for all features and configuration:
    - Notifications
    - Screenshots
    - Shell behavior
+   - Keyboard protocol
 
 4. **[Theme System](THEMES.md)** - Color themes and customization
    - Using themes
-   - Built-in themes (12 themes)
+   - 12 built-in themes
    - Creating custom themes
    - Theme file format
    - Theme application
@@ -82,16 +83,24 @@ For developers and advanced users:
    - Component architecture
    - Terminal widget design
    - Rendering pipeline
+   - Threading model
    - Event handling
    - State management
 
-2. **[Debug Guide](DEBUG.md)** - Debugging and development
+2. **[Keyboard Protocol](KEYBOARD_PROTOCOL.md)** - KITTY keyboard protocol guide
+   - Protocol overview
+   - Configuration options
+   - Auto-detection
+   - Flags and modes
+   - Troubleshooting
+
+3. **[Debug Guide](DEBUG.md)** - Debugging and development
    - Debug mode
    - Logging
    - Troubleshooting development issues
    - Performance profiling
 
-3. **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
+4. **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
    - Installation issues
    - Runtime errors
    - Display problems
@@ -99,7 +108,7 @@ For developers and advanced users:
    - Feature-specific issues
    - Platform-specific issues
 
-4. **[Documentation Style Guide](DOCUMENTATION_STYLE_GUIDE.md)** - Standards for documentation
+5. **[Documentation Style Guide](DOCUMENTATION_STYLE_GUIDE.md)** - Standards for documentation
    - Document structure
    - Writing style
    - Diagram standards
@@ -132,6 +141,7 @@ graph TD
     Themes[Theme System]
     Screenshots[Screenshots Guide]
     Arch[Architecture]
+    Keyboard[Keyboard Protocol]
     Debug[Debug Guide]
     Trouble[Troubleshooting]
     Style[Documentation Style Guide]
@@ -155,12 +165,14 @@ graph TD
     KeyBindings --> Config
     Themes --> Config
     Screenshots --> Config
+    Keyboard --> Config
 
     Install --> Trouble
     Usage --> Trouble
     Features --> Trouble
 
     Arch --> Debug
+    Arch --> Keyboard
     Debug --> Trouble
 
     Contributing --> Arch
@@ -177,6 +189,7 @@ graph TD
     style Themes fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
     style Screenshots fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
     style Arch fill:#880e4f,stroke:#c2185b,stroke-width:2px,color:#ffffff
+    style Keyboard fill:#880e4f,stroke:#c2185b,stroke-width:2px,color:#ffffff
     style Debug fill:#880e4f,stroke:#c2185b,stroke-width:2px,color:#ffffff
     style Trouble fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
     style Style fill:#37474f,stroke:#78909c,stroke-width:2px,color:#ffffff
@@ -196,6 +209,7 @@ graph TD
 - **Configure settings** → [Configuration Reference](CONFIG_REFERENCE.md)
 - **Choose or create themes** → [Theme System](THEMES.md)
 - **Take screenshots** → [Screenshots Guide](SCREENSHOTS.md)
+- **Use KITTY keyboard protocol** → [Keyboard Protocol](KEYBOARD_PROTOCOL.md)
 - **Fix a problem** → [Troubleshooting](TROUBLESHOOTING.md)
 - **Understand the design** → [Architecture](ARCHITECTURE.md)
 - **Contribute code** → [Contributing Guide](../CONTRIBUTING.md)
@@ -211,12 +225,15 @@ graph TD
 **Power Users:**
 1. [Usage Guide](USAGE.md)
 2. [Configuration Reference](CONFIG_REFERENCE.md)
-3. [Screenshots Guide](SCREENSHOTS.md)
+3. [Theme System](THEMES.md)
+4. [Screenshots Guide](SCREENSHOTS.md)
+5. [Keyboard Protocol](KEYBOARD_PROTOCOL.md)
 
 **Developers:**
 1. [Contributing Guide](../CONTRIBUTING.md)
 2. [Architecture](ARCHITECTURE.md)
 3. [Debug Guide](DEBUG.md)
+4. [Documentation Style Guide](DOCUMENTATION_STYLE_GUIDE.md)
 
 **Technical Writers:**
 1. [Documentation Style Guide](DOCUMENTATION_STYLE_GUIDE.md)

@@ -14,6 +14,7 @@ Comprehensive overview of Par Term Emu TUI Rust features and capabilities.
 - [Clipboard Integration](#clipboard-integration)
 - [Visual Bell](#visual-bell)
 - [Cursor Customization](#cursor-customization)
+- [Keyboard Protocol](#keyboard-protocol)
 - [Shell Integration](#shell-integration)
 - [Theme System](#theme-system)
 - [Related Documentation](#related-documentation)
@@ -33,19 +34,19 @@ Par Term Emu TUI Rust is a modern terminal emulator TUI built with Textual and p
 | **Clipboard** | pyperclip | Cross-platform clipboard support |
 | **Paths** | xdg-base-dirs | XDG Base Directory compliance |
 
-> **📝 Note:** See `pyproject.toml` for current dependency versions.
+> **📝 Note:** See `pyproject.toml` for current package versions.
 
 ## Core Features
 
 ### Custom Terminal Widget
 
-A Textual widget that wraps `par_term_emu.Terminal`:
+A Textual widget that wraps `PtyTerminal` from `par-term-emu-core-rust`:
 
-- **Efficient Rendering**: Uses Textual's Line API for optimal performance
-- **Partial Updates**: Only re-renders changed lines
-- **Dynamic Sizing**: Adapts to terminal window resize
+- **Efficient Rendering**: Uses Textual's Strip API for optimal performance
+- **Partial Updates**: Only re-renders changed lines via generation tracking
+- **Dynamic Sizing**: Adapts to terminal window resize with SIGWINCH
 - **Color Accuracy**: Full 24-bit RGB color support
-- **Text Attributes**: Bold, italic, underline, strikethrough, dim
+- **Text Attributes**: Bold, italic, underline, strikethrough, dim, reverse video
 
 ```mermaid
 graph TD
@@ -213,9 +214,11 @@ graph TD
 - Visibility toggle
 
 **Keyboard protocol:**
+- KITTY keyboard protocol support for enhanced input
 - Disambiguate ambiguous keys (Ctrl+I vs Tab, etc.)
 - Optional key release events
 - Alternate key representations
+- Auto-detection of application protocol requests
 - See [Keyboard Protocol Guide](KEYBOARD_PROTOCOL.md) for details
 
 ## Scrollback Buffer
@@ -246,7 +249,7 @@ Navigate through terminal history to view previous output.
 # Scrollback settings
 scrollback_lines: 10000          # Maximum history lines (0 = unlimited)
 max_scrollback_lines: 100000     # Safety limit for unlimited mode
-mouse_wheel_scroll_lines: 1      # Lines per wheel tick
+mouse_wheel_scroll_lines: 3      # Lines per wheel tick
 ```
 
 ## Mouse Support
@@ -310,14 +313,16 @@ echo -e '\e]8;;https://example.com\e\\Click me!\e]8;;\e\\'
 
 ```yaml
 # Hyperlink settings
-clickable_urls: true                    # Enable URL clicking
-link_color: [100, 150, 255]            # RGB color for links
-url_modifier: "none"                    # Modifier key: none, ctrl, shift, alt
+clickable_urls: true                               # Enable URL clicking
+link_color: [100, 150, 255]                       # RGB color for links
+url_modifier: "ctrl"                               # Modifier key: none, ctrl, shift, alt
+allowed_url_schemes: ["http", "https", "ftp", "ftps", "file", "mailto"]  # Allowed URL schemes
+warn_on_unknown_url_scheme: true                   # Warn when blocking unsupported schemes
 ```
 
 **Modifier options:**
 - `none` - Click URLs directly
-- `ctrl` - Require Ctrl+Click
+- `ctrl` - Require Ctrl+Click (default)
 - `shift` - Require Shift+Click
 - `alt` - Require Alt+Click
 
@@ -397,7 +402,7 @@ paste_warn_size: 100000                # Warn before pasting large content
 
 ## Visual Bell
 
-The terminal supports visual bell notifications using TWO complementary systems when applications send a bell character (BEL/\x07).
+The terminal supports visual bell notifications using a flash overlay system when applications send a bell character (BEL/\x07).
 
 ### Bell Behavior
 
@@ -409,22 +414,14 @@ The terminal supports visual bell notifications using TWO complementary systems 
 **Visual Indicators:**
 
 1. **Flash Overlay (BellFlash)**:
-   - 3×3 centered overlay with bell icon (🔔)
-   - Appears for 0.25 seconds then auto-dismisses
+   - Centered overlay with bell icon (🔔)
+   - Appears briefly then auto-dismisses
    - Immediate, attention-grabbing visual feedback
    - Uses warning color theme with rounded border
 
-2. **Header Indicator (TerminalHeader)**:
-   - Bell icon (🔔) appears in the header subtitle
-   - Persists until user interaction (any key press or mouse click)
-   - Provides lasting visual reminder
-   - Non-intrusive indicator for users who miss the flash
-
 **User Interaction:**
-- Header bell clears on next keyboard input
-- Header bell clears on any mouse click
-- Flash overlay dismisses automatically after 0.25 seconds
-- Allows user to acknowledge notification naturally
+- Flash overlay dismisses automatically
+- Non-disruptive visual notification
 - No audio component (visual only)
 
 ### Configuration
@@ -458,14 +455,14 @@ visual_bell_enabled: true   # Enable visual bell indicator (default: true)
 ### Cursor Styles
 
 **Blinking cursors:**
-- `BlinkingBlock` - Solid blinking block
-- `BlinkingUnderline` - Blinking underline
-- `BlinkingBar` - Vertical blinking bar
+- `blinking_block` - Solid blinking block
+- `blinking_underline` - Blinking underline
+- `blinking_bar` - Vertical blinking bar
 
 **Steady cursors:**
-- `SteadyBlock` - Always-visible block
-- `SteadyUnderline` - Always-visible underline
-- `SteadyBar` - Always-visible vertical bar
+- `steady_block` - Always-visible block
+- `steady_underline` - Always-visible underline
+- `steady_bar` - Always-visible vertical bar
 
 ### Configuration
 
@@ -477,6 +474,56 @@ cursor_blink_rate: 0.5           # Blink interval in seconds
 ```
 
 > **📝 Note:** Applications can change cursor style via DECSCUSR sequences. The TUI respects application-set styles.
+
+## Keyboard Protocol
+
+Enhanced keyboard input support using the KITTY keyboard protocol.
+
+### KITTY Protocol Features
+
+The KITTY keyboard protocol provides:
+
+- **Key Disambiguation**: Distinguish Ctrl+I from Tab, Ctrl+M from Enter, etc.
+- **Key Release Events**: Applications can receive key release notifications
+- **Alternate Representations**: Multiple ways to represent the same key
+- **Report All Keys**: Send escape codes for all keys
+- **Associated Text**: Include text representation with events
+
+### Configuration
+
+```yaml
+# KITTY keyboard protocol settings
+keyboard_protocol_enabled: false        # Enable protocol globally
+keyboard_protocol_flags: 1              # Feature flags (1=disambiguate, 2=events, 4=alternate, 8=report_all, 16=text)
+keyboard_protocol_auto_detect: false    # Auto-enable when apps request it
+```
+
+### Usage Modes
+
+**Manual Mode** (`keyboard_protocol_enabled: true`):
+- Always sends KITTY protocol sequences
+- Configured flags are used for all applications
+- Best for terminal-only environments
+
+**Auto-Detection Mode** (`keyboard_protocol_auto_detect: true`):
+- Monitors terminal output for protocol activation (CSI >flags u)
+- Automatically enables when applications request it
+- Automatically disables when applications stop using it
+- Seamless integration with supporting applications
+
+**Disabled** (default):
+- Uses traditional escape sequences
+- Compatible with all applications
+- No protocol overhead
+
+### Supported Applications
+
+Applications with KITTY protocol support:
+- Neovim (with terminal emulator plugins)
+- Kakoune text editor
+- Any application using the KITTY protocol library
+
+See [Keyboard Protocol Guide](KEYBOARD_PROTOCOL.md) for detailed documentation.
 
 ## Shell Integration
 
@@ -584,6 +631,8 @@ par-term-emu-tui-rust --apply-theme-from my-theme.yaml
 - [Usage Guide](USAGE.md) - Command-line options and usage
 - [Key Bindings](KEY_BINDINGS.md) - Keyboard and mouse reference
 - [Keyboard Protocol](KEYBOARD_PROTOCOL.md) - KITTY keyboard protocol support
-- [Configuration Reference](CONFIG_REFERENCE.md) - All settings
+- [Configuration Reference](CONFIG_REFERENCE.md) - All configuration settings
 - [Screenshots Guide](SCREENSHOTS.md) - Screenshot functionality
-- [Theme Guide](THEMES.md) - Theme customization and management
+- [Themes Guide](THEMES.md) - Theme customization and management
+- [Architecture](ARCHITECTURE.md) - System design and implementation details
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions

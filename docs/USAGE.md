@@ -78,23 +78,28 @@ Usage: par-term-emu-tui-rust [OPTIONS]
        par-term-emu-tui-rust install <component> [OPTIONS]
 
 Options:
-  -d, --debug                  Enable debug logging to debug_logs/
-  -s, --shell SHELL            Shell to execute (default: $SHELL on Unix, PowerShell/cmd.exe on Windows)
-  -c, --command CMD            Command to inject after 1 second delay
-  -q, --auto-quit SECONDS      Automatically quit after specified seconds
-  --screenshot SECONDS         Take screenshot after specified seconds
-  --open-screenshot            Open screenshot with default viewer after capture
-  --init-config                Create default config.yaml and exit
-  --export-theme NAME          Export current theme as NAME and exit
-  --apply-theme NAME           Apply built-in theme NAME and exit
-  --list-themes                List available themes and exit
-  --apply-theme-from FILE      Apply theme from YAML file and exit
-  --theme NAME                 Use theme for this session (overrides config)
-  -h, --help                   Show this help message and exit
+  -d, --debug                            Enable debug logging to debug_logs/
+  -s, --shell SHELL                      Shell to execute (default: $SHELL on Unix, PowerShell/cmd.exe on Windows)
+  -c, --command CMD                      Command to inject after 1 second delay
+  -q, --auto-quit SECONDS                Automatically quit after specified seconds
+  --screenshot SECONDS                   Take screenshot after specified seconds
+  --open-screenshot                      Open screenshot with default viewer after capture
+  --init-config                          Create default config.yaml and exit
+  --export-theme NAME                    Export current theme as NAME and exit
+  --apply-theme NAME                     Apply built-in theme NAME and exit
+  --list-themes                          List available themes and exit
+  --apply-theme-from FILE                Apply theme from YAML file and exit
+  --theme NAME                           Use theme for this session (overrides config)
+  --keyboard-protocol                    Enable KITTY keyboard protocol for embedded applications
+  --no-keyboard-protocol                 Disable KITTY keyboard protocol (override config file)
+  --keyboard-protocol-flags FLAGS        KITTY protocol flags: 1=disambiguate, 2=events, 4=alternate, 8=report_all, 16=text (combine by adding)
+  --keyboard-protocol-auto-detect        Auto-detect and enable KITTY protocol when embedded apps request it
+  --no-keyboard-protocol-auto-detect     Disable auto-detection (override config file)
+  -h, --help                             Show this help message and exit
 
 Subcommands:
-  install                      Install shell integration, terminfo, or fonts
-                              Run 'par-term-emu-tui-rust install --help' for details
+  install                                Install shell integration, terminfo, or fonts
+                                        Run 'par-term-emu-tui-rust install --help' for details
 ```
 
 ### Debug Options
@@ -187,7 +192,7 @@ paste_warn_size: 100000
 # ============================================================================
 focus_follows_mouse: false
 middle_click_paste: true
-mouse_wheel_scroll_lines: 1
+mouse_wheel_scroll_lines: 3
 
 # ============================================================================
 # Security & Advanced
@@ -198,7 +203,9 @@ accept_osc7: true
 # ============================================================================
 # Theme & Colors
 # ============================================================================
-theme: "iterm2-dark"
+theme: "dark-background"
+bold_brightening: false
+minimum_contrast: 0.0
 
 # ============================================================================
 # Notifications
@@ -211,6 +218,7 @@ notification_timeout: 5
 # ============================================================================
 screenshot_directory: null
 screenshot_format: "png"
+screenshot_minimum_contrast: 0.0
 open_screenshot_after_capture: false
 
 # ============================================================================
@@ -223,7 +231,9 @@ exit_on_shell_exit: true
 # ============================================================================
 clickable_urls: true
 link_color: [100, 150, 255]
-url_modifier: "none"
+url_modifier: "ctrl"
+allowed_url_schemes: ["http", "https", "ftp", "ftps", "file", "mailto"]
+warn_on_unknown_url_scheme: true
 
 # ============================================================================
 # Search & Highlighting
@@ -239,6 +249,13 @@ show_status_bar: true
 # Visual Bell
 # ============================================================================
 visual_bell_enabled: true
+
+# ============================================================================
+# Keyboard Protocol (KITTY)
+# ============================================================================
+keyboard_protocol_enabled: false
+keyboard_protocol_flags: 1
+keyboard_protocol_auto_detect: false
 ```
 
 > **📝 Note:** See [CONFIG_REFERENCE.md](CONFIG_REFERENCE.md) for detailed documentation of each setting.
@@ -253,9 +270,9 @@ par-term-emu-tui-rust --list-themes
 ```
 
 **Available themes:**
-- `dark-background` - Classic dark terminal
+- `dark-background` - Classic dark terminal (default)
 - `high-contrast` - High contrast for accessibility
-- `iterm2-dark` - iTerm2 Dark (default)
+- `iterm2-dark` - iTerm2 Dark
 - `light-background` - Classic light terminal
 - `pastel-dark` - Soft pastel on dark
 - `regular` - Balanced colors
@@ -447,6 +464,29 @@ par-term-emu-tui-rust --shell /bin/zsh
 par-term-emu-tui-rust --shell /usr/bin/fish
 ```
 
+### Keyboard Protocol Options
+
+**KITTY keyboard protocol for enhanced key handling:**
+```bash
+# Enable KITTY keyboard protocol
+par-term-emu-tui-rust --keyboard-protocol
+
+# Enable with specific flags (disambiguate + events)
+par-term-emu-tui-rust --keyboard-protocol-flags 3
+
+# Auto-detect when apps request protocol
+par-term-emu-tui-rust --keyboard-protocol-auto-detect
+
+# Disable protocol (override config)
+par-term-emu-tui-rust --no-keyboard-protocol
+```
+
+**KITTY protocol benefits:**
+- Distinguishes Ctrl+I from Tab, Ctrl+M from Enter
+- Reports key release events (if flags include 2)
+- Enhanced key representations
+- Better integration with modern terminal applications
+
 ### Environment Variables
 
 **Override configuration:**
@@ -519,5 +559,7 @@ echo "TUI test passed"
 - [Features](FEATURES.md) - Complete feature list
 - [Key Bindings](KEY_BINDINGS.md) - Keyboard and mouse reference
 - [Configuration Reference](CONFIG_REFERENCE.md) - All configuration options
+- [Keyboard Protocol](KEYBOARD_PROTOCOL.md) - KITTY keyboard protocol guide
 - [Screenshots Guide](SCREENSHOTS.md) - Screenshot functionality
+- [Themes Guide](THEMES.md) - Theme customization
 - [Troubleshooting](TROUBLESHOOTING.md) - Common issues

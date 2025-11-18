@@ -38,27 +38,30 @@ Themes are applied **before the shell starts**, ensuring consistent colors from 
 Edit `~/.config/par-term-emu-tui-rust/config.yaml`:
 
 ```yaml
-theme: "dark-background"
+theme: "dark-background"  # Default theme
 ```
 
 **Via Command Line:**
 
 ```bash
-# Use a specific theme for one session
-uv run par-term-emu-tui-rust --theme solarized-dark
+# Use a specific theme for one session (overrides config)
+par-term-emu-tui-rust --theme solarized-dark
 
-# Apply theme to config permanently
-uv run par-term-emu-tui-rust --apply-theme dark-background
+# Apply a built-in theme to config.yaml permanently
+par-term-emu-tui-rust --apply-theme dark-background
 
-# Apply a custom theme from a YAML file
-uv run par-term-emu-tui-rust --apply-theme-from ~/mytheme.yaml
+# Import and apply a custom theme from a YAML file
+par-term-emu-tui-rust --apply-theme-from ~/mytheme.yaml
+
+# Export current theme to a YAML file
+par-term-emu-tui-rust --export-theme my-custom-theme
 ```
 
 ### Listing Available Themes
 
 ```bash
 # List all built-in themes
-uv run par-term-emu-tui-rust --list-themes
+par-term-emu-tui-rust --list-themes
 
 # Or via make
 make themes
@@ -307,20 +310,27 @@ badge: "#bf616a"
 match: "#ebcb8b"
 ```
 
-**Future Usage (Not Currently Implemented):**
+**Current Limitation:**
 
-Custom themes will eventually be usable via:
+After importing a custom theme with `--apply-theme-from`, the theme file is saved to `~/.config/par-term-emu-tui-rust/themes/` but cannot be loaded by the application. The theme system currently only supports the 12 built-in themes.
 
 ```bash
-# This will work once custom theme loading is implemented
-uv run par-term-emu-tui-rust --theme nord-inspired
+# This does NOT work - custom themes cannot be loaded yet
+par-term-emu-tui-rust --theme nord-inspired  # ❌ Will fail
+
+# Only built-in theme keys work
+par-term-emu-tui-rust --theme dark-background    # ✓ Works
 ```
 
-**Workaround:** Until custom theme loading is implemented, you can:
-1. Modify one of the built-in themes in `src/par_term_emu_tui_rust/themes.py`
-2. Or contribute a PR to add your theme as a built-in theme
+**Workarounds:**
 
-The `--apply-theme-from` command saves the structure for future use but custom themes cannot currently be loaded by the application.
+Until custom theme loading is implemented, you can:
+
+1. **Export and modify a built-in theme:** Use `--export-theme` to create a custom theme file, modify it, then contribute it as a built-in theme via PR
+2. **Modify source code:** Add your theme directly to `src/par_term_emu_tui_rust/themes.py` in the `THEMES` dictionary
+3. **Contribute:** Submit a PR to add your theme as a new built-in theme for all users
+
+The `--apply-theme-from` command saves the theme file structure for future use, but the application's theme loader (`get_theme()` function in `themes.py`) only searches the built-in `THEMES` dictionary, not the user themes directory.
 
 ## Theme Application
 
