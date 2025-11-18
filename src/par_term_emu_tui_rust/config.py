@@ -287,6 +287,136 @@ class TuiConfig:
     )
     keyboard_protocol_auto_detect: bool = False  # Auto-detect and enable when apps request protocol
 
+    @staticmethod
+    def _validate_value(field_name: str, value: Any, field_type: Any) -> Any:
+        """Validate and clamp config values to valid ranges.
+
+        Args:
+            field_name: Name of the field being validated
+            value: Value to validate
+            field_type: Expected type of the field
+
+        Returns:
+            Validated and potentially clamped value
+
+        Raises:
+            ValueError: If value cannot be validated
+        """
+        # Validate float ranges (0.0-1.0)
+        if field_name in ("minimum_contrast", "screenshot_minimum_contrast"):
+            if field_type is float:
+                val = float(value)
+                if val < 0.0:
+                    logger.warning("%s value %s is below 0.0, clamping to 0.0", field_name, val)
+                    return 0.0
+                if val > 1.0:
+                    logger.warning("%s value %s is above 1.0, clamping to 1.0", field_name, val)
+                    return 1.0
+                return val
+
+        # Validate positive float values
+        if field_name == "cursor_blink_rate":
+            if field_type is float:
+                val = float(value)
+                if val <= 0.0:
+                    logger.warning("%s value %s must be positive, using default 0.5", field_name, val)
+                    return 0.5
+                return val
+
+        # Validate non-negative integers
+        if field_name in (
+            "scrollback_lines",
+            "max_scrollback_lines",
+            "paste_chunk_size",
+            "paste_chunk_delay_ms",
+            "paste_warn_size",
+            "notification_timeout",
+            "keyboard_protocol_flags",
+        ):
+            if field_type is int:
+                val = int(value)
+                if val < 0:
+                    logger.warning("%s value %s is negative, clamping to 0", field_name, val)
+                    return 0
+                return val
+
+        # Validate positive integers
+        if field_name == "mouse_wheel_scroll_lines":
+            if field_type is int:
+                val = int(value)
+                if val < 1:
+                    logger.warning("%s value %s must be at least 1, using default 3", field_name, val)
+                    return 3
+                return val
+
+        # Validate RGB tuples (0-255)
+        if field_name in ("link_color", "search_match_color"):
+            if isinstance(value, (list, tuple)) and len(value) == 3:
+                clamped = []
+                for i, component in enumerate(value):
+                    val = int(component)
+                    if val < 0:
+                        logger.warning("%s[%d] value %s is below 0, clamping to 0", field_name, i, val)
+                        clamped.append(0)
+                    elif val > 255:
+                        logger.warning("%s[%d] value %s is above 255, clamping to 255", field_name, i, val)
+                        clamped.append(255)
+                    else:
+                        clamped.append(val)
+                return tuple(clamped)
+
+        # Validate cursor_style values
+        if field_name == "cursor_style":
+            valid_styles = {
+                "blinking_block",
+                "steady_block",
+                "blinking_underline",
+                "steady_underline",
+                "blinking_bar",
+                "steady_bar",
+            }
+            val = str(value).lower()
+            if val not in valid_styles:
+                logger.warning(
+                    "%s value %r is invalid, using default 'blinking_block'. Valid values: %s",
+                    field_name,
+                    value,
+                    valid_styles,
+                )
+                return "blinking_block"
+            return val
+
+        # Validate url_modifier values
+        if field_name == "url_modifier":
+            valid_modifiers = {"none", "ctrl", "shift", "alt"}
+            val = str(value).lower()
+            if val not in valid_modifiers:
+                logger.warning(
+                    "%s value %r is invalid, using default 'ctrl'. Valid values: %s",
+                    field_name,
+                    value,
+                    valid_modifiers,
+                )
+                return "ctrl"
+            return val
+
+        # Validate screenshot_format values
+        if field_name == "screenshot_format":
+            valid_formats = {"png", "jpeg", "bmp", "svg", "html"}
+            val = str(value).lower()
+            if val not in valid_formats:
+                logger.warning(
+                    "%s value %r is invalid, using default 'png'. Valid values: %s",
+                    field_name,
+                    value,
+                    valid_formats,
+                )
+                return "png"
+            return val
+
+        # No specific validation needed
+        return value
+
     @classmethod
     def load(cls, config_path: Path | None = None) -> TuiConfig:
         """Load configuration from YAML file.
@@ -321,33 +451,42 @@ class TuiConfig:
                 field_type_str = str(field_type)
 
                 try:
+                    converted_value = None
+
                     # Handle None values
                     if value is None:
-                        converted_data[field_info.name] = None
+                        converted_value = None
                     # Handle bool (must come before int since bool is subclass of int)
                     elif field_type is bool:
-                        converted_data[field_info.name] = bool(value) if not isinstance(value, bool) else value
+                        converted_value = bool(value) if not isinstance(value, bool) else value
                     # Handle int
                     elif field_type is int:
-                        converted_data[field_info.name] = int(value) if not isinstance(value, int) else value
+                        converted_value = int(value) if not isinstance(value, int) else value
                     # Handle float
                     elif field_type is float:
-                        converted_data[field_info.name] = float(value) if not isinstance(value, float) else value
+                        converted_value = float(value) if not isinstance(value, float) else value
                     # Handle tuple[int, int, int] for colors
                     elif "tuple" in field_type_str and "int" in field_type_str:
                         if isinstance(value, (list, tuple)):
-                            converted_data[field_info.name] = tuple(int(v) for v in value)
+                            converted_value = tuple(int(v) for v in value)
                         else:
-                            converted_data[field_info.name] = field_info.default
+                            converted_value = field_info.default
                     # Handle list[str]
                     elif "list" in field_type_str and "str" in field_type_str:
                         if isinstance(value, list):
-                            converted_data[field_info.name] = [str(v) for v in value]
+                            converted_value = [str(v) for v in value]
                         else:
-                            converted_data[field_info.name] = field_info.default
+                            converted_value = field_info.default
                     # Handle str and other types
                     else:
-                        converted_data[field_info.name] = value
+                        converted_value = value
+
+                    # Apply validation if we have a non-None value
+                    if converted_value is not None:
+                        converted_value = cls._validate_value(field_info.name, converted_value, field_type)
+
+                    converted_data[field_info.name] = converted_value
+
                 except (ValueError, TypeError):
                     # Use default value if conversion fails
                     logger.warning(

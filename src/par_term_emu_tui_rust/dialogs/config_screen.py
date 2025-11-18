@@ -606,12 +606,14 @@ class ConfigScreen(ModalScreen[bool]):
                 widget_id = f"field_{field.name}"
 
                 try:
+                    converted_value = None
+
                     if field.type is bool:
                         widget = self.query_one(f"#{widget_id}", Checkbox)
-                        yaml_data[field.name] = widget.value
+                        converted_value = widget.value
                     elif "Select" in str(type(self.query_one(f"#{widget_id}"))):
                         widget = self.query_one(f"#{widget_id}", Select)
-                        yaml_data[field.name] = widget.value
+                        converted_value = widget.value
                     else:
                         widget = self.query_one(f"#{widget_id}", Input)
                         value_str = widget.value.strip()
@@ -621,7 +623,7 @@ class ConfigScreen(ModalScreen[bool]):
 
                         # Handle empty optional fields
                         if not value_str and field.default is None:
-                            yaml_data[field.name] = None
+                            converted_value = None
                         # Handle tuple[int, int, int] for colors
                         elif "tuple" in field_type_str and "int" in field_type_str:
                             if value_str:
@@ -629,9 +631,9 @@ class ConfigScreen(ModalScreen[bool]):
                                 if len(parts) != 3:
                                     msg = f"Color must have 3 values (R,G,B), got {len(parts)}"
                                     raise ValueError(msg)
-                                yaml_data[field.name] = parts
+                                converted_value = parts
                             else:
-                                yaml_data[field.name] = field.default
+                                converted_value = field.default
                         # Handle list[str]
                         elif "list" in field_type_str:
                             # Don't update allowed_url_schemes from widgets (too complex)
@@ -640,19 +642,25 @@ class ConfigScreen(ModalScreen[bool]):
                         elif field.type is int or (
                             hasattr(field.type, "__origin__") and int in getattr(field.type, "__args__", ())
                         ):
-                            yaml_data[field.name] = (
+                            converted_value = (
                                 int(value_str) if value_str else (field.default if field.default is not None else 0)
                             )
                         # Handle float types (including float and any union with float)
                         elif field.type is float or (
                             hasattr(field.type, "__origin__") and float in getattr(field.type, "__args__", ())
                         ):
-                            yaml_data[field.name] = (
+                            converted_value = (
                                 float(value_str) if value_str else (field.default if field.default is not None else 0.0)
                             )
                         # String or unknown types
                         else:
-                            yaml_data[field.name] = value_str if value_str else field.default
+                            converted_value = value_str if value_str else field.default
+
+                    # Apply validation if we have a non-None value
+                    if converted_value is not None:
+                        converted_value = TuiConfig._validate_value(field.name, converted_value, field.type)
+
+                    yaml_data[field.name] = converted_value
 
                 except Exception:
                     # Skip widgets that don't exist or can't be converted
