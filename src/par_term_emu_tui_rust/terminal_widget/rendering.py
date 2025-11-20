@@ -405,7 +405,7 @@ class Renderer:
             scrollback_start_idx = scrollback_len - scroll_offset
             line_idx = scrollback_start_idx + y
 
-            if line_idx < scrollback_len:
+            if 0 <= line_idx < scrollback_len:
                 # Fetch from scrollback
                 scrollback_line = self.term.scrollback_line(line_idx)
                 if scrollback_line is not None:
@@ -413,6 +413,9 @@ class Renderer:
                 else:
                     # Scrollback line doesn't exist (shouldn't happen), use blank
                     line_cells = []
+            elif line_idx < 0:
+                # Scrollback was cleared while scrolled back - show blank
+                line_cells = []
             else:
                 # Fetch from live terminal (we're showing some scrollback + some live)
                 terminal_row = line_idx - scrollback_len
