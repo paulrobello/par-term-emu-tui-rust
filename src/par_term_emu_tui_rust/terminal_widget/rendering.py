@@ -726,8 +726,14 @@ class Renderer:
             for item in graphics_at_row:
                 if isinstance(item, tuple):
                     # Scrollback graphic with virtual row
+                    # virtual_row is a graphic row (0-N), but _render_graphic_line expects a terminal row
+                    # Convert: terminal_row = virtual_row - scroll_offset + graphic_position_row
+                    # This makes the scroll_offset addition in _render_graphic_line cancel out correctly
                     graphic, virtual_row = item
-                    gfx_segments = self._render_graphic_line(graphic, virtual_row, term_cols)
+                    gfx_row = graphic.position[1]
+                    scroll_off = graphic.scroll_offset_rows
+                    equivalent_terminal_row = virtual_row - scroll_off + gfx_row
+                    gfx_segments = self._render_graphic_line(graphic, equivalent_terminal_row, term_cols)
                 else:
                     # Terminal graphic
                     graphic = item
