@@ -186,11 +186,16 @@ bold_brightening: false
 # Uses NTSC perceived brightness formula. Applied to live terminal display.
 # For screenshots specifically, use screenshot_minimum_contrast below.
 # Range: 0.0-1.0 where:
-#   - 0.0 = disabled (default, matches iTerm2 default)
-#   - 0.5 = moderate contrast (recommended for readability)
+#   - 0.0 = disabled (default)
+#   - 0.5 = moderate contrast (matches iTerm2 slider at 50%)
 #   - 1.0 = maximum contrast
 # Default: 0.0
 minimum_contrast: 0.0
+
+# Alpha multiplier for faint/dim text (SGR 2).
+# 0.0 makes faint text invisible, 1.0 renders it normally.
+# Default: 0.5
+faint_text_alpha: 0.5
 
 # ============================================================================
 # Notifications
@@ -206,6 +211,50 @@ show_notifications: true
 # How long notification toasts remain visible before auto-dismissing.
 # Default: 5
 notification_timeout: 5
+
+# Forward BEL events to desktop notification centers
+# Default: false
+notification_bell_desktop: false
+
+# Volume (0-100) for backend bell sound alerts (0 disables)
+# Default: 0
+notification_bell_sound: 0
+
+# Enable backend visual bell overlay
+# Default: true
+notification_bell_visual: true
+
+# Enable notifications when activity resumes after inactivity
+# Default: false
+notification_activity_enabled: false
+
+# Seconds of inactivity required before an activity alert fires
+# Default: 10
+notification_activity_threshold: 10
+
+# Enable notifications after prolonged silence
+# Default: false
+notification_silence_enabled: false
+
+# Seconds of silence before a silence alert fires
+# Default: 300
+notification_silence_threshold: 300
+
+# Maximum number of OSC 9/777 notification entries retained by backend
+# Default: 64
+notification_max_buffer: 64
+
+# ============================================================================
+# Clipboard Sync Limits
+# ============================================================================
+
+# Maximum clipboard sync events retained for diagnostics
+# Default: 64
+clipboard_max_sync_events: 64
+
+# Maximum bytes stored per clipboard sync event
+# Default: 2048
+clipboard_max_event_bytes: 2048
 
 # ============================================================================
 # Screenshot
@@ -235,17 +284,44 @@ screenshot_format: "png"
 # Automatically adjusts text colors to ensure readability against backgrounds.
 # Uses NTSC perceived brightness formula to maintain hue while adjusting brightness.
 # Range: 0.0-1.0 where:
-#   - 0.0 = disabled (default, matches iTerm2 default)
-#   - 0.5 = moderate contrast (recommended for readability)
+#   - 0.0 = disabled
+#   - 0.5 = moderate (matches minimum_contrast default)
 #   - 1.0 = maximum contrast
-# Default: 0.0
-screenshot_minimum_contrast: 0.0
+# Default: null (inherit minimum_contrast)
+screenshot_minimum_contrast: null
 
 # Automatically open screenshot after capture
 # When enabled, opens the screenshot file with the system's default image viewer
 # (macOS: open, Linux: xdg-open, Windows: start) immediately after capturing.
 # Default: false
 open_screenshot_after_capture: false
+
+# ============================================================================
+# Recording
+# ============================================================================
+
+# Directory to save terminal recordings
+# When not set (null), uses (in order): shell CWD via OSC 7, XDG_VIDEOS_DIR/Recordings,
+# ~/Videos/Recordings, or the home directory.
+# Default: null
+recording_directory: null
+
+# File format for terminal recordings
+# Supported formats: asciicast (asciinema v2), json
+# Default: "asciicast"
+recording_format: "asciicast"
+
+# Title template for recordings (use {timestamp} placeholder)
+# Default: "Terminal Session {timestamp}"
+recording_title_template: "Terminal Session {timestamp}"
+
+# Automatically export recording when stopping via Ctrl+Shift+R
+# Default: true
+recording_auto_export_on_stop: true
+
+# Automatically open exported recording with default app
+# Default: false
+open_recording_after_export: false
 
 # ============================================================================
 # Shell Behavior

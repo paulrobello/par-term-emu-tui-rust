@@ -50,7 +50,7 @@ par-term-emu-tui-rust --shell /usr/bin/fish
 par-term-emu-tui-rust --shell /bin/bash
 ```
 
-> **📝 Note:** Default shell is `$SHELL` environment variable or `/bin/bash` if not set.
+> **📝 Note:** Default shell is `$SHELL` environment variable on Unix, or PowerShell/cmd.exe on Windows.
 
 ### Execute Command
 
@@ -192,7 +192,7 @@ paste_warn_size: 100000
 # ============================================================================
 focus_follows_mouse: false
 middle_click_paste: true
-mouse_wheel_scroll_lines: 3
+mouse_wheel_scroll_lines: 1
 
 # ============================================================================
 # Security & Advanced
@@ -203,9 +203,10 @@ accept_osc7: true
 # ============================================================================
 # Theme & Colors
 # ============================================================================
-theme: "dark-background"
+theme: "Dark Background"
 bold_brightening: false
-minimum_contrast: 0.0
+minimum_contrast: 0.5
+faint_text_alpha: 0.5
 
 # ============================================================================
 # Notifications
@@ -218,7 +219,7 @@ notification_timeout: 5
 # ============================================================================
 screenshot_directory: null
 screenshot_format: "png"
-screenshot_minimum_contrast: 0.0
+screenshot_minimum_contrast: null
 open_screenshot_after_capture: false
 
 # ============================================================================
@@ -270,31 +271,31 @@ par-term-emu-tui-rust --list-themes
 ```
 
 **Available themes:**
-- `dark-background` - Classic dark terminal (default)
-- `high-contrast` - High contrast for accessibility
-- `iterm2-dark` - iTerm2 Dark
-- `light-background` - Classic light terminal
-- `pastel-dark` - Soft pastel on dark
-- `regular` - Balanced colors
-- `smoooooth` - Smooth, muted colors
-- `solarized` - Original Solarized
-- `solarized-dark` - Solarized Dark variant
-- `solarized-light` - Solarized Light variant
-- `tango-dark` - Tango Dark
-- `tango-light` - Tango Light
+- `Dark Background` - Classic dark terminal (default)
+- `High Contrast` - High contrast for accessibility
+- `iTerm2 Dark` - iTerm2-style colors with pure black background
+- `Light Background` - Classic light terminal
+- `Pastel (Dark Background)` - Soft pastel colors on dark background
+- `Regular` - Balanced colors for general use
+- `Smoooooth` - Smooth, muted colors
+- `Solarized` - Original Solarized theme
+- `Solarized Dark` - Solarized Dark variant
+- `Solarized Light` - Solarized Light variant
+- `Tango Dark` - Tango colors on dark gray background
+- `Tango Light` - Tango colors on light background
 
 ### Apply Themes
 
 **Temporary theme (session only):**
 ```bash
-# Override config for this session
-par-term-emu-tui-rust --theme solarized-dark
+# Override config for this session (use exact theme name with spaces/capitals)
+par-term-emu-tui-rust --theme "Solarized Dark"
 ```
 
 **Permanent theme:**
 ```bash
-# Update config.yaml with new theme
-par-term-emu-tui-rust --apply-theme solarized-dark
+# Update config.yaml with new theme (use exact theme name)
+par-term-emu-tui-rust --apply-theme "Solarized Dark"
 
 # Verify change
 grep "theme:" ~/.config/par-term-emu-tui-rust/config.yaml
@@ -366,7 +367,7 @@ par-term-emu-tui-rust --screenshot 3 --open-screenshot --auto-quit 5
 #!/bin/bash
 # test-themes.sh - Test all themes with screenshots
 
-themes=("dark-background" "solarized-dark" "high-contrast")
+themes=("Dark Background" "Solarized Dark" "High Contrast")
 
 for theme in "${themes[@]}"; do
     echo "Testing theme: $theme"
@@ -530,14 +531,14 @@ par-term-emu-tui-rust --command "mosh user@host"
 
 # Show system info
 par-term-emu-tui-rust \
-    --theme solarized-dark \
+    --theme "Solarized Dark" \
     --command "neofetch" \
     --screenshot 3 \
     --auto-quit 5
 
 # Show directory tree
 par-term-emu-tui-rust \
-    --theme tango-dark \
+    --theme "Tango Dark" \
     --command "tree -L 2" \
     --screenshot 3 \
     --auto-quit 5
@@ -554,12 +555,10 @@ echo "TUI test passed"
 
 ## Related Documentation
 
-- [Quick Start Guide](QUICK_START.md) - Get started in 5 minutes
-- [Installation Guide](INSTALLATION.md) - Install and setup
+- [Quick Start Guide](QUICK_START.md) - Get started quickly
 - [Features](FEATURES.md) - Complete feature list
 - [Key Bindings](KEY_BINDINGS.md) - Keyboard and mouse reference
 - [Configuration Reference](CONFIG_REFERENCE.md) - All configuration options
 - [Keyboard Protocol](KEYBOARD_PROTOCOL.md) - KITTY keyboard protocol guide
 - [Screenshots Guide](SCREENSHOTS.md) - Screenshot functionality
-- [Themes Guide](THEMES.md) - Theme customization
-- [Troubleshooting](TROUBLESHOOTING.md) - Common issues
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions

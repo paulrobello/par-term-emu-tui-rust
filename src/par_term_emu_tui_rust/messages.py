@@ -28,13 +28,10 @@ class Flash(Message):
 
 @dataclass
 class DirectoryChanged(Message):
-    """Notify that the shell's current directory changed (via OSC 7).
-
-    Args:
-        directory: The new current working directory path.
-    """
+    """Notify that the shell's current directory and stats changed (OSC 7)."""
 
     directory: str
+    stats_summary: str | None = None
 
 
 @dataclass

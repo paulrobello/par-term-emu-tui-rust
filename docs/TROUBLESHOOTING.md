@@ -27,18 +27,19 @@ ERROR: Python 3.12 or higher required
 # Check Python version
 python3 --version
 
-# Ensure you have Python 3.12 or higher
+# Use uv to manage Python versions (recommended)
+uv python install 3.14
+uv python pin 3.14
+
+# Or install system Python 3.12+
 # macOS (using Homebrew)
-brew install python@3.12
+brew install python@3.14
 
 # Linux (Ubuntu/Debian)
-sudo apt-get install python3.12
+sudo apt-get install python3.14
 
 # Linux (Fedora)
-sudo dnf install python3.12
-
-# Or use uv to manage Python versions
-uv python install 3.12
+sudo dnf install python3.14
 ```
 
 ### UV Not Found
@@ -75,9 +76,6 @@ ModuleNotFoundError: No module named 'par_term_emu_tui_rust'
 # Reinstall dependencies
 cd /path/to/par-term-emu-tui-rust
 uv sync
-
-# Or use make
-make install
 
 # Verify installation
 uv run par-term-emu-tui-rust --help
@@ -243,20 +241,34 @@ Config backups are created automatically when saving configuration from the conf
 # Check TERM variable
 echo $TERM
 
-# Test true color
+# Test 256 color support
+for i in {0..255}; do printf "\x1b[38;5;%dmcolor%-5d\x1b[0m" $i $i; if ! (( ($i + 1) % 16 )); then echo; fi; done
+
+# Test true color (24-bit)
 printf "\x1b[38;2;255;100;0mTRUECOLOR\x1b[0m\n"
 ```
 
 **Solution:**
 ```bash
-# Set TERM variable
-export TERM=xterm-256color
+# The TUI sets TERM internally based on capabilities
+# You generally don't need to set TERM manually
 
-# Or for true color
-export TERM=xterm-256color
+# Try different themes
+par-term-emu-tui-rust --theme dark-background
+par-term-emu-tui-rust --theme solarized-dark
+par-term-emu-tui-rust --theme high-contrast
 
-# Add to shell profile
-echo 'export TERM=xterm-256color' >> ~/.bashrc
+# List available themes
+par-term-emu-tui-rust --list-themes
+
+# Set theme in config
+# Edit ~/.config/par-term-emu-tui-rust/config.yaml
+theme: "dark-background"
+
+# Adjust minimum contrast (0.0-1.0)
+minimum_contrast: 0.5  # Default, like iTerm2
+minimum_contrast: 0.0  # Disabled
+minimum_contrast: 1.0  # Maximum contrast
 ```
 
 ### Text Rendering Issues
@@ -312,11 +324,16 @@ par-term-emu-tui-rust
 **Solution:**
 ```yaml
 # In config.yaml - reduce scrollback
-scrollback_lines: 1000  # Reduce from 10000
+scrollback_lines: 1000  # Default is 10000
 
-# Or disable unlimited scrollback
-scrollback_lines: 5000
-max_scrollback_lines: 10000
+# Unlimited scrollback (up to safety limit)
+scrollback_lines: 0
+max_scrollback_lines: 100000  # Safety limit when unlimited
+
+# Recommended values
+scrollback_lines: 5000   # Good balance
+scrollback_lines: 10000  # Default
+scrollback_lines: 50000  # Heavy users
 ```
 
 ### High CPU Usage
@@ -327,18 +344,27 @@ max_scrollback_lines: 10000
 ```bash
 # Monitor CPU usage
 top -p $(pgrep -f par-term-emu-tui-rust)
+
+# Check if rapid screen updates are occurring
+# Common causes:
+# - Applications with frequent updates (htop, btop, etc.)
+# - Infinite loops printing to stdout
+# - Cursor blink animation
 ```
 
 **Solutions:**
 ```yaml
-# Disable cursor blinking
+# Disable cursor blinking (reduces 60Hz timer)
 cursor_blink_enabled: false
 
-# Reduce scrollback
+# Reduce scrollback (less memory to manage)
 scrollback_lines: 1000
 
-# Disable mouse tracking in apps
-# vim: :set mouse=
+# Reduce mouse wheel scroll speed
+mouse_wheel_scroll_lines: 1  # Default is 3
+
+# Note: Polling interval is optimized at 16ms (~60Hz)
+# This is needed for responsive updates and smooth rendering
 ```
 
 ### Memory Issues
@@ -365,7 +391,9 @@ exit_on_shell_exit: true
 
 **macOS:**
 ```bash
+# Uses pbcopy/pbpaste (built-in)
 # No additional dependencies needed
+
 # Verify clipboard access
 echo "test" | pbcopy
 pbpaste
@@ -373,23 +401,47 @@ pbpaste
 
 **Linux:**
 ```bash
-# Install xclip
+# Requires xclip or xsel for clipboard operations
+# Install xclip (recommended)
 sudo apt-get install xclip  # Debian/Ubuntu
 sudo dnf install xclip      # Fedora
 sudo pacman -S xclip        # Arch
 
+# Or install xsel as alternative
+sudo apt-get install xsel   # Debian/Ubuntu
+
 # Test clipboard
 echo "test" | xclip -selection clipboard
 xclip -selection clipboard -o
+
+# Test PRIMARY selection (for middle-click paste)
+echo "test" | xclip -selection primary
+xclip -selection primary -o
+
+# For Wayland users
+sudo apt-get install wl-clipboard
 ```
 
 **Windows:**
 ```powershell
+# Uses win32clipboard (built-in)
 # Clipboard should work by default
+
 # Verify PowerShell clipboard access
 "test" | Set-Clipboard
 Get-Clipboard
 ```
+
+**Notes:**
+- Uses pyperclip for cross-platform clipboard support
+- On Linux, also copies to PRIMARY selection for middle-click paste
+- Middle-click paste works with PRIMARY selection on Linux (requires xclip/xsel)
+- Keyboard shortcuts:
+  - Ctrl+Shift+C / Cmd+C: Copy selection
+  - Ctrl+Shift+V / Cmd+V: Paste from clipboard
+  - Ctrl+C (with selection): Copy selection
+  - Ctrl+C (no selection): Send SIGINT to PTY
+  - Middle-click: Paste PRIMARY selection (Linux)
 
 ### Screenshots Not Saving
 
@@ -397,7 +449,10 @@ Get-Clipboard
 
 **Diagnosis:**
 ```bash
-# Check screenshot directory
+# Check default screenshot directory
+# Priority: config > OSC 7 CWD > XDG_PICTURES_DIR/Screenshots > ~/Pictures/Screenshots > ~
+
+# Check if default directory exists
 ls -la ~/Pictures/Screenshots
 
 # Check permissions
@@ -407,14 +462,24 @@ rm ~/Pictures/Screenshots/test.txt
 
 **Solution:**
 ```bash
-# Create directory
+# Create default directory
 mkdir -p ~/Pictures/Screenshots
 
-# Set in config
-echo "screenshot_directory: ~/Pictures/Screenshots" >> ~/.config/par-term-emu-tui-rust/config.yaml
+# Or set custom directory in config
+# Edit ~/.config/par-term-emu-tui-rust/config.yaml
+screenshot_directory: ~/my-screenshots
 
 # Test screenshot
 par-term-emu-tui-rust --screenshot 2 --auto-quit 4
+
+# Check available formats
+# Supported: png (default), jpeg, bmp, svg, html
+# Set in config.yaml:
+screenshot_format: png
+
+# Auto-open after capture
+# Set in config.yaml:
+open_screenshot_after_capture: true
 ```
 
 ### Shell Integration Not Working
@@ -445,25 +510,72 @@ echo 'source ~/.config/par-term-emu-tui-rust/shell-integration/zsh_integration.s
 exec $SHELL
 ```
 
+### Keyboard Shows Escape Codes After TUI Apps
+
+**Problem:** After exiting nvim, htop, or other TUI apps, keyboard input appears as codes like "8u 5u" or "105;5u"
+
+**Status:** **FIXED** automatically as of v0.4.0
+
+**How it's fixed:**
+- Terminal core automatically resets keyboard protocol state when:
+  - TUI apps exit alternate screen mode
+  - Full terminal reset occurs
+- No manual intervention needed
+
+**If you still see this:**
+1. Verify you're running v0.4.0 or later: `par-term-emu-tui-rust --version`
+2. Try Ctrl+L to force screen refresh
+3. As a workaround, type: `reset` and press Enter
+
+**Background:**
+Some TUI applications enable KITTY keyboard protocol for enhanced input but fail to disable it when exiting (due to crashes or improper cleanup). The terminal emulator now automatically cleans up this state to prevent corruption.
+
+**Related:**
+- See [KEYBOARD_PROTOCOL.md](KEYBOARD_PROTOCOL.md) for more details about KITTY keyboard protocol
+- This was a common issue with applications that crash or don't handle signals properly
+
 ### Hyperlinks Not Clickable
 
 **Problem:** URLs don't open when clicked
 
 **Diagnosis:**
 ```yaml
-# Check config
-clickable_urls: true  # Should be true
-url_modifier: "none"  # Or required modifier key
+# Check config (in ~/.config/par-term-emu-tui-rust/config.yaml)
+clickable_urls: true  # Must be true to enable URL clicking
+url_modifier: "ctrl"  # Default requires Ctrl+Click
+allowed_url_schemes:  # Only these schemes are allowed
+  - http
+  - https
+  - ftp
+  - ftps
+  - file
+  - mailto
+warn_on_unknown_url_scheme: true  # Warn when blocking URLs
 ```
 
 **Solution:**
 ```bash
 # Test URL detection
+# OSC 8 hyperlinks (explicit)
 echo -e '\e]8;;https://example.com\e\\Click me\e]8;;\e\\'
+
+# Plain text URLs (auto-detected)
 echo "https://github.com"
 
 # Check modifier key requirement
-# If url_modifier: "ctrl", must Ctrl+Click
+# Default: Ctrl+Click
+# Change in config.yaml:
+url_modifier: "none"   # No modifier required
+url_modifier: "ctrl"   # Ctrl+Click (default)
+url_modifier: "shift"  # Shift+Click
+url_modifier: "alt"    # Alt+Click
+
+# Allow additional URL schemes
+allowed_url_schemes:
+  - http
+  - https
+  - ssh
+  - vscode
 ```
 
 ### Mouse Selection Not Working
@@ -471,44 +583,68 @@ echo "https://github.com"
 **Problem:** Can't select text with mouse
 
 **Diagnosis:**
-- Check if application has enabled mouse tracking
+- Check if application has enabled mouse tracking (mouse events sent to app)
+- When mouse tracking is on, terminal intercepts mouse events
 - Test in different applications
 
 **Solution:**
 ```bash
-# For selection when mouse tracking enabled, use Shift
-# Shift + Click & Drag
+# When mouse tracking is enabled, use Shift+Click to select
+# Shift + Click & Drag (bypasses mouse tracking)
 
-# Disable mouse tracking in vim
+# Double-click to select word
+# Triple-click to select line
+
+# Disable mouse tracking in applications:
+
+# Vim/Neovim
 :set mouse=
 
-# Disable mouse tracking in tmux
+# Tmux
 tmux set -g mouse off
+
+# Htop
+# Press F10 to open settings, disable mouse
+
+# Configure word selection boundaries
+# In config.yaml:
+word_characters: "/-+\\~_."  # Default word boundary chars
+
+# Configure selection behavior
+auto_copy_selection: true           # Auto-copy on selection (default)
+keep_selection_after_copy: true     # Keep selection visible (like iTerm2)
+copy_trailing_newline: false        # Include \n when copying lines
 ```
 
 ## Platform-Specific Issues
 
 ### macOS Issues
 
-**Problem:** Screenshot shortcut conflicts
+**Problem:** Screenshot shortcut conflicts with system shortcuts
 
 **Solution:**
 ```
-System Settings → Keyboard → Keyboard Shortcuts
-Disable conflicting shortcuts
+System Settings → Keyboard → Keyboard Shortcuts → Screenshots
+Disable conflicting shortcuts (e.g., Cmd+Shift+S)
+
+# Terminal shortcuts
+Ctrl+Shift+S - Screenshot
+Ctrl+Shift+C - Copy
+Ctrl+Shift+V - Paste
+Cmd+C/V also work on macOS
 ```
 
-**Problem:** Font not rendering
+**Problem:** Font not rendering properly
 
 **Solution:**
 ```bash
-# Install Hack font
+# Install Hack font (recommended monospace font)
 par-term-emu-tui-rust install font
 
-# Verify font
-fc-list | grep Hack
+# Font is installed to:
+# ~/Library/Fonts/Hack-Regular.ttf (and variants)
 
-# Restart terminal app
+# Restart terminal emulator to pick up new fonts
 ```
 
 ### Linux Issues
@@ -517,22 +653,40 @@ fc-list | grep Hack
 
 **Solution:**
 ```bash
-# Install xclip
-sudo apt-get install xclip
+# Install xclip (required for clipboard operations)
+sudo apt-get install xclip   # Debian/Ubuntu
+sudo dnf install xclip       # Fedora
+sudo pacman -S xclip         # Arch
 
-# For Wayland
+# For Wayland (alternative to X11)
 sudo apt-get install wl-clipboard
+
+# Verify clipboard tools
+which xclip
+which xsel
+
+# Test clipboard
+echo "test" | xclip -selection clipboard
+xclip -selection clipboard -o
+
+# Test PRIMARY selection (middle-click paste)
+echo "test" | xclip -selection primary
+xclip -selection primary -o
 ```
 
-**Problem:** Permission denied for terminfo
+**Problem:** Permission denied for terminfo installation
 
 **Solution:**
 ```bash
-# User install (no sudo)
+# User install (no sudo, installs to ~/.terminfo)
 par-term-emu-tui-rust install terminfo
 
-# System install (with sudo)
+# System-wide install (requires sudo, installs to /usr/share/terminfo)
 sudo par-term-emu-tui-rust install terminfo --system
+
+# Verify installation
+infocmp par-term
+toe | grep par-term
 ```
 
 ### Windows Issues
@@ -757,11 +911,26 @@ cat ~/.config/par-term-emu-tui-rust/config.yaml
 - Check [Debug FAQ](DEBUG.md#faq) for debugging questions
 - See examples in README
 
+## Quick Reference: Common Issues
+
+| Issue | Quick Fix |
+|-------|-----------|
+| Clipboard not working (Linux) | `sudo apt-get install xclip` |
+| URLs not clickable | Set `url_modifier: "none"` in config.yaml |
+| Colors wrong | Check `theme` setting in config, try `--theme dark-background` |
+| Mouse selection not working | Use Shift+Click when mouse tracking is enabled |
+| Config file errors | Use interactive recovery or `--init-config` |
+| Screenshot directory missing | Creates in ~/Pictures/Screenshots automatically |
+| Shell integration not working | Run `par-term-emu-tui-rust install shell-integration` |
+| Keyboard shows escape codes | Fixed in v0.4.0 - automatic reset on app exit |
+| TUI crashes on startup | Check debug logs: `par-term-emu-tui-rust --debug` |
+
 ## Related Documentation
 
 - [Quick Start Guide](QUICK_START.md) - Get started quickly
-- [Installation Guide](INSTALLATION.md) - Installation help
 - [Configuration Reference](CONFIG_REFERENCE.md) - All settings
 - [Debug Guide](DEBUG.md) - Advanced debugging
 - [Features](FEATURES.md) - Complete feature list
+- [Key Bindings](KEY_BINDINGS.md) - Keyboard shortcuts
+- [Keyboard Protocol](KEYBOARD_PROTOCOL.md) - KITTY protocol details
 - [Architecture](ARCHITECTURE.md) - System design and development guide

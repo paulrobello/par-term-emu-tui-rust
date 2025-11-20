@@ -9,6 +9,7 @@ Complete reference for keyboard shortcuts and mouse interactions in Par Term Emu
 - [Scrollback Navigation](#scrollback-navigation)
 - [Clipboard Operations](#clipboard-operations)
 - [Special Keys](#special-keys)
+- [KITTY Keyboard Protocol](#kitty-keyboard-protocol)
 - [Application-Specific Bindings](#application-specific-bindings)
 - [Customization](#customization)
 - [Related Documentation](#related-documentation)
@@ -21,13 +22,16 @@ Complete reference for keyboard shortcuts and mouse interactions in Par Term Emu
 |----------|--------|-------------|
 | **Ctrl+Shift+Q** | Quit application | Exit the TUI immediately |
 | **Ctrl+Shift+S** | Take screenshot | Capture current terminal view |
+| **Ctrl+Shift+R** | Toggle recording | Start/stop terminal session recording |
 | **Ctrl+Shift+C** | Copy selection | Copy selected text to clipboard |
 | **Ctrl+C** | Smart copy | Copy if text is selected, otherwise send SIGINT |
 | **Cmd+C** (macOS) | Copy selection | Copy selected text to clipboard |
 | **Ctrl+Shift+V** | Paste | Paste clipboard content to terminal |
 | **Ctrl+V** | Paste | Paste clipboard content to terminal |
 | **Cmd+V** (macOS) | Paste | Paste clipboard content to terminal |
-| **Alt+Ctrl+Shift+C** | Edit config | Open config file editor dialog |
+| **Alt+Ctrl+Shift+C** | Edit config | Open config editor dialog |
+| **Escape** (in config) | Cancel | Close config editor without saving |
+| **Ctrl+S** (in config) | Save config | Save changes in config editor |
 
 ### Navigation Shortcuts
 
@@ -206,7 +210,6 @@ max_scrollback_lines: 100000    # Safety limit for unlimited
 | **Keyboard paste** | Ctrl+Shift+V, Ctrl+V | Paste clipboard content |
 | **macOS paste** | Cmd+V | Paste clipboard content (macOS) |
 | **Middle click** | Middle button | Paste (PRIMARY on Linux) |
-| **Application paste** | Shift+Insert | Forwarded to application |
 
 ### Clipboard Integration
 
@@ -224,13 +227,34 @@ paste_chunk_delay_ms: 10      # Delay between chunks
 
 ## Special Keys
 
+### Basic Keys
+
+| Key | Sent As | Description |
+|-----|---------|-------------|
+| **Enter** | `\r` (0x0D) | Carriage return |
+| **Tab** | `\t` (0x09) | Tab character |
+| **Backspace** | `DEL` (0x7F) | Delete character |
+| **Escape** | `ESC` (0x1B) | Escape character |
+| **Space** | ` ` (0x20) | Space character |
+
 ### Function Keys
 
 | Key | Sent As | Description |
 |-----|---------|-------------|
-| **F1-F12** | `ESC O P` - `ESC O [` | Function key sequences |
-| **Shift+F1-F12** | Modified sequences | Shifted function keys |
-| **Ctrl+F1-F12** | Modified sequences | Control function keys |
+| **F1** | `ESC O P` | Function key 1 |
+| **F2** | `ESC O Q` | Function key 2 |
+| **F3** | `ESC O R` | Function key 3 |
+| **F4** | `ESC O S` | Function key 4 |
+| **F5** | `ESC [ 15 ~` | Function key 5 |
+| **F6** | `ESC [ 17 ~` | Function key 6 |
+| **F7** | `ESC [ 18 ~` | Function key 7 |
+| **F8** | `ESC [ 19 ~` | Function key 8 |
+| **F9** | `ESC [ 20 ~` | Function key 9 |
+| **F10** | `ESC [ 21 ~` | Function key 10 |
+| **F11** | `ESC [ 23 ~` | Function key 11 |
+| **F12** | `ESC [ 24 ~` | Function key 12 |
+
+**Note:** Modifier keys (Shift, Ctrl, Alt) with function keys are handled by the KITTY keyboard protocol when enabled.
 
 ### Navigation Keys
 
@@ -256,12 +280,78 @@ paste_chunk_delay_ms: 10      # Delay between chunks
 
 | Combination | Sent As | Common Use |
 |-------------|---------|------------|
-| **Ctrl+C** | `^C` (0x03) | Interrupt process |
+| **Ctrl+C** | `^C` (0x03) | Interrupt process (if no text selected) |
 | **Ctrl+D** | `^D` (0x04) | EOF / Exit |
 | **Ctrl+Z** | `^Z` (0x1A) | Suspend process |
 | **Ctrl+L** | `^L` (0x0C) | Clear screen |
 | **Ctrl+W** | `^W` (0x17) | Delete word |
 | **Ctrl+U** | `^U` (0x15) | Delete line |
+| **Ctrl+Space** | `NUL` (0x00) | Same as Ctrl+@ |
+| **Ctrl+[** | `ESC` (0x1B) | Escape |
+| **Ctrl+\\** | `FS` (0x1C) | SIGQUIT signal |
+| **Ctrl+]** | `GS` (0x1D) | - |
+| **Ctrl+^** or **Ctrl+6** | `RS` (0x1E) | - |
+| **Ctrl+_** or **Ctrl+-** | `US` (0x1F) | Undo in some editors |
+
+## KITTY Keyboard Protocol
+
+The terminal emulator supports the KITTY keyboard protocol for enhanced key handling with full modifier support. This protocol provides better disambiguation between key combinations and supports extended key codes.
+
+### Enabling KITTY Protocol
+
+The protocol can be enabled in three ways:
+
+1. **Manual Configuration:**
+```yaml
+keyboard_protocol_enabled: true
+keyboard_protocol_flags: 15  # Enable all features (default)
+```
+
+2. **Auto-Detection (Recommended):**
+```yaml
+keyboard_protocol_auto_detect: true
+```
+When enabled, the protocol automatically activates when embedded applications (like vim, tmux) request it.
+
+3. **Command-Line Override:**
+```bash
+par-term-emu-tui-rust --keyboard-protocol
+par-term-emu-tui-rust --keyboard-protocol-flags 15
+```
+
+### Protocol Flags
+
+The `keyboard_protocol_flags` value is a bitmask combining:
+- **1**: Disambiguate escape codes
+- **2**: Report event types
+- **4**: Report alternate keys
+- **8**: Report all keys as escape codes
+- **16**: Report associated text
+
+Default: `15` (all features enabled)
+
+### Key Encoding
+
+When KITTY protocol is active, keys are sent as:
+- Simple keys: `ESC[{codepoint}u`
+- With modifiers: `ESC[{codepoint};{modifiers+1}u`
+
+**Modifier encoding:**
+- Shift: 1
+- Alt: 2
+- Ctrl: 4
+- Super: 8
+- Hyper: 16
+- Meta: 32
+
+**Examples:**
+- `a` → `ESC[97u`
+- `Ctrl+A` → `ESC[97;5u` (modifiers=4, 4+1=5)
+- `Ctrl+Shift+A` → `ESC[65;6u` (modifiers=5, 5+1=6)
+- `Tab` → `ESC[9u`
+- `Ctrl+I` → `ESC[105;5u` (different from Tab!)
+
+This allows applications to distinguish between Tab and Ctrl+I, which produce the same escape sequence in traditional terminal emulation.
 
 ## Application-Specific Bindings
 

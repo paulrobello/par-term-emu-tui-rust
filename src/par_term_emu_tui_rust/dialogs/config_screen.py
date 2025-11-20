@@ -301,6 +301,12 @@ class ConfigScreen(ModalScreen[bool]):
                     "Minimum contrast adjustment for live display (0.0-1.0)",
                     input_type="number",
                 )
+                yield from self._create_input_row(
+                    "faint_text_alpha",
+                    "Faint text alpha:",
+                    "Alpha multiplier for dim text (0.0-1.0, default 0.5)",
+                    input_type="number",
+                )
 
             # Hyperlinks Section
             with Container(classes="config_section"):
@@ -325,6 +331,12 @@ class ConfigScreen(ModalScreen[bool]):
                     "Link color (R,G,B):",
                     "RGB color tuple for hyperlinks (e.g., 100,150,255)",
                     input_type="color",
+                )
+                yield from self._create_input_row(
+                    "allowed_url_schemes",
+                    "Allowed URL schemes:",
+                    "Comma-separated list of URL schemes to allow (e.g., http, https, ftp)",
+                    input_type="list",
                 )
                 yield from self._create_checkbox_row(
                     "warn_on_unknown_url_scheme",
@@ -359,11 +371,47 @@ class ConfigScreen(ModalScreen[bool]):
                     "Screenshot minimum contrast:",
                     "Minimum contrast adjustment for screenshots (0.0-1.0)",
                     input_type="number",
+                    allow_empty=True,
                 )
                 yield from self._create_checkbox_row(
                     "open_screenshot_after_capture",
                     "Open screenshot after capture:",
                     "Automatically open screenshot with default viewer",
+                )
+
+            # Recording Section
+            with Container(classes="config_section"):
+                yield Label("Recording", classes="section_title")
+
+                yield from self._create_input_row(
+                    "recording_directory",
+                    "Recording directory:",
+                    "Directory to save recordings (empty = auto-detect)",
+                    allow_empty=True,
+                )
+                yield from self._create_select_row(
+                    "recording_format",
+                    "Recording format:",
+                    "File format for terminal recordings",
+                    [
+                        ("Asciicast", "asciicast"),
+                        ("JSON", "json"),
+                    ],
+                )
+                yield from self._create_input_row(
+                    "recording_title_template",
+                    "Recording title template:",
+                    "Template for recording title (use {timestamp} for timestamp)",
+                )
+                yield from self._create_checkbox_row(
+                    "recording_auto_export_on_stop",
+                    "Auto-export on stop:",
+                    "Automatically export recording when stopped",
+                )
+                yield from self._create_checkbox_row(
+                    "open_recording_after_export",
+                    "Open recording after export:",
+                    "Automatically open recording with default application",
                 )
 
             # Notifications Section
@@ -377,6 +425,66 @@ class ConfigScreen(ModalScreen[bool]):
                     "notification_timeout",
                     "Notification timeout:",
                     "Duration in seconds to display notifications",
+                    input_type="integer",
+                )
+                yield from self._create_checkbox_row(
+                    "notification_bell_desktop",
+                    "Desktop bell alerts:",
+                    "Forward BEL events to desktop notifications",
+                )
+                yield from self._create_input_row(
+                    "notification_bell_sound",
+                    "Bell sound volume (0-100):",
+                    "Volume for backend sound alerts (0 disables)",
+                    input_type="integer",
+                )
+                yield from self._create_checkbox_row(
+                    "notification_bell_visual",
+                    "Backend visual bell:",
+                    "Enable backend visual flash overlay",
+                )
+                yield from self._create_checkbox_row(
+                    "notification_activity_enabled",
+                    "Activity notifications:",
+                    "Notify when activity resumes after inactivity",
+                )
+                yield from self._create_input_row(
+                    "notification_activity_threshold",
+                    "Activity threshold (s):",
+                    "Seconds of inactivity before activity alert",
+                    input_type="integer",
+                )
+                yield from self._create_checkbox_row(
+                    "notification_silence_enabled",
+                    "Silence notifications:",
+                    "Notify after prolonged silence",
+                )
+                yield from self._create_input_row(
+                    "notification_silence_threshold",
+                    "Silence threshold (s):",
+                    "Seconds of silence before alert",
+                    input_type="integer",
+                )
+                yield from self._create_input_row(
+                    "notification_max_buffer",
+                    "Notification buffer size:",
+                    "Maximum OSC 9/777 entries retained by backend",
+                    input_type="integer",
+                )
+
+            with Container(classes="config_section"):
+                yield Label("Clipboard Sync", classes="section_title")
+
+                yield from self._create_input_row(
+                    "clipboard_max_sync_events",
+                    "Max sync events:",
+                    "Maximum clipboard sync events retained for diagnostics",
+                    input_type="integer",
+                )
+                yield from self._create_input_row(
+                    "clipboard_max_event_bytes",
+                    "Max event bytes:",
+                    "Maximum bytes stored per clipboard sync event",
                     input_type="integer",
                 )
 
@@ -481,6 +589,9 @@ class ConfigScreen(ModalScreen[bool]):
         elif input_type == "color":
             # Convert tuple to comma-separated string
             value_str = ",".join(str(v) for v in value)
+        elif input_type == "list":
+            # Convert list to comma-separated string
+            value_str = ", ".join(str(v) for v in value) if isinstance(value, list) else str(value)
         else:
             value_str = str(value)
 
@@ -642,9 +753,14 @@ class ConfigScreen(ModalScreen[bool]):
                             else:
                                 converted_value = field.default
                         # Handle list[str]
-                        elif "list" in field_type_str:
-                            # Don't update allowed_url_schemes from widgets (too complex)
-                            continue
+                        elif "list" in field_type_str and "str" in field_type_str:
+                            if value_str:
+                                # Split by comma and strip whitespace/quotes from each item
+                                parts = [p.strip().strip('"').strip("'") for p in value_str.split(",")]
+                                # Filter out empty strings
+                                converted_value = [p for p in parts if p]
+                            else:
+                                converted_value = field.default if field.default is not None else []
                         # Handle integer types (including int and any union with int)
                         elif field_type is int or (
                             hasattr(field_type, "__origin__") and int in getattr(field_type, "__args__", ())

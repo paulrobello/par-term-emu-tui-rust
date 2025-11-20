@@ -135,12 +135,12 @@ PTY + Shell Process
 - `theme_manager.py`: Apply themes to terminal
 
 **Configuration (`config.py`):**
-- TuiConfig dataclass with 30+ configuration options
+- TuiConfig dataclass with 57 configuration options
 - XDG-compliant storage: `~/.config/par-term-emu-tui-rust/config.yaml`
 - Loads with defaults, saves user preferences
 
 **Themes (`themes.py`):**
-- 11 built-in themes (dark-background, solarized-dark, tango-dark, etc.)
+- 12 built-in themes (dark-background, solarized-dark, tango-dark, etc.)
 - Custom themes in `~/.config/par-term-emu-tui-rust/themes/`
 - Theme dataclass: palette (16 colors), bg, fg, cursor, selection, links, etc.
 

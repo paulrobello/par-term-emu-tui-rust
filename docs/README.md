@@ -47,7 +47,7 @@ Detailed reference for all features and configuration:
    - Clipboard operations
    - Special keys
 
-3. **[Configuration Reference](CONFIG_REFERENCE.md)** - All 40 configuration options
+3. **[Configuration Reference](CONFIG_REFERENCE.md)** - All 57 configuration options
    - Selection & clipboard
    - Scrollback & cursor
    - Paste enhancement
@@ -56,6 +56,7 @@ Detailed reference for all features and configuration:
    - Theme & colors
    - Notifications
    - Screenshots
+   - Recording
    - Shell behavior
    - Keyboard protocol
 

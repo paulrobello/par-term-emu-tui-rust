@@ -17,10 +17,10 @@ Get started with Par Term Emu TUI Rust in under 5 minutes. This guide covers ins
 
 Before installing Par Term Emu TUI Rust, ensure you have:
 
-- **Python 3.12 or higher** - Check with `python --version` (development requires Python 3.14)
+- **Python 3.12 or higher** - Check with `python --version`
 - **uv package manager** - Install from [astral.sh/uv](https://astral.sh/uv)
 - **Terminal with true color support** - Most modern terminals (iTerm2, Alacritty, Wezterm, etc.)
-- **par-term-emu-core-rust** - Local Rust dependency (located at `../par-term-emu-core-rust`)
+- **par-term-emu-core-rust** - Rust terminal emulation backend (automatically installed as local dependency)
 
 ## Installation
 
@@ -185,14 +185,14 @@ make themes
 
 Available themes: Dark Background, High Contrast, iTerm2 Dark, Light Background, Pastel (Dark Background), Regular, Smoooooth, Solarized, Solarized Dark, Solarized Light, Tango Dark, Tango Light
 
-**Note:** Use exact theme names as shown by `--list-themes` (case-sensitive)
+> **📝 Note:** Theme names are case-sensitive. Use the exact names as shown by `--list-themes`.
 
 ### Take Screenshots
 
 **Manual screenshot:**
 - Press **Ctrl+Shift+S** during session
-- Files saved to configured directory or current working directory
-- Timestamped filename: `terminal_screenshot_20251116_153045.png`
+- Files saved to screenshot directory (configurable) or auto-detected location
+- Timestamped filename: `terminal_screenshot_YYYYMMDD_HHMMSS.png`
 
 **Automated screenshot:**
 ```bash
@@ -206,7 +206,7 @@ par-term-emu-tui-rust --screenshot 3 --auto-quit 5
 screenshot_format: "svg"  # Options: png, jpeg, bmp, svg, html
 ```
 
-**Note:** Screenshots are saved with timestamped filenames in the configured directory
+> **📝 Note:** Screenshots are saved with timestamped filenames. The directory location can be configured with `screenshot_directory` in config.yaml, or will auto-detect the best location (e.g., `~/Pictures/Screenshots` on macOS, `~/Pictures` on Linux, or current working directory as fallback).
 
 ### Custom Shell
 
@@ -226,17 +226,20 @@ par-term-emu-tui-rust --command "neofetch"
 ### Enable Debug Logging
 
 ```bash
-# Enable debug logging to timestamped file
+# Enable Python TUI debug logging to timestamped file
 par-term-emu-tui-rust --debug
-
 # Logs location: debug_logs/terminal_debug_YYYYMMDD_HHMMSS.log
 
-# Or use make commands for different debug levels
-make debug           # DEBUG_LEVEL=2 (info)
-make debug-verbose   # DEBUG_LEVEL=3 (debug)
+# Or use make commands for comprehensive debugging
+make debug           # DEBUG_LEVEL=2 (info) + Python logs
+make debug-verbose   # DEBUG_LEVEL=3 (debug) + Python logs
 make debug-trace     # DEBUG_LEVEL=4 (trace - HUGE logs!)
-make debug-tail      # Tail logs in real-time
+make debug-tail      # Tail Rust + Python logs in real-time
+make debug-view      # View logs with less
+make debug-clear     # Clear all debug logs
 ```
+
+> **📝 Note:** Rust backend debug logs are written to `/tmp/par_term_emu_core_rust_debug_rust.log` and `/tmp/par_term_emu_core_rust_debug_python.log` when using `make debug*` commands.
 
 ## Next Steps
 
@@ -248,43 +251,57 @@ Explore advanced features:
 - **Notifications** - Terminal application notifications (OSC 9/777)
 - **Cursor styles** - Blinking and steady cursor modes
 - **Mouse support** - Full mouse tracking for applications
+- **KITTY Keyboard Protocol** - Enhanced keyboard handling with auto-detection
+- **Color System** - Bold brightening and automatic contrast adjustment
 
-See [README.md](../README.md) for comprehensive feature documentation.
+See [Features](FEATURES.md) and [README](../README.md) for comprehensive feature documentation.
 
 ### Customize Your Setup
 
 **Create custom theme:**
 ```bash
-# Export current theme to ~/.config/par-term-emu-tui-rust/themes/
+# Export current theme to custom file
 par-term-emu-tui-rust --export-theme my-theme
+# Creates: ~/.config/par-term-emu-tui-rust/themes/my-theme.yaml
 
-# This creates ~/.config/par-term-emu-tui-rust/themes/my-theme.yaml
 # Edit the YAML file to customize colors
+# See THEMES.md for theme structure
 
 # Apply your custom theme from file
 par-term-emu-tui-rust --apply-theme-from ~/.config/par-term-emu-tui-rust/themes/my-theme.yaml
 ```
 
+> **✅ Tip:** See [Themes Guide](THEMES.md) for detailed theme customization instructions.
+
 **Configure shell integration:**
 ```bash
-# Install for your shell
+# Install for current shell (auto-detected)
 par-term-emu-tui-rust install shell-integration
+
+# Or install for all available shells
+par-term-emu-tui-rust install shell-integration --all
+
+# Or install for specific shell
+par-term-emu-tui-rust install shell-integration zsh
 
 # Restart shell to activate
 exec $SHELL
 ```
 
 Shell integration provides:
-- Current directory in status bar
+- Current directory tracking (OSC 7)
 - Prompt navigation
 - Command status tracking
+
+> **📝 Note:** Shell integration files are installed to `~/.config/par-term-emu-tui-rust/shell-integration/` and must be sourced in your shell config.
 
 ### Extend the TUI
 
 For developers:
-- Review [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive system design
-- See [Contributing](../CONTRIBUTING.md) for development setup
-- Check [DEBUG.md](DEBUG.md) for debugging guidance
+- Review [ARCHITECTURE.md](ARCHITECTURE.md) - Comprehensive system design and implementation details
+- See [CONTRIBUTING.md](../CONTRIBUTING.md) - Development setup and contribution guidelines
+- Check [DEBUG.md](DEBUG.md) - Debugging tools and techniques
+- Read [CLAUDE.md](../CLAUDE.md) - AI assistant instructions for working with this codebase
 
 ## Troubleshooting
 
@@ -333,16 +350,18 @@ exec $SHELL
 
 ### Screenshots Failing
 
-**Install Hack font:**
+**Install Hack font for PNG/JPEG/BMP screenshots:**
 ```bash
 par-term-emu-tui-rust install font
 ```
 
+> **📝 Note:** SVG and HTML screenshot formats do not require font installation.
+
 **Check screenshot directory permissions:**
 ```bash
 # Verify write access to screenshot directory
-touch ~/Pictures/Screenshots/test.txt
-rm ~/Pictures/Screenshots/test.txt
+# Location depends on config and OS (e.g., ~/Pictures/Screenshots on macOS)
+touch ~/Pictures/Screenshots/test.txt && rm ~/Pictures/Screenshots/test.txt
 ```
 
 ### Performance Issues
@@ -350,28 +369,38 @@ rm ~/Pictures/Screenshots/test.txt
 **Reduce scrollback buffer:**
 ```yaml
 # In config.yaml
-scrollback_lines: 1000  # Reduce from 10000 (default)
+scrollback_lines: 1000  # Default is 10000
 ```
 
-**Disable cursor blinking:**
+**Cursor blinking is already disabled by default:**
 ```yaml
 # In config.yaml
-cursor_blink_enabled: false  # Already disabled by default
+cursor_blink_enabled: false  # Default setting
 ```
 
 **Adjust mouse wheel scroll speed:**
 ```yaml
 # In config.yaml
-mouse_wheel_scroll_lines: 1  # Reduce from 3 (default)
+mouse_wheel_scroll_lines: 1  # Default value
 ```
+
+> **✅ Tip:** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for more performance optimization tips.
 
 ## Related Documentation
 
-- [README](../README.md) - Complete feature documentation
+- [README](../README.md) - Complete project overview and feature documentation
+- [Installation Guide](INSTALLATION.md) - Detailed installation instructions
+- [Usage Guide](USAGE.md) - Command-line options and workflows
 - [Configuration Reference](CONFIG_REFERENCE.md) - All configuration options
-- [Architecture](ARCHITECTURE.md) - System design and implementation
 - [Features](FEATURES.md) - Comprehensive feature descriptions
-- [Debug Guide](DEBUG.md) - Debugging and development
+- [Key Bindings](KEY_BINDINGS.md) - Keyboard shortcuts and mouse actions
+- [Themes Guide](THEMES.md) - Theme system and customization
+- [Screenshots Guide](SCREENSHOTS.md) - Screenshot functionality
+- [KITTY Protocol](KEYBOARD_PROTOCOL.md) - Enhanced keyboard protocol
+- [Architecture](ARCHITECTURE.md) - System design and implementation
+- [Debug Guide](DEBUG.md) - Debugging tools and techniques
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
+- [Contributing](../CONTRIBUTING.md) - Development setup and guidelines
 - [Documentation Style Guide](DOCUMENTATION_STYLE_GUIDE.md) - Contributing to docs
 
 ## Summary

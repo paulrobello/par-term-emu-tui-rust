@@ -38,6 +38,14 @@ def test_config_save_and_load_round_trip(tmp_path: Path, monkeypatch: pytest.Mon
     assert loaded.scrollback_lines == 12345
 
 
+def test_config_defaults_match_iterm_preferences() -> None:
+    """Key color defaults (minimum_contrast disabled by default, faint_text_alpha at 50%)."""
+    cfg = TuiConfig()
+    assert cfg.minimum_contrast == 0.0  # Disabled by default
+    assert cfg.faint_text_alpha == 0.5  # Matches iTerm2 slider at 50%
+    assert cfg.screenshot_minimum_contrast is None
+
+
 @pytest.mark.parametrize(
     ("name_variant", "expected_key"),
     [

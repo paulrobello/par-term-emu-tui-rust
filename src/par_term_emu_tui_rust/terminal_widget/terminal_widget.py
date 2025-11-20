@@ -25,7 +25,15 @@ from par_term_emu_tui_rust.config import TuiConfig
 
 # Import managers and utilities
 from par_term_emu_tui_rust.terminal_widget import theme_manager
+from par_term_emu_tui_rust.terminal_widget.backend_controls import (
+    apply_clipboard_limits,
+    apply_notification_settings,
+    get_shell_stats_summary,
+    mark_terminal_activity,
+    run_activity_checks,
+)
 from par_term_emu_tui_rust.terminal_widget.clipboard import ClipboardManager
+from par_term_emu_tui_rust.terminal_widget.recording import RecordingManager
 from par_term_emu_tui_rust.terminal_widget.rendering import Renderer
 from par_term_emu_tui_rust.terminal_widget.screenshot import ScreenshotManager
 from par_term_emu_tui_rust.terminal_widget.selection import SelectionManager
@@ -94,6 +102,7 @@ class TerminalWidget(Widget, can_focus=True):
         ("ctrl+shift+c", "copy_selection", "Copy"),
         ("ctrl+shift+v", "paste_clipboard", "Paste"),
         ("ctrl+shift+s", "save_screenshot", "Screenshot"),
+        ("ctrl+shift+r", "toggle_recording", "Record"),
         ("ctrl+shift+pageup", "scroll_up", "Page Up"),
         ("ctrl+shift+pagedown", "scroll_down", "Page Down"),
         ("shift+home", "scroll_top", "Scroll Top"),
@@ -155,6 +164,8 @@ class TerminalWidget(Widget, can_focus=True):
         self.term.set_accept_osc7(self.config.accept_osc7)
         self.term.set_disable_insecure_sequences(self.config.disable_insecure_sequences)
         self.term.set_bold_brightening(self.config.bold_brightening)
+        apply_notification_settings(self.term, self.config)
+        apply_clipboard_limits(self.term, self.config)
         self.last_update_generation = 0
         self.render_generation = 0  # Generation snapshot for rendering (prevents stale rendering)
 
@@ -190,6 +201,7 @@ class TerminalWidget(Widget, can_focus=True):
         # Shell integration state tracking
         self._last_known_directory: str | None = None  # Track directory from OSC 7
         self._last_known_title: str = ""  # Track terminal title from OSC 0/1/2
+        self._last_stats_summary: str | None = None  # Track shell stats summary for status bar
 
         # Initialize managers
         self.selection = SelectionManager(
@@ -207,6 +219,11 @@ class TerminalWidget(Widget, can_focus=True):
             term=self.term,
             config=self.config,
             get_scroll_offset=lambda: self._scroll_offset,
+        )
+
+        self.recording = RecordingManager(
+            term=self.term,
+            config=self.config,
         )
 
         self.renderer = Renderer(
@@ -336,7 +353,14 @@ class TerminalWidget(Widget, can_focus=True):
                     shell_state = self.term.shell_integration_state()
                     if shell_state.cwd:
                         self._last_known_directory = shell_state.cwd
-                        self.post_message(messages.DirectoryChanged(directory=shell_state.cwd))
+                        stats_summary = get_shell_stats_summary(self.term)
+                        self._last_stats_summary = stats_summary
+                        self.post_message(
+                            messages.DirectoryChanged(
+                                directory=shell_state.cwd,
+                                stats_summary=stats_summary,
+                            ),
+                        )
                         debug_log("SHELL_INTEGRATION", f"Initial directory: {shell_state.cwd}")
                 except Exception as e:
                     debug_log("SHELL_INTEGRATION", f"Error getting initial directory: {e}")
@@ -408,6 +432,7 @@ class TerminalWidget(Widget, can_focus=True):
             self.term.write_str(self._shell_command)
             # Send Enter key to execute the command
             self.term.write_str("\r")
+            mark_terminal_activity(self.term)
             debug_log("LIFECYCLE", "command sent successfully")
 
     def _toggle_cursor_blink(self) -> None:
@@ -604,6 +629,7 @@ class TerminalWidget(Widget, can_focus=True):
         if self.term.has_updates_since(self.last_update_generation):
             # Check if alternate screen status changed
             is_alt_screen = self.term.is_alt_screen_active()
+            mark_terminal_activity(self.term)
 
             # Detect transition TO alternate screen
             if is_alt_screen and not self._was_alt_screen:
@@ -698,12 +724,33 @@ class TerminalWidget(Widget, can_focus=True):
                 current_dir = shell_state.cwd if shell_state.cwd else None
 
                 # If directory changed, post message to app
+                stats_summary = get_shell_stats_summary(self.term)
+                if stats_summary != self._last_stats_summary:
+                    self._last_stats_summary = stats_summary
+
                 if current_dir and current_dir != self._last_known_directory:
                     self._last_known_directory = current_dir
-                    self.post_message(messages.DirectoryChanged(directory=current_dir))
+                    self.post_message(
+                        messages.DirectoryChanged(
+                            directory=current_dir,
+                            stats_summary=self._last_stats_summary,
+                        ),
+                    )
                     debug_log("SHELL_INTEGRATION", f"Directory changed to: {current_dir}")
             except Exception as e:
                 debug_log("SHELL_INTEGRATION", f"Error checking directory: {e}")
+
+        # If stats changed but directory did not, still update status bar
+        stats_summary = get_shell_stats_summary(self.term)
+        if stats_summary != self._last_stats_summary:
+            self._last_stats_summary = stats_summary
+            if self._last_known_directory:
+                self.post_message(
+                    messages.DirectoryChanged(
+                        directory=self._last_known_directory,
+                        stats_summary=stats_summary,
+                    ),
+                )
 
         # Check for title changes (OSC 0/1/2)
         try:
@@ -731,6 +778,9 @@ class TerminalWidget(Widget, can_focus=True):
                     debug_log("BELL", f"Bell event detected, count={current_bell_count}")
             except Exception as e:
                 debug_log("BELL", f"Error checking bell: {e}")
+
+        # Allow backend to evaluate silence/activity triggers
+        run_activity_checks(self.term, self.config)
 
     def _do_refresh(self) -> None:
         """Execute the actual refresh after debounce delay."""
@@ -957,6 +1007,7 @@ class TerminalWidget(Widget, can_focus=True):
                 kitty_sequence = self._key_event_to_kitty_sequence(event)
                 if kitty_sequence:
                     self.term.write_str(kitty_sequence)
+                    mark_terminal_activity(self.term)
                     debug_log(
                         "KEYBOARD",
                         f"Sent KITTY protocol sequence for {key}: {kitty_sequence!r}",
@@ -1096,6 +1147,7 @@ class TerminalWidget(Widget, can_focus=True):
 
             if handled:
                 debug_trace("KEY", f"sent to terminal: {key}")
+                mark_terminal_activity(self.term)
         except Exception as e:
             self.log(f"Error handling key: {e}")
 
@@ -1172,6 +1224,7 @@ class TerminalWidget(Widget, can_focus=True):
                 f"Sending: mode={mouse_mode} button={button} pos=({col},{row}) pressed={pressed} seq={sequence!r}",
             )
             self.term.write_str(sequence)
+            mark_terminal_activity(self.term)
 
         except Exception as e:
             self.log(f"Error sending mouse event: {e}")
@@ -1352,6 +1405,7 @@ class TerminalWidget(Widget, can_focus=True):
             # Paste from PRIMARY selection
             debug_log("MOUSE", "Middle-click paste triggered")
             await self.clipboard.paste_from_primary()
+            mark_terminal_activity(self.term)
             event.stop()
             return
 
@@ -1557,6 +1611,7 @@ class TerminalWidget(Widget, can_focus=True):
                 focus_seq = self.term.get_focus_in_event()
                 if focus_seq:
                     self.term.write_str(focus_seq)
+                    mark_terminal_activity(self.term)
                     debug_log("FOCUS", f"sent focus in event: {focus_seq!r}")
             except Exception as e:
                 self.log(f"Error sending focus in event: {e}")
@@ -1579,6 +1634,7 @@ class TerminalWidget(Widget, can_focus=True):
                 focus_seq = self.term.get_focus_out_event()
                 if focus_seq:
                     self.term.write_str(focus_seq)
+                    mark_terminal_activity(self.term)
                     debug_log("FOCUS", f"sent focus out event: {focus_seq!r}")
             except Exception as e:
                 self.log(f"Error sending focus out event: {e}")
@@ -1635,6 +1691,7 @@ class TerminalWidget(Widget, can_focus=True):
             if message:
                 # Show message (could be warning or success message)
                 self.notify(message)
+            mark_terminal_activity(self.term)
         # Show error
         elif message:
             self.notify(message, severity="error")
@@ -1668,6 +1725,61 @@ class TerminalWidget(Widget, can_focus=True):
             self.notify(error, severity="error")
         else:
             self.notify("Failed to save screenshot", severity="error")
+
+    def action_toggle_recording(self) -> None:
+        """Toggle terminal session recording (start if stopped, stop if started).
+
+        When recording starts, displays a flash message and updates status indicator.
+        When recording stops, auto-exports to configured format if enabled, and optionally
+        opens the recording file with the default application.
+
+        Directory selection priority (when auto-export enabled):
+        1. Config recording_directory (if set)
+        2. Shell's current working directory (from OSC 7)
+        3. XDG_VIDEOS_DIR/Recordings or ~/Videos/Recordings
+        4. Home directory
+
+        Format options: asciicast (asciinema v2), json
+        """
+        is_now_recording, message, filepath = self.recording.toggle()
+
+        # Update header recording indicator
+        try:
+            from par_term_emu_tui_rust.widgets.terminal_header import TerminalHeader
+
+            header = self.app.query_one(TerminalHeader)
+            if is_now_recording:
+                header.show_recording()
+            else:
+                header.hide_recording()
+        except Exception as e:
+            debug_log("RECORDING", f"Failed to update header: {e}")
+
+        # Format message with filepath if available
+        display_message = message
+        if filepath and "Error:" not in message:
+            display_path = RecordingManager.format_path_for_display(filepath)
+            display_message = f"Recording saved: {display_path}"
+
+        # Determine message style
+        if "Error:" in message:
+            style = "error"
+        elif is_now_recording:
+            style = "success"
+        else:
+            style = "default"
+
+        # Post flash message
+        self.post_message(messages.Flash(display_message, style, 5.0))
+        debug_log("RECORDING", display_message)
+
+        # If recording was stopped and exported, open file if configured
+        if filepath and self.config and self.config.open_recording_after_export:
+            display_path = RecordingManager.format_path_for_display(filepath)
+            if open_with_default_app(filepath):
+                debug_log("RECORDING", f"Opened recording {display_path} with default app")
+            else:
+                debug_log("RECORDING", f"Failed to open recording {display_path}")
 
     def action_scroll_up(self) -> None:
         """Scroll up one page in scrollback."""

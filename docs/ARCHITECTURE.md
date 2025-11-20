@@ -133,7 +133,7 @@ The top-level Textual application that manages the overall UI structure and appl
 - Respects theme override from CLI (`--theme` flag)
 
 **Message Flow:**
-- Receives `DirectoryChanged` messages → updates StatusBar
+- Receives `DirectoryChanged` messages (directory + optional stats summary) → updates StatusBar
 - Receives `TitleChanged` messages → updates app sub_title
 - Receives `Flash` messages → displays via FlashLine widget
 
@@ -282,11 +282,11 @@ _get_cell_metrics()           # Get pixel metrics from environment
 
 **Configuration Integration:**
 
-The widget accepts a `TuiConfig` object and respects 39 configuration options including scrollback_lines, cursor settings, clipboard behavior, mouse handling, security options, theme selection, notifications, screenshots, URL handling, visual bell, keyboard protocol (KITTY), and search highlighting.
+The widget accepts a `TuiConfig` object and respects 57 configuration options including scrollback_lines, cursor settings, clipboard and clipboard-sync behavior, mouse handling, security options, theme selection, backend notification controls, screenshots, recording, URL handling, visual bell, keyboard protocol (KITTY), and search highlighting.
 
 **Message Production:**
 
-- Posts `DirectoryChanged(directory)` when OSC 7 cwd changes
+- Posts `DirectoryChanged(directory, stats_summary)` when OSC 7 cwd or shell stats change
 - Posts `TitleChanged(title)` when OSC 0/1/2 title changes
 - Posts `Flash(content, style, duration)` for notifications
 
@@ -558,7 +558,7 @@ Manages application configuration with YAML persistence and XDG directory compli
 ~/.config/par-term-emu-tui-rust/config.yaml
 ```
 
-**Configuration Options (39 total):**
+**Configuration Options (57 total):**
 
 **Selection & Clipboard:**
 - `auto_copy_selection` - Copy on selection complete (default: true)
@@ -611,10 +611,11 @@ Manages application configuration with YAML persistence and XDG directory compli
 
 **Theme & Appearance (continued):**
 - `bold_brightening` - Use bright ANSI colors (8-15) for bold text with normal colors (0-7) (default: false)
-- `minimum_contrast` - Minimum contrast adjustment for live terminal display, 0.0-1.0 (default: 0.0)
+- `minimum_contrast` - Minimum contrast adjustment for live terminal display, 0.0-1.0 (default: 0.5)
+- `faint_text_alpha` - Alpha multiplier for faint/dim text, 0.0-1.0 (default: 0.5)
 
 **Screenshots (continued):**
-- `screenshot_minimum_contrast` - Minimum contrast adjustment for screenshots, 0.0-1.0 (default: 0.0)
+- `screenshot_minimum_contrast` - Minimum contrast adjustment for screenshots, 0.0-1.0 (default: inherit `minimum_contrast`)
 
 **Search & Highlighting:**
 - `search_match_color` - RGB tuple for search match highlights (default: `(255, 255, 0)`)
@@ -675,12 +676,10 @@ class Flash(Message):
 
 @dataclass
 class DirectoryChanged(Message):
-    """Terminal directory changed via OSC 7.
+    """Terminal directory changed via OSC 7 (with optional stats summary)."""
 
-    Args:
-        directory: The new working directory path
-    """
     directory: str
+    stats_summary: str | None = None
 
 
 @dataclass
@@ -870,7 +869,7 @@ graph LR
     C --> D[par_term_emu parses]
     D --> E[Stores in<br/>shell_integration_state]
     E --> F[_poll_updates<br/>detects change]
-    F --> G[Posts DirectoryChanged<br/>message]
+    F --> G[Posts DirectoryChanged<br/>message<br/>dir and stats]
     G --> H[TerminalApp<br/>.on_directory_changed]
     H --> I[Updates<br/>StatusBar]
 
@@ -899,7 +898,7 @@ graph LR
 ```mermaid
 graph TB
     subgraph "TerminalWidget"
-        A[Detect OSC 7<br/>directory change] --> B[Post DirectoryChanged<br/>message]
+        A[Detect OSC 7<br/>directory/stats change] --> B[Post DirectoryChanged<br/>message]
         C[Detect OSC 0/1/2<br/>title change] --> D[Post TitleChanged<br/>message]
         E[Clipboard/Screenshot<br/>operation] --> F[Post Flash<br/>message]
     end
@@ -1209,8 +1208,8 @@ Then use: `par-term-emu-tui-rust --theme my-theme`
 1. Shell sends ESC ] 7 ; file://hostname/path ST
 2. `par_term_emu` parses and stores in `shell_integration_state()`
 3. `_poll_updates()` checks for change
-4. Posts `DirectoryChanged` message
-5. App updates StatusBar with directory
+4. Posts `DirectoryChanged` message (directory plus optional stats summary)
+5. App updates StatusBar with directory and shell stats summary
 
 **Title tracking (OSC 0/1/2):**
 1. App sends ESC ] 0/1/2 ; title ST

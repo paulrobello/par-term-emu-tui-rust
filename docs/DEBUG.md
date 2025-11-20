@@ -35,7 +35,7 @@ The debugging system provides extensive logging capabilities across Rust and Pyt
    - Controlled by `DEBUG_LEVEL` environment variable (0-4)
    - From par-term-emu-core-rust Rust backend
 
-2. **Python core debug logs**: `/tmp/par_term_emu_core_rust_debug_python.log`
+2. **Python core debug logs**: `/tmp/par_term_emu_debug_python.log`
    - Core Python bindings debug output
    - Controlled by `DEBUG_LEVEL` environment variable (0-4)
    - From par-term-emu-core-rust Python module
@@ -56,26 +56,26 @@ This three-layer separation makes it easier to identify whether issues originate
 ```bash
 # Set debug level (0-4) and run application with debug mode enabled
 export DEBUG_LEVEL=3
-python -m par_term_emu_tui_rust --debug
+uv run par-term-emu-tui-rust --debug
 
-# Or use Makefile shortcuts
+# Or use Makefile shortcuts (recommended)
 make debug          # DEBUG_LEVEL=2 (info)
 make debug-verbose  # DEBUG_LEVEL=3 (debug)
 make debug-trace    # DEBUG_LEVEL=4 (trace)
 
 # View debug output in real-time (all three log sources)
 tail -f /tmp/par_term_emu_core_rust_debug_rust.log \
-        /tmp/par_term_emu_core_rust_debug_python.log \
+        /tmp/par_term_emu_debug_python.log \
         debug_logs/terminal_debug_*.log
 
 # Or view individually
 tail -f /tmp/par_term_emu_core_rust_debug_rust.log    # Rust core only
-tail -f /tmp/par_term_emu_core_rust_debug_python.log  # Python core only
+tail -f /tmp/par_term_emu_debug_python.log  # Python core only
 tail -f debug_logs/terminal_debug_*.log                # Python TUI application only
 
 # Or after the fact
 less /tmp/par_term_emu_core_rust_debug_rust.log
-less /tmp/par_term_emu_core_rust_debug_python.log
+less /tmp/par_term_emu_debug_python.log
 less debug_logs/terminal_debug_*.log
 
 # Or use Makefile shortcuts
@@ -273,7 +273,7 @@ Based on the handoff.md, here's how to use the debug system to investigate:
 
 ```bash
 export DEBUG_LEVEL=2
-python -m par_term_emu_tui_rust
+uv run par-term-emu-tui-rust
 # Inside TUI, run: python -m textual
 # Wait for corruption to appear
 ```
@@ -289,7 +289,7 @@ This will show:
 
 ```bash
 export DEBUG_LEVEL=3
-python -m par_term_emu_tui_rust
+uv run par-term-emu-tui-rust
 # Reproduce the corruption
 ```
 
@@ -307,7 +307,7 @@ This adds:
 
 ```bash
 export DEBUG_LEVEL=4
-python -m par_term_emu_tui_rust
+uv run par-term-emu-tui-rust
 # Reproduce (will generate large log file)
 ```
 
@@ -323,7 +323,7 @@ python -m par_term_emu_tui_rust
 ```bash
 # Find corruption events (check both logs)
 grep CORRUPTION /tmp/par_term_emu_core_rust_debug_rust.log
-grep CORRUPTION /tmp/par_term_emu_core_rust_debug_python.log
+grep CORRUPTION /tmp/par_term_emu_debug_python.log
 
 # Find screen switches (Rust log - core terminal operations)
 grep SCREEN_SWITCH /tmp/par_term_emu_core_rust_debug_rust.log
@@ -332,11 +332,11 @@ grep SCREEN_SWITCH /tmp/par_term_emu_core_rust_debug_rust.log
 grep DEVICE_QUERY /tmp/par_term_emu_core_rust_debug_rust.log
 
 # Find render warnings (Python log - TUI rendering)
-grep "WARNING" /tmp/par_term_emu_core_rust_debug_python.log
+grep "WARNING" /tmp/par_term_emu_debug_python.log
 
 # Get context around a specific time (both logs)
 grep -A 10 -B 10 "CORRUPTION" /tmp/par_term_emu_core_rust_debug_rust.log
-grep -A 10 -B 10 "CORRUPTION" /tmp/par_term_emu_core_rust_debug_python.log
+grep -A 10 -B 10 "CORRUPTION" /tmp/par_term_emu_debug_python.log
 ```
 
 ## Running the TUI with Debug Mode
@@ -371,26 +371,26 @@ You can also run directly with environment variables and CLI flags:
 
 ```bash
 # Run TUI with core debug level 2 (info) + TUI application logging
-DEBUG_LEVEL=2 python -m par_term_emu_tui_rust --debug
+DEBUG_LEVEL=2 uv run par-term-emu-tui-rust --debug
 
 # Run TUI with core debug level 3 (debug) + TUI application logging
-DEBUG_LEVEL=3 python -m par_term_emu_tui_rust --debug
+DEBUG_LEVEL=3 uv run par-term-emu-tui-rust --debug
 
 # Run TUI with core debug level 4 (trace) + TUI application logging - WARNING: huge logs
-DEBUG_LEVEL=4 python -m par_term_emu_tui_rust --debug
+DEBUG_LEVEL=4 uv run par-term-emu-tui-rust --debug
 
 # Run TUI with only application logging (no core debug logs)
-python -m par_term_emu_tui_rust --debug
+uv run par-term-emu-tui-rust --debug
 
 # Run TUI with only core debug logs (no application logging)
-DEBUG_LEVEL=3 python -m par_term_emu_tui_rust
+DEBUG_LEVEL=3 uv run par-term-emu-tui-rust
 ```
 
 ### Managing Debug Logs
 
 ```bash
 # Clear core debug log files (Rust + Python)
-rm -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
+rm -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log
 
 # Clear TUI application logs
 rm -rf debug_logs/
@@ -399,14 +399,14 @@ rm -rf debug_logs/
 make debug-clear
 
 # View core debug logs in real-time
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
+tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log
 
 # View TUI application logs in real-time
 tail -f debug_logs/terminal_debug_*.log
 
 # View core debug logs with less
 less /tmp/par_term_emu_core_rust_debug_rust.log
-less /tmp/par_term_emu_core_rust_debug_python.log
+less /tmp/par_term_emu_debug_python.log
 
 # View TUI application logs with less
 less debug_logs/terminal_debug_*.log
@@ -440,8 +440,8 @@ grep "\[CSI\]" /tmp/par_term_emu_core_rust_debug_rust.log
 grep "\[SCREEN_SWITCH\]" /tmp/par_term_emu_core_rust_debug_rust.log
 
 # Find specific categories in Python core log (rendering, widgets)
-grep "\[RENDER\]" /tmp/par_term_emu_core_rust_debug_python.log
-grep "\[LIFECYCLE\]" /tmp/par_term_emu_core_rust_debug_python.log
+grep "\[RENDER\]" /tmp/par_term_emu_debug_python.log
+grep "\[LIFECYCLE\]" /tmp/par_term_emu_debug_python.log
 
 # Search TUI application logs (standard Python logging format)
 grep "INFO" debug_logs/terminal_debug_*.log
@@ -454,13 +454,13 @@ grep "corruption" debug_logs/terminal_debug_*.log
 
 # Find time ranges (timestamps are in seconds since epoch for core logs)
 awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' /tmp/par_term_emu_core_rust_debug_rust.log
-awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' /tmp/par_term_emu_core_rust_debug_python.log
+awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' /tmp/par_term_emu_debug_python.log
 
 # Count event types in each log
 echo "Rust core events:"
 grep -o "\[.*\]" /tmp/par_term_emu_core_rust_debug_rust.log | sort | uniq -c
 echo "Python core events:"
-grep -o "\[.*\]" /tmp/par_term_emu_core_rust_debug_python.log | sort | uniq -c
+grep -o "\[.*\]" /tmp/par_term_emu_debug_python.log | sort | uniq -c
 echo "TUI application log levels:"
 grep -o "\[.*\]" debug_logs/terminal_debug_*.log | sort | uniq -c
 ```
@@ -476,16 +476,16 @@ When corruption appears:
 ```bash
 # Good run
 export DEBUG_LEVEL=3
-python -m par_term_emu_tui_rust --debug
+uv run par-term-emu-tui-rust --debug
 # Exit cleanly
 mv /tmp/par_term_emu_core_rust_debug_rust.log /tmp/good_run_rust.log
-mv /tmp/par_term_emu_core_rust_debug_python.log /tmp/good_run_python.log
+mv /tmp/par_term_emu_debug_python.log /tmp/good_run_python.log
 cp debug_logs/terminal_debug_*.log /tmp/good_run_tui.log
 
 # Bad run (reproduce corruption)
-python -m par_term_emu_tui_rust --debug
+uv run par-term-emu-tui-rust --debug
 mv /tmp/par_term_emu_core_rust_debug_rust.log /tmp/bad_run_rust.log
-mv /tmp/par_term_emu_core_rust_debug_python.log /tmp/bad_run_python.log
+mv /tmp/par_term_emu_debug_python.log /tmp/bad_run_python.log
 cp debug_logs/terminal_debug_*.log /tmp/bad_run_tui.log
 
 # Compare
@@ -532,7 +532,7 @@ Debug logging has minimal impact at lower levels:
 ```bash
 # Check permissions for core log files
 ls -la /tmp/par_term_emu_core_rust_debug_rust.log
-ls -la /tmp/par_term_emu_core_rust_debug_python.log
+ls -la /tmp/par_term_emu_debug_python.log
 
 # Check TUI application log directory
 ls -la debug_logs/
@@ -565,7 +565,7 @@ DEBUG_LEVEL=3 python -c "import os; print(os.environ.get('DEBUG_LEVEL'))"
 ```bash
 # Truncate the core logs
 > /tmp/par_term_emu_core_rust_debug_rust.log
-> /tmp/par_term_emu_core_rust_debug_python.log
+> /tmp/par_term_emu_debug_python.log
 
 # Or delete core logs
 rm -f /tmp/par_term_emu_core_rust_debug_*.log
@@ -586,7 +586,7 @@ Debug output goes to files specifically so you can read them from another termin
 
 ```bash
 # In a separate terminal window/pane - view core logs
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log
+tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log
 
 # View TUI application logs
 tail -f debug_logs/terminal_debug_*.log
@@ -639,12 +639,12 @@ grep "\[VT_INPUT\]" /tmp/par_term_emu_core_rust_debug_rust.log | \
     head -10
 
 echo "Python events:"
-grep "\[RENDER\]" /tmp/par_term_emu_core_rust_debug_python.log | \
+grep "\[RENDER\]" /tmp/par_term_emu_debug_python.log | \
     awk '{print $2, $4, $5, $6}' | \
     head -10
 
 # Merge and sort by timestamp to see interleaved events
-sort -t'[' -k2 -n /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log | \
+sort -t'[' -k2 -n /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log | \
     grep -E '\[(VT_INPUT|RENDER|CORRUPTION)\]' | \
     head -30
 ```
@@ -729,7 +729,7 @@ The project Makefile provides convenient targets for debugging:
 | `make debug` | Run with INFO level logging | `DEBUG_LEVEL=2` + `--debug` flag | All three log files |
 | `make debug-verbose` | Run with DEBUG level logging | `DEBUG_LEVEL=3` + `--debug` flag | All three log files |
 | `make debug-trace` | Run with TRACE level logging | `DEBUG_LEVEL=4` + `--debug` flag | All three log files (HUGE!) |
-| `make debug-clear` | Clear core debug logs | N/A | Removes `/tmp/*_rust.log` and `/tmp/*_python.log` |
+| `make debug-clear` | Clear core debug logs | N/A | Removes Rust and Python core log files |
 | `make debug-tail` | Tail core logs in real-time | N/A | Shows Rust + Python core logs |
 | `make debug-view` | View core logs with less | N/A | Opens Rust + Python core logs |
 
@@ -742,5 +742,6 @@ The project Makefile provides convenient targets for debugging:
 
 - **[CONFIG_REFERENCE.md](CONFIG_REFERENCE.md)** - TUI configuration options
 - **[Makefile](../Makefile)** - Build and debug targets
-- **[README.md](../README.md)** - TUI application overview
+- **[README.md](../README.md)** - Project overview and quick start
 - **[CLAUDE.md](../CLAUDE.md)** - Development guidelines including debug workflows
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design details

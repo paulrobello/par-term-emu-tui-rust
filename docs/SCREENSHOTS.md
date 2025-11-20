@@ -299,11 +299,11 @@ screenshot_format: "png"
 # Automatically adjusts text colors to ensure readability against backgrounds.
 # Uses NTSC perceived brightness formula to maintain hue while adjusting brightness.
 # Range: 0.0-1.0 where:
-#   - 0.0 = disabled (default, matches iTerm2 default)
+#   - 0.0 = disabled
 #   - 0.5 = moderate contrast (recommended for readability)
 #   - 1.0 = maximum contrast
-# Default: 0.0
-screenshot_minimum_contrast: 0.0
+# Default: null (inherit live `minimum_contrast`, default 0.5)
+screenshot_minimum_contrast: null
 
 # Automatically open screenshot after capture
 # When enabled, opens the screenshot file with the system's default viewer
@@ -567,4 +567,4 @@ start screenshot.png
 - [Features](FEATURES.md) - Complete feature list
 - [Usage Guide](USAGE.md) - Command-line options
 - [Configuration Reference](CONFIG_REFERENCE.md) - All settings
-- [Installation Guide](INSTALLATION.md) - Font installation
+- [Installation Guide](INSTALLATION.md) - Installation and setup instructions

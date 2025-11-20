@@ -1,6 +1,7 @@
 .PHONY: help run install setup-venv clean fmt lint test checkall themes \
         debug debug-verbose debug-trace debug-clear debug-tail debug-view debug-copy-logs \
-        pre-commit-install pre-commit-uninstall pre-commit-run pre-commit-update keys borders colors
+        pre-commit-install pre-commit-uninstall pre-commit-run pre-commit-update keys borders colors \
+        deploy
 
 ###############################################################################
 # Common make values.
@@ -48,6 +49,9 @@ help:
 	@echo "  pre-commit-uninstall - Uninstall pre-commit hooks"
 	@echo "  pre-commit-run       - Run pre-commit on all files"
 	@echo "  pre-commit-update    - Update pre-commit hook versions"
+	@echo ""
+	@echo "Deployment:"
+	@echo "  deploy          - Trigger GitHub 'Build and Deploy' workflow"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  clean           - Clean build artifacts and cache"
@@ -111,7 +115,7 @@ debug: install debug-clear
 	@echo "======================================================================"
 	@echo ""
 	@echo "  Rust debug output: /tmp/par_term_emu_core_rust_debug_rust.log"
-	@echo "  Python debug output: /tmp/par_term_emu_core_rust_debug_python.log"
+	@echo "  Python debug output: /tmp/par_term_emu_debug_python.log"
 	@echo "  Python TUI logs: debug_logs/terminal_debug_*.log"
 	@echo "  View in another terminal: make debug-tail"
 	@echo ""
@@ -127,7 +131,7 @@ debug-verbose: install debug-clear
 	@echo "======================================================================"
 	@echo ""
 	@echo "  Rust debug output: /tmp/par_term_emu_core_rust_debug_rust.log"
-	@echo "  Python debug output: /tmp/par_term_emu_core_rust_debug_python.log"
+	@echo "  Python debug output: /tmp/par_term_emu_debug_python.log"
 	@echo "  Python TUI logs: debug_logs/terminal_debug_*.log"
 	@echo "  View in another terminal: make debug-tail"
 	@echo ""
@@ -143,7 +147,7 @@ debug-trace: install debug-clear
 	@echo "======================================================================"
 	@echo ""
 	@echo "  Rust debug output: /tmp/par_term_emu_core_rust_debug_rust.log"
-	@echo "  Python debug output: /tmp/par_term_emu_core_rust_debug_python.log"
+	@echo "  Python debug output: /tmp/par_term_emu_debug_python.log"
 	@echo "  Python TUI logs: debug_logs/terminal_debug_*.log"
 	@echo "  View in another terminal: make debug-tail"
 	@echo ""
@@ -159,17 +163,17 @@ debug-trace: install debug-clear
 debug-clear:
 	@echo "Clearing debug logs..."
 	@rm -f /tmp/par_term_emu_core_rust_debug_rust.log
-	@rm -f /tmp/par_term_emu_core_rust_debug_python.log
+	@rm -f /tmp/par_term_emu_debug_python.log
 	@echo "Debug logs cleared:"
 	@echo "  - /tmp/par_term_emu_core_rust_debug_rust.log"
-	@echo "  - /tmp/par_term_emu_core_rust_debug_python.log"
+	@echo "  - /tmp/par_term_emu_debug_python.log"
 
 debug-tail:
 	@echo "======================================================================"
 	@echo "  Showing debug logs in real-time (Ctrl+C to exit)"
 	@echo "======================================================================"
 	@echo ""
-	@if [ ! -f /tmp/par_term_emu_core_rust_debug_rust.log ] && [ ! -f /tmp/par_term_emu_core_rust_debug_python.log ]; then \
+	@if [ ! -f /tmp/par_term_emu_core_rust_debug_rust.log ] && [ ! -f /tmp/par_term_emu_debug_python.log ]; then \
 		echo "Debug logs not found. Run a debug target first:"; \
 		echo "  make debug"; \
 		echo "  make debug-verbose"; \
@@ -178,7 +182,7 @@ debug-tail:
 	fi
 	@echo "Tailing both Rust and Python logs..."
 	@echo ""
-	tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_core_rust_debug_python.log 2>/dev/null || true
+	tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log 2>/dev/null || true
 
 debug-view:
 	@echo "======================================================================"
@@ -189,9 +193,9 @@ debug-view:
 		echo "--- Rust Debug Log ---"; \
 		less /tmp/par_term_emu_core_rust_debug_rust.log; \
 	fi
-	@if [ -f /tmp/par_term_emu_core_rust_debug_python.log ]; then \
+	@if [ -f /tmp/par_term_emu_debug_python.log ]; then \
 		echo "--- Python Debug Log ---"; \
-		less /tmp/par_term_emu_core_rust_debug_python.log; \
+		less /tmp/par_term_emu_debug_python.log; \
 	fi
 
 # ============================================================================
@@ -287,3 +291,26 @@ borders:
 
 colors:
 	$(run) textual colors
+
+# ============================================================================
+# Deployment
+# ============================================================================
+
+deploy:
+	@echo "======================================================================"
+	@echo "  Triggering GitHub 'Build and Deploy' workflow"
+	@echo "======================================================================"
+	@echo ""
+	@if ! command -v gh > /dev/null; then \
+		echo "Error: GitHub CLI (gh) not found. Install it from:"; \
+		echo "  https://cli.github.com/"; \
+		exit 1; \
+	fi
+	gh workflow run deployment.yml
+	@echo ""
+	@echo "Workflow triggered successfully!"
+	@echo "Monitor progress at:"
+	@echo "  https://github.com/paulrobello/par-term-emu-tui-rust/actions"
+	@echo ""
+	@echo "Or use: gh run list --workflow=deployment.yml"
+	@echo ""

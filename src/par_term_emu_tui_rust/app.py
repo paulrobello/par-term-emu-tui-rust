@@ -226,8 +226,12 @@ class TerminalApp(App):
         if directory.startswith(home):
             directory = "~" + directory[len(home) :]
 
+        status_chunks = [f"📁 {directory}"]
+        if event.stats_summary:
+            status_chunks.append(f"⚙ {event.stats_summary}")
+
         status_bar = self.query_one(StatusBar)
-        status_bar.update_content(f"📁 {directory}", style="default")
+        status_bar.update_content("  |  ".join(status_chunks), style="default")
         # Make sure status bar is displayed when updating content
         status_bar.styles.display = "block"
         status_bar.styles.visibility = "visible"

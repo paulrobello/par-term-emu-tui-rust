@@ -100,16 +100,19 @@ class TuiConfig:
                          When True, bold text with ANSI colors 0-7 automatically uses bright
                          variants 8-15 (like iTerm2's "Use Bright Bold" setting). When False,
                          bold text uses the original color without brightening.
-                         (default: True)
+                         (default: False)
         minimum_contrast: Minimum contrast adjustment for live terminal display (iTerm2-compatible).
                          Automatically adjusts text colors to ensure readability against backgrounds.
                          Uses NTSC perceived brightness formula. Applied to both live display
                          and screenshots unless screenshot_minimum_contrast is explicitly set.
                          Range: 0.0-1.0 where:
-                         - 0.0 = disabled (default, matches iTerm2 default)
-                         - 0.5 = moderate contrast (recommended for readability)
+                         - 0.0 = disabled
+                         - 0.5 = moderate contrast (default, matches iTerm2 slider at 50%)
                          - 1.0 = maximum contrast
-                         (default: 0.0)
+                         (default: 0.5)
+        faint_text_alpha: Alpha multiplier for faint/dim text (SGR 2).
+                         0.0 makes faint text invisible, 1.0 renders it normally.
+                         (default: 0.5)
         show_notifications: Display OSC 9/777 notifications as toast messages.
                           When True, terminal applications can display desktop-style
                           notifications using OSC 9 (simple) or OSC 777 (title + message).
@@ -117,6 +120,31 @@ class TuiConfig:
         notification_timeout: Duration in seconds to display notifications.
                             How long notification toasts remain visible before auto-dismissing.
                             (default: 5)
+        notification_bell_desktop: Forward BEL events to desktop notification centers.
+                                   When True, backend triggers OS-level notifications.
+                                   (default: False)
+        notification_bell_sound: Volume (0-100) for backend sound alerts on BEL.
+                                 0 disables sounds.
+                                 (default: 0)
+        notification_bell_visual: Enable backend visual bell overlay (independent of TUI bell).
+                                  (default: True)
+        notification_activity_enabled: Emit alerts when activity resumes after inactivity window.
+                                       (default: False)
+        notification_activity_threshold: Seconds of inactivity before activity notifications fire.
+                                         (default: 10)
+        notification_silence_enabled: Emit alerts after prolonged silence.
+                                      (default: False)
+        notification_silence_threshold: Seconds of silence that trigger alerts.
+                                        (default: 300)
+        notification_max_buffer: Maximum number of OSC 9/777 notifications buffered in the backend.
+                                 Older entries are dropped when the cap is reached.
+                                 (default: 64)
+        clipboard_max_sync_events: Cap for clipboard synchronization history stored by the backend.
+                                   Prevents unbounded memory use while debugging.
+                                   (default: 64)
+        clipboard_max_event_bytes: Maximum payload size retained per clipboard sync event in bytes.
+                                   Payloads larger than this are truncated.
+                                   (default: 2048)
         screenshot_directory: Directory to save screenshots.
                             When None (default), tries in order:
                             1. Shell's current working directory (from OSC 7)
@@ -134,18 +162,39 @@ class TuiConfig:
                           - html: Full HTML document with inline styles, viewable in browsers
                           (default: "png")
         screenshot_minimum_contrast: Minimum contrast adjustment for screenshots (iTerm2-compatible).
-                                    Automatically adjusts text colors to ensure readability
-                                    against backgrounds. Uses NTSC perceived brightness formula.
-                                    Range: 0.0-1.0 where:
-                                    - 0.0 = disabled (default, matches iTerm2 default)
-                                    - 0.5 = moderate contrast (recommended for readability)
-                                    - 1.0 = maximum contrast
-                                    (default: 0.0)
+                                    When set to None (default), inherits the live `minimum_contrast`.
+                                    Set a float (0.0-1.0) to override screenshots only.
+                                    (default: None, i.e., reuse minimum_contrast)
         open_screenshot_after_capture: Automatically open screenshot after capture.
                                       When True, opens the screenshot file with the system's
                                       default image viewer (macOS: open, Linux: xdg-open,
                                       Windows: start).
                                       (default: False)
+        recording_directory: Directory to save terminal recordings.
+                           When None (default), uses same logic as screenshot_directory:
+                           1. Shell's current working directory (from OSC 7)
+                           2. XDG_PICTURES_DIR/Recordings or ~/Videos/Recordings
+                           3. Home directory
+                           Set to a path string to override default behavior.
+                           (default: None)
+        recording_format: File format for terminal recordings.
+                         Supported formats:
+                         - "asciicast": asciinema v2 format (default, playback with asciinema)
+                         - "json": JSON export with full session data
+                         (default: "asciicast")
+        recording_title_template: Template for recording session title.
+                                 Use {timestamp} for automatic timestamp insertion.
+                                 Example: "Build Session {timestamp}"
+                                 (default: "Terminal Session {timestamp}")
+        recording_auto_export_on_stop: Automatically export recording when stopped.
+                                      When True, recording is saved to file automatically when
+                                      stopped. When False, recording data is kept in memory only
+                                      (useful for programmatic access).
+                                      (default: True)
+        open_recording_after_export: Automatically open recording after export.
+                                    When True, opens the recording file with the system's
+                                    default application (e.g., asciinema player for .cast files).
+                                    (default: False)
         exit_on_shell_exit: Exit TUI when shell exits.
                            When True, the TUI application exits when the shell process exits.
                            When False, the TUI remains open after the shell exits, allowing
@@ -247,17 +296,37 @@ class TuiConfig:
     # Theme (Phase 6)
     theme: str = "dark-background"  # Color theme name
     bold_brightening: bool = False  # Use bright colors (8-15) for bold text with colors 0-7
-    minimum_contrast: float = 0.0  # Minimum contrast for display (0.0-1.0, iTerm2-compatible)
+    minimum_contrast: float = 0.0  # Minimum contrast for display (0.0-1.0, default 0.0)
+    faint_text_alpha: float = 0.5  # Faint text alpha (0.0=hidden, 1.0=normal)
 
     # Notifications (OSC 9/777)
     show_notifications: bool = True  # Display OSC 9/777 notifications as toasts
     notification_timeout: int = 5  # Notification display duration in seconds
+    notification_bell_desktop: bool = False  # Forward BEL events to desktop notification centers
+    notification_bell_sound: int = 0  # Volume 0-100 for backend bell audio
+    notification_bell_visual: bool = True  # Backend visual bell overlay
+    notification_activity_enabled: bool = False  # Enable activity notifications
+    notification_activity_threshold: int = 10  # Seconds of inactivity before activity alert
+    notification_silence_enabled: bool = False  # Enable silence notifications
+    notification_silence_threshold: int = 300  # Seconds of silence before alert
+    notification_max_buffer: int = 64  # Max OSC 9/777 entries retained in backend queue
+
+    # Clipboard debug/sync controls
+    clipboard_max_sync_events: int = 64  # Max clipboard sync events retained
+    clipboard_max_event_bytes: int = 2048  # Max bytes per clipboard sync event
 
     # Screenshot
     screenshot_directory: str | None = None  # Directory to save screenshots
     screenshot_format: str = "png"  # Screenshot file format (png, jpeg, bmp, svg)
-    screenshot_minimum_contrast: float = 0.0  # Minimum contrast (0.0-1.0, iTerm2-compatible)
+    screenshot_minimum_contrast: float | None = None  # Minimum contrast override for screenshots
     open_screenshot_after_capture: bool = False  # Open screenshot with default viewer
+
+    # Recording
+    recording_directory: str | None = None  # Directory to save recordings
+    recording_format: str = "asciicast"  # Recording file format (asciicast, json)
+    recording_title_template: str = "Terminal Session {timestamp}"  # Title template for recordings
+    recording_auto_export_on_stop: bool = True  # Auto-export when stopping recording
+    open_recording_after_export: bool = False  # Open recording with default app after export
 
     # Shell Behavior
     exit_on_shell_exit: bool = True  # Exit TUI when shell exits
@@ -303,16 +372,27 @@ class TuiConfig:
             ValueError: If value cannot be validated
         """
         # Validate float ranges (0.0-1.0)
-        if field_name in ("minimum_contrast", "screenshot_minimum_contrast"):
-            if field_type is float:
-                val = float(value)
-                if val < 0.0:
-                    logger.warning("%s value %s is below 0.0, clamping to 0.0", field_name, val)
-                    return 0.0
-                if val > 1.0:
-                    logger.warning("%s value %s is above 1.0, clamping to 1.0", field_name, val)
-                    return 1.0
-                return val
+        if field_name in ("minimum_contrast", "faint_text_alpha"):
+            val = float(value)
+            if val < 0.0:
+                logger.warning("%s value %s is below 0.0, clamping to 0.0", field_name, val)
+                return 0.0
+            if val > 1.0:
+                logger.warning("%s value %s is above 1.0, clamping to 1.0", field_name, val)
+                return 1.0
+            return val
+
+        if field_name == "screenshot_minimum_contrast":
+            if value is None:
+                return None
+            val = float(value)
+            if val < 0.0:
+                logger.warning("%s value %s is below 0.0, clamping to 0.0", field_name, val)
+                return 0.0
+            if val > 1.0:
+                logger.warning("%s value %s is above 1.0, clamping to 1.0", field_name, val)
+                return 1.0
+            return val
 
         # Validate positive float values
         if field_name == "cursor_blink_rate":
@@ -331,6 +411,11 @@ class TuiConfig:
             "paste_chunk_delay_ms",
             "paste_warn_size",
             "notification_timeout",
+            "notification_activity_threshold",
+            "notification_silence_threshold",
+            "notification_max_buffer",
+            "clipboard_max_sync_events",
+            "clipboard_max_event_bytes",
             "keyboard_protocol_flags",
         ):
             if field_type is int:
@@ -339,6 +424,15 @@ class TuiConfig:
                     logger.warning("%s value %s is negative, clamping to 0", field_name, val)
                     return 0
                 return val
+
+        if field_name == "notification_bell_sound":
+            val = int(value)
+            if val < 0:
+                return 0
+            if val > 100:
+                logger.warning("notification_bell_sound %s above 100, clamping", val)
+                return 100
+            return val
 
         # Validate positive integers
         if field_name == "mouse_wheel_scroll_lines":

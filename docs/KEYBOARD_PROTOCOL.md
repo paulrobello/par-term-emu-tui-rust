@@ -53,7 +53,8 @@ Edit `~/.config/par-term-emu-tui-rust/config.yaml`:
 ```yaml
 # Keyboard Protocol (KITTY) - Auto-detect mode
 keyboard_protocol_auto_detect: true   # Auto-enable when apps request it
-keyboard_protocol_flags: 1             # Default flags to use (optional)
+# Note: keyboard_protocol_flags is ignored in auto-detect mode.
+# The TUI uses whatever flags the application requests.
 ```
 
 **Via Command Line:**
@@ -275,6 +276,23 @@ nnoremap <C-i> <C-i>
 
 ## Troubleshooting
 
+### Keyboard Shows Codes Like "8u 5u" After Exiting TUI Apps
+
+**Problem**: After exiting a TUI application (nvim, htop, etc.), keyboard input shows as escape codes instead of characters.
+
+**This is automatically fixed** (as of v0.4.0):
+- The terminal emulator **automatically resets** keyboard protocol state when:
+  - Exiting alternate screen mode (when TUI apps exit)
+  - Performing a full terminal reset
+- No manual intervention needed
+
+**Background**: Some TUI applications enable KITTY keyboard protocol but fail to disable it on exit (crash, improper cleanup, etc.). The terminal core now automatically cleans up this state to prevent corruption.
+
+**If you still see this issue**:
+1. Check you're running the latest version
+2. Verify the TUI app is using alternate screen mode (most do)
+3. Report as a bug - it should auto-reset
+
 ### Keys Not Working After Enabling Protocol
 
 **Problem**: Some keys stop working when protocol is enabled.
@@ -446,15 +464,44 @@ Where:
 
 ### Protocol Activation
 
-The terminal enables KITTY protocol by sending:
+Applications request KITTY protocol by sending sequences to the terminal:
 
 ```
-CSI > flags u
+CSI > flags u     (push flags to protocol stack)
+CSI < flags u     (pop from protocol stack)
 ```
 
 Example:
-- `\x1b[>1u` - Push flag 1 to stack (enable disambiguation)
-- `\x1b[<1u` - Pop 1 level from stack (disable)
+- `\x1b[>1u` - Application requests protocol with flag 1 (disambiguation)
+- `\x1b[<1u` - Application disables protocol (pops from stack)
+
+The terminal detects these sequences and responds by sending enhanced keyboard events back to the application. When auto-detect mode is enabled, the TUI automatically switches between KITTY and legacy key sequences based on these requests.
+
+### Automatic State Reset
+
+**Important**: The terminal core automatically resets keyboard protocol state to prevent corruption:
+
+**When Reset Occurs**:
+1. **Exiting alternate screen** - When any application exits alternate screen mode (returns to primary screen)
+2. **Full terminal reset** - When processing RIS (Reset to Initial State) sequence
+
+**What Gets Reset**:
+- `keyboard_flags` → 0 (disabled)
+- `keyboard_stack` → cleared
+- `keyboard_stack_alt` → cleared
+
+**Why This Matters**:
+Some TUI applications (nvim, htop, btop, etc.) enable KITTY keyboard protocol but may exit without properly disabling it due to:
+- Application crash
+- Improper signal handling
+- Missing cleanup code
+
+Without automatic reset, the terminal would stay in protocol mode, causing keyboard input to appear as escape codes like "8u 5u" instead of characters.
+
+**Implementation** (par-term-emu-core-rust):
+- Reset happens in `Terminal::use_primary_screen()` method
+- Triggered automatically when CSI ?1049l (exit alternate screen) is received
+- No TUI-level intervention needed - handled entirely in the terminal core
 
 ### Backward Compatibility
 

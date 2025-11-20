@@ -12,6 +12,7 @@ Comprehensive overview of Par Term Emu TUI Rust features and capabilities.
 - [Hyperlinks](#hyperlinks)
 - [Notifications](#notifications)
 - [Clipboard Integration](#clipboard-integration)
+- [Session Recording](#session-recording)
 - [Visual Bell](#visual-bell)
 - [Cursor Customization](#cursor-customization)
 - [Keyboard Protocol](#keyboard-protocol)
@@ -79,30 +80,51 @@ graph TD
 
 ### Interactive Config Editor
 
-A built-in modal dialog for editing configuration files directly within the TUI:
+A built-in tabbed configuration screen for managing settings directly within the TUI:
 
 **Key Features:**
-- **Syntax Highlighting**: YAML syntax highlighting with Monokai theme
+- **Dual Edit Modes**:
+  - **Settings Tab**: Widget-based form with checkboxes, inputs, and dropdowns
+  - **Raw YAML Tab**: Full YAML editor with syntax highlighting (Monokai theme)
 - **Live Validation**: Real-time YAML syntax checking before saving
 - **Auto-Creation**: Automatically creates config file with defaults if it doesn't exist
-- **Smart Editor**: TextArea-based editor with line numbers and tab indentation
-- **Error Handling**: Clear error messages for invalid YAML syntax
+- **Type-Safe Editing**: Form widgets enforce correct types (boolean, integer, float, color tuples)
+- **Context Help**: Inline help text for every configuration option
+- **Error Handling**: Clear error messages for invalid values or YAML syntax
 
 **Access:**
 - Press **Alt+Ctrl+Shift+C** while TUI is running
 - Opens `~/.config/par-term-emu-tui-rust/config.yaml`
 
 **Keyboard Shortcuts:**
-- **Ctrl+S** - Save changes and close dialog
+- **Ctrl+S** - Save changes and close screen
 - **Escape** - Cancel and discard changes
+- **Tab** / **Shift+Tab** - Navigate between tabs and widgets
 - Standard text editing (arrow keys, home/end, page up/down, etc.)
-- **Tab** - Indent (4 spaces in YAML mode)
+
+**Configuration Sections:**
+- Selection & Clipboard
+- Scrollback & Buffer
+- Cursor
+- Paste
+- Mouse
+- Theme & Colors
+- Hyperlinks & URLs
+- Screenshot
+- Recording
+- Notifications
+- Clipboard Sync
+- Shell & Security
+- UI Elements
+- Keyboard Protocol (KITTY)
+- Search & Highlighting
 
 **Use Cases:**
 - Quick configuration adjustments without leaving TUI
 - First-time setup with auto-generated defaults
 - Testing configuration changes on the fly
-- Safe editing with syntax validation
+- Safe editing with validation and type enforcement
+- Explore available settings with contextual help
 
 ### Configuration Safety & Recovery (v0.4.0+)
 
@@ -138,44 +160,58 @@ graph TD
     Check{Config File<br/>Exists?}
     Create[Create Default Config]
     Load[Load Config Content]
-    Editor[Open Editor Dialog]
-    Edit[Edit Configuration]
+    Screen[Open Config Screen]
+    TabChoice{Settings or<br/>Raw YAML?}
+    WidgetEdit[Edit via Form Widgets]
+    YAMLEdit[Edit Raw YAML]
     Save{Save or<br/>Cancel?}
-    Validate[Validate YAML]
+    ValidateWidget[Validate Widget Values]
+    ValidateYAML[Validate YAML Syntax]
     Error[Show Error]
+    Backup[Create Timestamped Backup]
     Write[Write to File]
-    Close[Close Dialog]
+    Close[Close Screen]
 
     Trigger --> Check
     Check -->|No| Create
     Check -->|Yes| Load
     Create --> Load
-    Load --> Editor
-    Editor --> Edit
-    Edit --> Save
-    Save -->|Save| Validate
+    Load --> Screen
+    Screen --> TabChoice
+    TabChoice -->|Settings Tab| WidgetEdit
+    TabChoice -->|Raw YAML Tab| YAMLEdit
+    WidgetEdit --> Save
+    YAMLEdit --> Save
+    Save -->|Save| ValidateWidget
+    ValidateWidget --> Backup
     Save -->|Cancel| Close
-    Validate -->|Invalid| Error
-    Validate -->|Valid| Write
-    Error --> Edit
+    Backup --> Write
     Write --> Close
+    ValidateYAML -->|Invalid| Error
+    ValidateYAML -->|Valid| Backup
+    Error --> YAMLEdit
 
     style Trigger fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
     style Check fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
     style Create fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
-    style Editor fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
-    style Validate fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
+    style Screen fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
+    style TabChoice fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
+    style ValidateWidget fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
+    style ValidateYAML fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
     style Error fill:#c62828,stroke:#ef5350,stroke-width:2px,color:#ffffff
+    style Backup fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
     style Write fill:#2e7d32,stroke:#66bb6a,stroke-width:2px,color:#ffffff
 ```
 
 **Implementation:**
-- Dialog: `src/par_term_emu_tui_rust/dialogs/config_edit_dialog.py`
+- Screen: `src/par_term_emu_tui_rust/dialogs/config_screen.py`
 - Action binding: `src/par_term_emu_tui_rust/app.py` (action_edit_config)
-- Uses Textual's ModalScreen and TextArea widgets
-- YAML syntax highlighting with Monokai theme
-- Integrates with TuiConfig for default value generation
+- Uses Textual's ModalScreen, TabbedContent, and form widgets
+- Settings tab with Input, Checkbox, and Select widgets for type-safe editing
+- Raw YAML tab with TextArea, syntax highlighting (Monokai), and line numbers
+- Integrates with TuiConfig for default value generation and type validation
 - Flash messages for user feedback on save/error
+- Automatic config backup on save with UTC timestamp
 
 ## Terminal Emulation
 
@@ -355,9 +391,25 @@ echo -e '\x1b]777;notify;Build Status;Compilation successful\x1b\\'
 
 ```yaml
 # Notification settings
-show_notifications: true        # Enable/disable notifications
-notification_timeout: 5         # Display duration in seconds
+show_notifications: true                  # Enable/disable notifications
+notification_timeout: 5                   # Display duration in seconds
+notification_bell_desktop: false          # Forward BEL to desktop notifications
+notification_bell_sound: 0                # Bell sound volume (0-100, 0 = disabled)
+notification_bell_visual: true            # Backend visual flash overlay
+notification_activity_enabled: false      # Alert when activity resumes after inactivity
+notification_activity_threshold: 10       # Seconds of inactivity before activity alert
+notification_silence_enabled: false       # Alert after prolonged silence
+notification_silence_threshold: 300       # Seconds of silence before alert
+notification_max_buffer: 64               # Maximum OSC 9/777 entries buffered
 ```
+
+**Backend integration:**
+- Desktop bell alerts: Forward BEL events to OS notification center
+- Sound alerts: Adjustable volume (0-100) for backend audio on BEL events
+- Visual bell: Backend flash overlay (independent of TUI bell icon)
+- Activity detection: Triggers when terminal output resumes after configured inactivity period
+- Silence detection: Alerts when terminal remains silent for configured duration
+- Buffer management: Prevents unbounded memory growth from notification backlog
 
 ## Clipboard Integration
 
@@ -373,8 +425,9 @@ Cross-platform clipboard support for seamless copy/paste.
 
 **Paste methods:**
 - Middle-click paste (Linux: PRIMARY selection)
-- Ctrl+Shift+V keyboard paste
+- Ctrl+Shift+V keyboard paste (also Cmd+V on macOS, Ctrl+V on Windows/Linux)
 - Paste confirmation for large content
+- Chunked pasting support for large content (configurable chunk size and delay)
 
 ### OSC 52 Support
 
@@ -391,14 +444,130 @@ expose_system_clipboard: true   # Allow OSC 52 clipboard read
 
 ```yaml
 # Clipboard settings
-auto_copy_selection: true              # Auto-copy on selection
-keep_selection_after_copy: true        # Keep highlighting after copy
-expose_system_clipboard: true          # Allow OSC 52 access
-copy_trailing_newline: false           # Include newline in line copy
-paste_chunk_size: 0                    # Chunk size for large pastes (0 = disabled)
-paste_chunk_delay_ms: 10               # Delay between chunks
-paste_warn_size: 100000                # Warn before pasting large content
+auto_copy_selection: true                 # Auto-copy on selection
+keep_selection_after_copy: true           # Keep highlighting after copy
+expose_system_clipboard: true             # Allow OSC 52 access
+copy_trailing_newline: false              # Include newline in line copy
+paste_chunk_size: 0                       # Chunk size for large pastes (0 = disabled)
+paste_chunk_delay_ms: 10                  # Delay between chunks
+paste_warn_size: 100000                   # Warn before pasting large content
+clipboard_max_sync_events: 64             # Max clipboard sync events for diagnostics
+clipboard_max_event_bytes: 2048           # Max bytes per clipboard sync event
 ```
+
+**Clipboard Sync Limits (v0.4.0+):**
+- `clipboard_max_sync_events`: Caps the number of clipboard synchronization events stored in the backend for diagnostics (prevents unbounded memory use)
+- `clipboard_max_event_bytes`: Limits the payload size retained per clipboard sync event (large payloads are truncated)
+
+## Session Recording
+
+Record terminal sessions with full fidelity for later playback using asciinema or custom players.
+
+### Recording Features
+
+**Capture capabilities:**
+- All terminal I/O events (input, output, resize)
+- Millisecond-precision timestamps
+- Session metadata (terminal size, title, environment)
+- Automatic file export on stop
+
+**Supported formats:**
+- **Asciicast v2**: Compatible with asciinema player
+- **JSON**: Full session data for custom processing
+
+### Recording Control
+
+**Keyboard shortcut:**
+- **Ctrl+Shift+R** - Toggle recording (start/stop)
+
+**Visual indicator:**
+- Recording icon (⏺️ REC) appears in header when active
+- Flash message confirms start/stop actions
+- Auto-export notification shows saved file path
+
+### Recording Workflow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant TUI
+    participant RecordingManager
+    participant File
+
+    User->>TUI: Ctrl+Shift+R (Start)
+    TUI->>RecordingManager: start_recording()
+    RecordingManager->>TUI: Show "⏺️ REC" indicator
+    TUI->>User: Flash "Recording started"
+
+    Note over TUI,RecordingManager: Terminal activity captured
+
+    User->>TUI: Ctrl+Shift+R (Stop)
+    TUI->>RecordingManager: stop_recording()
+
+    alt recording_auto_export_on_stop: true
+        RecordingManager->>RecordingManager: export_asciicast()
+        RecordingManager->>File: Save recording file
+        RecordingManager->>TUI: Hide "⏺️ REC" indicator
+        TUI->>User: Flash "Recording stopped and saved"
+
+        opt open_recording_after_export: true
+            RecordingManager->>User: Open with default app
+        end
+    else recording_auto_export_on_stop: false
+        RecordingManager->>TUI: Hide "⏺️ REC" indicator
+        TUI->>User: Flash "Recording stopped (not exported)"
+    end
+```
+
+### Playback
+
+**Using asciinema:**
+```bash
+# Play recording
+asciinema play terminal_recording_20250119_120000.cast
+
+# Upload to share
+asciinema upload terminal_recording_20250119_120000.cast
+```
+
+**Using web player:**
+```bash
+# Open in browser (if configured)
+# Opens automatically after export when open_recording_after_export: true
+```
+
+### Configuration
+
+```yaml
+# Recording settings
+recording_directory: null                              # Save location (null = auto-detect)
+recording_format: "asciicast"                         # Format: asciicast or json
+recording_title_template: "Terminal Session {timestamp}"  # Title template
+recording_auto_export_on_stop: true                   # Auto-export when stopped
+open_recording_after_export: false                    # Auto-open after export
+```
+
+**Directory selection priority** (when `recording_directory` is `null`):
+1. Shell's current working directory (from OSC 7 shell integration)
+2. `XDG_VIDEOS_DIR/Recordings` (if XDG_VIDEOS_DIR is set) or `~/Videos/Recordings`
+3. Home directory (final fallback)
+
+### Use Cases
+
+**Documentation:**
+- Capture command sequences for tutorials
+- Record troubleshooting sessions
+- Create reproducible examples
+
+**Training:**
+- Record demonstrations for team training
+- Build library of common procedures
+- Share best practices
+
+**Debugging:**
+- Capture intermittent issues
+- Share terminal state with support
+- Review command history with timing
 
 ## Visual Bell
 
@@ -532,9 +701,10 @@ Enhanced features through shell integration scripts.
 ### Features Provided
 
 **Current working directory:**
-- Tracked via OSC 7 sequences
-- Displayed in status bar
-- Used for screenshot directory selection
+- Tracked via OSC 7 sequences (requires shell integration)
+- Displayed in status bar with shell statistics: total commands, failed commands, average duration
+- Used for screenshot and recording directory selection
+- Compact display format: "📁 ~/path/to/dir  |  ⚙ cmds 42 | 2 fail | avg 15ms"
 
 **Prompt navigation:**
 - Mark prompt locations

@@ -131,14 +131,14 @@ This installs:
 ### Verify Installation
 
 ```bash
-# Check installed version
-par-term-emu-tui-rust --version
-
 # Test basic functionality
 par-term-emu-tui-rust --auto-quit 2
 
+# List available themes
+par-term-emu-tui-rust --list-themes
+
 # You can also use the shorter alias 'ptr'
-ptr --version
+ptr --auto-quit 2
 ```
 
 ## Component Installation
@@ -295,6 +295,11 @@ par-term-emu-tui-rust --auto-quit 2
 par-term-emu-tui-rust --command "echo 'Hello World'" --screenshot 1 --auto-quit 3
 ```
 
+**Check available themes:**
+```bash
+par-term-emu-tui-rust --list-themes
+```
+
 **Verify components:**
 ```bash
 # Check terminfo
@@ -303,7 +308,7 @@ infocmp par-term
 # Check shell integration files
 ls ~/.par_term_emu_core_rust_shell_integration.*
 
-# Check font
+# Check font (Linux/macOS)
 fc-list | grep Hack
 ```
 
@@ -321,10 +326,23 @@ The configuration file is stored using XDG Base Directory specification:
 ```bash
 # macOS/Linux - XDG_CONFIG_HOME or ~/.config
 cat ~/.config/par-term-emu-tui-rust/config.yaml
-
-# Windows - APPDATA
-type %APPDATA%\par-term-emu-tui-rust\config.yaml
 ```
+
+**Edit configuration interactively:**
+
+While the TUI is running, press **Alt+Ctrl+Shift+C** to open the built-in config editor with:
+- YAML syntax highlighting
+- Live validation before saving
+- Automatic backup on save
+- Interactive error recovery
+
+**Configuration features (v0.4.0+):**
+- Automatic timestamped backups on every save
+- Type validation for all config values
+- Range clamping for numeric settings
+- Interactive recovery when parsing fails
+
+See [Configuration Reference](CONFIG_REFERENCE.md) for all available options.
 
 ## Troubleshooting Installation
 

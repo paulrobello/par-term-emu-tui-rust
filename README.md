@@ -13,92 +13,52 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/probello3)
 
-## What's New in v0.4.0
+## What's New in v0.5.0
 
-### Enhanced Configuration Management
-- **Automatic Config Backup**: Every config save creates timestamped backup (`config.yaml.backup.YYYYMMDD_HHMMSS`)
-- **Interactive Recovery**: When config parsing fails, prompts for recovery options:
-  - Reset to defaults
-  - Restore from backup
-  - View all available backups
-  - Exit gracefully
-- **Comprehensive Validation**: All config values validated for proper types, ranges, and formats
-  - Numeric values (int/float) properly converted from YAML strings
-  - Range clamping for float values (0.0-1.0) like `minimum_contrast`
-  - Positive/non-negative validation for numeric settings
-  - RGB tuple validation for color values
-  - Enum validation for theme and screenshot format settings
-- **Config UI Improvements**: Optimized widget widths for better layout
-- **Restart Notification**: Toast message after saving config reminds user to restart TUI
-- **Bold Brightening Default**: Changed `bold_brightening` default from `true` to `false` for better color accuracy
+### Interactive Configuration Editor
+- **Tabbed Configuration Screen**: Press `Alt+Ctrl+Shift+C` to access comprehensive configuration UI
+  - **Settings Tab**: Widget-based form editor with organized sections
+    - 15 configuration categories with proper input widgets (checkboxes, selects, number inputs)
+    - Immediate validation and type checking
+    - Descriptive labels and help text for all options
+  - **Raw YAML Tab**: Direct YAML editing with syntax highlighting
+    - Full access to all configuration options
+    - Real-time syntax validation
+  - **Automatic Backup**: Creates timestamped backup before saving changes
+  - **Restart Reminder**: Toast notification reminds user to restart after changes
 
-### Configuration Safety
-```yaml
-# Before save: automatic backup created
-# ~/.config/par-term-emu-tui-rust/config.yaml.backup.20250118_143022
+### Terminal Session Recording
+- **Record Terminal Sessions**: Capture all terminal activity with `Ctrl+Shift+R`
+  - Recording indicator (⏺️) in header shows active status
+  - Start/stop recording with single keypress
+- **Multiple Export Formats**:
+  - Asciicast (.cast) - Compatible with asciinema players
+  - JSON (.json) - Raw event data for custom processing
+- **Smart Directory Selection**:
+  1. Configured `recording_directory` (if set)
+  2. Shell's current working directory (from OSC 7)
+  3. `XDG_VIDEOS_DIR/Recordings` or `~/Videos/Recordings`
+  4. Home directory fallback
+- **Auto-Export**: Optionally export recording immediately when stopped
+- **Customizable Titles**: Template-based titles with `{timestamp}` placeholder
+- **Optional Auto-Open**: Launch recording in default application after export
 
-# Invalid values automatically clamped/corrected
-minimum_contrast: 1.5  # Automatically clamped to 1.0
-scrollback_lines: -100  # Automatically corrected to 0
+### Backend Integration Enhancements
+- **Native Notification Control**: TUI configuration now surfaces Rust backend notification settings
+  - Bell sound volume (0-100)
+  - Desktop notifications
+  - Visual bell overlay
+  - Activity/silence detection thresholds
+  - Max notification buffer size
+- **Clipboard Limits**: Configure backend clipboard sync event limits
+  - Max sync events retained
+  - Max bytes per event
+- **Shell Integration Stats**: Status bar displays shell command statistics
+  - Total commands executed
+  - Failed command count
+  - Average command duration
 
-# Parse failures trigger interactive recovery:
-# 1. Reset to defaults
-# 2. Restore from backup
-# 3. View all backups
-# 4. Exit
-```
-
-### Previous Release (v0.3.1)
-
-#### New Color System Features
-- **Automatic Contrast Adjustment**: iTerm2-compatible minimum contrast system
-  - `minimum_contrast` (0.0-1.0) - Automatic contrast adjustment for live terminal display
-  - `screenshot_minimum_contrast` (0.0-1.0) - Independent contrast setting for screenshots
-  - Uses NTSC perceived brightness formula for accurate readability
-  - Range: 0.0 (disabled, default) to 1.0 (maximum contrast)
-  - Recommended: 0.5 for moderate readability improvements
-  - Ensures text remains readable on any background color
-
-- **Bold Text Brightening**: Enhanced bold text rendering
-  - `bold_brightening` (default: false) - Use bright ANSI colors (8-15) for bold text with normal colors (0-7)
-  - Matches iTerm2's "Use Bright Bold" setting
-  - When enabled: Bold red (1) automatically renders as bright red (9)
-  - When disabled: Bold text uses original color without brightening
-
-#### Configuration Example
-```yaml
-# Live terminal contrast adjustment
-minimum_contrast: 0.5  # Moderate contrast for display
-
-# Screenshot-specific contrast (overrides minimum_contrast for screenshots)
-screenshot_minimum_contrast: 0.7  # Higher contrast for screenshots
-
-# Bold text appearance
-bold_brightening: false  # Use original colors for bold text
-```
-
-#### Previous Release (v0.3.0)
-- **Visual Bell Flash**: Animated bell icon overlay when terminal receives BEL character (🔔)
-- **Install Command Discoverability**: `install` subcommand now visible in `--help` output
-- **KITTY Keyboard Protocol Documentation**: Comprehensive guide for enhanced keyboard handling
-- **Configuration Expansion**: 39 configuration options (up from 30) including new color system features
-
-### Improvements
-- **Better CLI Help**: Install subcommand now visible in main help output
-- **Enhanced Documentation**: All docs updated to reference install command and new features
-- **Code Organization**: Added BellFlash widget for visual bell feedback
-
-### Documentation
-- New [KEYBOARD_PROTOCOL.md](docs/KEYBOARD_PROTOCOL.md) - Complete KITTY protocol guide
-- Enhanced [USAGE.md](docs/USAGE.md) - Install command now documented
-- Updated [CLAUDE.md](CLAUDE.md) - Installation commands reference added
-- Updated all documentation to reflect new scrolling default
-
-### Previous Release (v0.2.0)
-- Fixed all lint errors (22 → 0) and achieved 100% type checking compliance
-- Enhanced test suite reliability with all 20 tests passing
-- Added KITTY keyboard protocol support with auto-detection
-- Improved code consistency and type safety across codebase
+See [CHANGELOG.md](CHANGELOG.md) for previous releases.
 
 ## Quick Start
 
@@ -122,14 +82,16 @@ See the [Quick Start Guide](docs/QUICK_START.md) for detailed instructions.
 - **Efficient Rendering** - Textual Line API for optimal performance
 - **Full ANSI Support** - 16/256/true color, bold, italic, underline, and more
 - **Advanced Color System** - Bold brightening and automatic contrast adjustment (iTerm2-compatible)
+- **Interactive Configuration** - Tabbed UI with widget-based and raw YAML editing modes
+- **Session Recording** - Record terminal sessions to asciicast or JSON with auto-export
 - **Scrollback Buffer** - Navigate history with keyboard and mouse
 - **Mouse Support** - Text selection, clickable URLs, and mouse tracking
 - **Hyperlinks** - OSC 8 hyperlinks and auto-detected plain text URLs
-- **Notifications** - OSC 9/777 notification support with toast messages
-- **Shell Integration** - Working directory tracking, prompt navigation
+- **Notifications** - OSC 9/777 notification support with toast messages and backend integration
+- **Shell Integration** - Working directory tracking, prompt navigation, command statistics
 - **Screenshots** - Multiple formats (PNG, SVG, HTML) with auto-capture and contrast control
 - **Themes** - 12 built-in themes with custom theme support
-- **Clipboard** - Cross-platform copy/paste with OSC 52 support
+- **Clipboard** - Cross-platform copy/paste with OSC 52 support and configurable limits
 - **KITTY Protocol** - Enhanced keyboard protocol with auto-detection
 
 See [Features](docs/FEATURES.md) for complete feature documentation.
@@ -142,9 +104,10 @@ See [Features](docs/FEATURES.md) for complete feature documentation.
 - [Usage Guide](docs/USAGE.md) - Command-line options and workflows
 
 ### Reference
+- [Changelog](CHANGELOG.md) - Version history and release notes
 - [Features](docs/FEATURES.md) - Complete feature descriptions
 - [Key Bindings](docs/KEY_BINDINGS.md) - Keyboard shortcuts and mouse actions
-- [Configuration Reference](docs/CONFIG_REFERENCE.md) - All 39 configuration options
+- [Configuration Reference](docs/CONFIG_REFERENCE.md) - All 57 configuration options
 - [Themes Guide](docs/THEMES.md) - Theme system and 12 built-in themes
 - [Screenshots Guide](docs/SCREENSHOTS.md) - Screenshot functionality
 
@@ -200,7 +163,9 @@ par-term-emu-tui-rust --screenshot 3 --auto-quit 5
 |----------|--------|
 | **Ctrl+Shift+Q** | Quit application |
 | **Ctrl+Shift+S** | Take screenshot |
+| **Ctrl+Shift+R** | Toggle recording |
 | **Ctrl+Shift+C** | Copy selection |
+| **Alt+Ctrl+Shift+C** | Open configuration editor |
 | **Shift+PageUp/Down** | Scroll history |
 | **Shift+Home/End** | Jump to top/bottom |
 
@@ -221,6 +186,7 @@ par-term-emu-tui-rust --init-config
 theme: "dark-background"
 bold_brightening: false          # Use bright colors for bold text
 minimum_contrast: 0.0            # Display contrast (0.0=off, 0.5=moderate, 1.0=max)
+faint_text_alpha: 0.5            # Faint text alpha (0.0=hidden, 1.0=normal)
 
 # Scrollback
 scrollback_lines: 10000
@@ -231,7 +197,7 @@ middle_click_paste: true
 
 # Screenshots
 screenshot_format: "png"
-screenshot_minimum_contrast: 0.0  # Screenshot contrast (overrides minimum_contrast)
+screenshot_minimum_contrast: null # Screenshot contrast (null=inherits minimum_contrast)
 
 # Keyboard Protocol
 keyboard_protocol_enabled: false

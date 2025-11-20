@@ -141,6 +141,70 @@ graph TD
     style Component2 fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
 ```
 
+### Special Characters in Mermaid Diagrams
+
+**IMPORTANT:** Certain characters have special meaning in Mermaid syntax and can cause parsing errors when used in node labels or text.
+
+#### Characters That Break Diagrams
+
+| Character | Issue | Solution | Example |
+|-----------|-------|----------|---------|
+| `()` Parentheses | Interpreted as node shape syntax | Replace with alternatives or describe differently | ❌ `[Posts msg (dir + stats)]`<br/>✅ `[Posts msg dir and stats]` |
+| `{}` Curly braces | Used for decision/rhombus nodes | Use "with" or descriptive text | ❌ `[Config {key: value}]`<br/>✅ `[Config with key and value]` |
+| `<>` Angle brackets | Can be interpreted as HTML tags | Use "less than/greater than" or quotes | ❌ `[Value <10]`<br/>✅ `[Value less than 10]` |
+| `+` Plus in context | Can cause parsing issues with parentheses | Use "and", "plus", or "with" | ❌ `[(a + b)]`<br/>✅ `[a and b]` or `[sum of a and b]` |
+| `[]` Square brackets | Node definition syntax (safe when used correctly) | Only use for defining nodes | ✅ `NodeName[Label Text]` |
+| Unescaped quotes | String termination issues | Use different quote style or escape | ❌ `[Text with "quotes"]`<br/>✅ `[Text with quotes]` |
+
+#### Best Practices for Node Labels
+
+**DO:**
+- Use descriptive plain text: `[Posts DirectoryChanged message]`
+- Use line breaks for multi-line text: `[Line 1<br/>Line 2]`
+- Use simple conjunctions: `[dir and stats]`, `[name or id]`
+- Describe the content: `[Configuration object]`, `[User data structure]`
+
+**DON'T:**
+- Use mathematical notation: `[(x + y) * z]`
+- Use programming syntax: `[func(arg1, arg2)]`
+- Use complex punctuation: `[Item #1 (primary)]`
+- Mix special characters: `[{data: <value>}]`
+
+#### Safe Alternatives
+
+| Instead of | Use |
+|------------|-----|
+| `(dir + stats)` | `dir and stats` |
+| `{key: value}` | `key-value pair` or `object with key` |
+| `func(args)` | `function with arguments` |
+| `<type>` | `type parameter` or `generic type` |
+| `[0-9]+` | `one or more digits` |
+| `#tag` | `hash tag` or `tag` |
+
+#### Example: Before and After
+
+**Before (breaks parser):**
+```mermaid
+graph LR
+    A[Process data (x + y)] --> B[Store {key: value}]
+    B --> C[Return <Result>]
+```
+
+**After (works correctly):**
+```mermaid
+graph LR
+    A[Process data sum] --> B[Store key-value pair]
+    B --> C[Return Result object]
+```
+
+#### Testing Diagrams
+
+Always validate Mermaid diagrams after creation:
+1. Use a Mermaid live editor (https://mermaid.live)
+2. Check for parse errors in documentation viewers
+3. Test in both light and dark modes
+4. Verify all connections render correctly
+
 ## Color Scheme
 
 ### High-Contrast Colors for Dark Mode Compatibility

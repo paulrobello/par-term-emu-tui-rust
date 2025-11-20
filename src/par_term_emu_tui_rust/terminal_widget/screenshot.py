@@ -122,16 +122,46 @@ class ScreenshotManager:
                 debug_log("SCREENSHOT", "Exported HTML screenshot")
             else:
                 # Use screenshot_to_file for image formats
-                self.term.screenshot_to_file(
-                    str(filepath),
-                    format=screenshot_format,
-                    scrollback_offset=scroll_offset,
-                    minimum_contrast=self.config.screenshot_minimum_contrast if self.config else 0.0,
-                )
+                minimum_contrast = 0.5
+                if self.config:
+                    if self.config.screenshot_minimum_contrast is not None:
+                        minimum_contrast = self.config.screenshot_minimum_contrast
+                    else:
+                        minimum_contrast = self.config.minimum_contrast
+                faint_text_alpha = self.config.faint_text_alpha if self.config else 0.5
+                bold_brightening = self.config.bold_brightening if self.config else False
+                # Font size reduced 10% from 13.0 to match TUI appearance
+                font_size = 11.7
+                screenshot_kwargs = {
+                    "format": screenshot_format,
+                    "font_size": font_size,
+                    "scrollback_offset": scroll_offset,
+                    "faint_text_alpha": faint_text_alpha,
+                    "minimum_contrast": minimum_contrast,
+                    "bold_brightening": bold_brightening,
+                }
+                try:
+                    self.term.screenshot_to_file(
+                        str(filepath),
+                        **screenshot_kwargs,
+                    )
+                except TypeError as exc:
+                    # Older core builds may not yet support faint_text_alpha. Retry without it.
+                    if "faint_text_alpha" in str(exc):
+                        screenshot_kwargs.pop("faint_text_alpha", None)
+                        debug_log(
+                            "SCREENSHOT",
+                            "Core build missing faint_text_alpha support; retrying without it",
+                        )
+                        self.term.screenshot_to_file(
+                            str(filepath),
+                            **screenshot_kwargs,
+                        )
+                    else:
+                        raise
                 debug_log(
                     "SCREENSHOT",
-                    f"Capturing screenshot with scroll_offset={scroll_offset}, "
-                    f"minimum_contrast={self.config.screenshot_minimum_contrast if self.config else 0.0}",
+                    f"Capturing screenshot with scroll_offset={scroll_offset}, minimum_contrast={minimum_contrast}",
                 )
 
             debug_log("SCREENSHOT", f"Saved screenshot to {filepath}")

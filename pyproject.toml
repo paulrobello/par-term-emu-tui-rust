@@ -1,6 +1,6 @@
 [project]
 name = "par-term-emu-tui-rust"
-version = "0.4.0"
+version = "0.5.0"
 description = "Textual-based TUI demonstration of par-term-emu-tui-rust terminal emulator"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,7 +10,7 @@ dependencies = [
     "ruamel.yaml>=0.18.0",
     "xdg-base-dirs>=6.0.2",
     "pyperclip>=1.11.0",
-    "par-term-emu-core-rust>=0.6.0",
+    "par-term-emu-core-rust>=0.8.0",
 ]
 authors = [
     { name = "Paul Robello", email = "probello@gmail.com" },
@@ -167,6 +167,7 @@ timeout = 10
 testpaths = [
     "tests",
 ]
+
 
 [dependency-groups]
 dev = [

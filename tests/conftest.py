@@ -48,6 +48,12 @@ def _install_par_term_core_stub() -> None:
 
         def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
             self._buffer: dict[tuple[int, int], str] = {}
+            self._notification_config = None
+            self._max_notifications = 0
+            self._max_clipboard_sync_events = 0
+            self._max_clipboard_event_bytes = 0
+            self._activity_updates = 0
+            self._shell_stats = None
 
         # SelectionManager expects these on the terminal
         def get_word_at(self, col: int, row: int, word_chars: str) -> str:
@@ -76,6 +82,31 @@ def _install_par_term_core_stub() -> None:
             """Consume pasted content (no-op in stub)."""
             _ = content
 
+        # Notification / clipboard helpers invoked by backend_controls
+        def set_notification_config(self, config) -> None:  # noqa: ANN001 - matches native signature
+            self._notification_config = config
+
+        def set_max_notifications(self, count: int) -> None:
+            self._max_notifications = count
+
+        def set_max_clipboard_sync_events(self, count: int) -> None:
+            self._max_clipboard_sync_events = count
+
+        def set_max_clipboard_event_bytes(self, size: int) -> None:
+            self._max_clipboard_event_bytes = size
+
+        def update_activity(self) -> None:
+            self._activity_updates += 1
+
+        def check_silence(self) -> None:
+            return
+
+        def check_activity(self) -> None:
+            return
+
+        def get_shell_integration_stats(self) -> None:
+            return self._shell_stats
+
     class DummyCursorStyle:
         """Simple container for cursor style constants used in comparisons."""
 
@@ -88,6 +119,18 @@ def _install_par_term_core_stub() -> None:
 
     core.PtyTerminal = DummyPtyTerminal  # type: ignore[attr-defined]
     core.CursorStyle = DummyCursorStyle  # type: ignore[attr-defined]
+
+    class NotificationConfig:
+        def __init__(self) -> None:
+            self.bell_desktop = False
+            self.bell_sound = 0
+            self.bell_visual = True
+            self.activity_enabled = False
+            self.activity_threshold = 10
+            self.silence_enabled = False
+            self.silence_threshold = 300
+
+    core.NotificationConfig = NotificationConfig  # type: ignore[attr-defined]
 
     # Add stub for adjust_contrast_rgb used by rendering.py
     def adjust_contrast_rgb(

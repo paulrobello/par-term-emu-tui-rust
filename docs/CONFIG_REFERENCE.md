@@ -17,6 +17,7 @@ Comprehensive reference for par-term-emu-tui-rust TUI application configuration 
 - [Theme Configuration](#theme-configuration)
 - [Notification Settings](#notification-settings)
 - [Screenshot Configuration](#screenshot-configuration)
+- [Recording Configuration](#recording-configuration)
 - [Hyperlinks & URLs](#hyperlinks--urls)
 - [UI Elements](#ui-elements)
 - [Shell Behavior](#shell-behavior)
@@ -114,8 +115,8 @@ Choose recovery option:
 
 ## Currently Implemented Settings
 
-**Implementation Status** (Last Updated: 2025-11-18):
-- ✅ **36 options fully implemented**
+**Implementation Status** (Last Updated: 2025-11-19):
+- ✅ **56 options fully implemented**
 
 | Setting | Config Key | Default | Notes |
 |---------|-----------|---------|-------|
@@ -141,13 +142,29 @@ Choose recovery option:
 | Visual bell enabled | `visual_bell_enabled` | `true` | Shows bell icon (🔔) in header on BEL character |
 | Theme | `theme` | `"iterm2-dark"` | Color theme name |
 | Bold brightening | `bold_brightening` | `false` | Use bright colors (8-15) for bold text with colors 0-7 |
-| Minimum contrast | `minimum_contrast` | `0.0` | Live display contrast adjustment (0.0-1.0, iTerm2-compatible) |
+| Minimum contrast | `minimum_contrast` | `0.5` | Live display contrast adjustment (0.0-1.0, iTerm2-compatible) |
+| Faint text alpha | `faint_text_alpha` | `0.5` | Alpha multiplier for faint/dim text (0.0-1.0) |
 | Show notifications | `show_notifications` | `true` | Display OSC 9/777 notifications |
 | Notification timeout | `notification_timeout` | `5` | Notification display duration (seconds) |
+| Notification bell desktop | `notification_bell_desktop` | `false` | Forward BEL to desktop notification center |
+| Notification bell sound | `notification_bell_sound` | `0` | Volume (0-100) for backend bell audio |
+| Notification bell visual | `notification_bell_visual` | `true` | Enable backend visual bell overlay |
+| Notification activity enabled | `notification_activity_enabled` | `false` | Alert on activity after inactivity |
+| Notification activity threshold | `notification_activity_threshold` | `10` | Seconds of inactivity before activity alert |
+| Notification silence enabled | `notification_silence_enabled` | `false` | Alert after prolonged silence |
+| Notification silence threshold | `notification_silence_threshold` | `300` | Seconds of silence before alert |
+| Notification max buffer | `notification_max_buffer` | `64` | Max OSC 9/777 notifications buffered |
+| Clipboard max sync events | `clipboard_max_sync_events` | `64` | Max clipboard sync events retained |
+| Clipboard max event bytes | `clipboard_max_event_bytes` | `2048` | Max bytes per clipboard sync event |
 | Screenshot directory | `screenshot_directory` | `None` | Directory for screenshots |
 | Screenshot format | `screenshot_format` | `"png"` | Format: png, jpeg, svg, bmp, html |
-| Screenshot minimum contrast | `screenshot_minimum_contrast` | `0.0` | Auto-contrast (0.0-1.0, iTerm2-compatible) |
+| Screenshot minimum contrast | `screenshot_minimum_contrast` | `null` | Auto-contrast override (null inherits `minimum_contrast`) |
 | Open screenshot after capture | `open_screenshot_after_capture` | `false` | Auto-open with system viewer |
+| Recording directory | `recording_directory` | `None` | Directory for recordings (auto-detect if None) |
+| Recording format | `recording_format` | `"asciicast"` | Format: asciicast, json |
+| Recording title template | `recording_title_template` | `"Terminal Session {timestamp}"` | Title template with {timestamp} placeholder |
+| Recording auto-export on stop | `recording_auto_export_on_stop` | `true` | Automatically export when recording stopped |
+| Open recording after export | `open_recording_after_export` | `false` | Auto-open with default app after export |
 | Exit on shell exit | `exit_on_shell_exit` | `true` | Exit TUI when shell exits |
 | Clickable URLs | `clickable_urls` | `true` | Enable clicking URLs to open in browser |
 | Link color | `link_color` | `[100, 150, 255]` | RGB color for hyperlinks (blue) |
@@ -378,7 +395,8 @@ accept_osc7: true                   # Enable directory tracking (default)
 |---------|------|---------|-------------|
 | `theme` | `str` | `"iterm2-dark"` | Color theme name to use for terminal colors |
 | `bold_brightening` | `bool` | `false` | Use bright ANSI colors (8-15) for bold text with normal colors (0-7) |
-| `minimum_contrast` | `float` | `0.0` | Minimum contrast adjustment for live terminal display (0.0-1.0) |
+| `minimum_contrast` | `float` | `0.5` | Minimum contrast adjustment for live terminal display (0.0-1.0) |
+| `faint_text_alpha` | `float` | `0.5` | Alpha multiplier for faint/dim text (0.0-1.0) |
 
 **Available Themes:**
 - Use `par-term-emu-tui-rust --list-themes` to see all available themes
@@ -393,12 +411,18 @@ accept_osc7: true                   # Enable directory tracking (default)
 
 **Minimum Contrast (Live Display):**
 - **Range**: 0.0-1.0
-- **Default**: 0.0 (disabled, matches iTerm2 default)
+- **Default**: 0.5 (matches iTerm2 slider at 50%)
 - **Algorithm**: NTSC perceived brightness formula (30% red, 59% green, 11% blue)
 - **Behavior**: Automatically adjusts text colors when brightness difference < threshold
 - **Recommended**: 0.5 for improved readability
 - **Use Cases**: Accessibility, dark-on-dark/light-on-light color schemes
 - **Note**: This affects live terminal display; use `screenshot_minimum_contrast` for screenshots
+
+**Faint Text Alpha:**
+- **Range**: 0.0-1.0
+- **Default**: 0.5 (renders faint text at 50% opacity)
+- **Behavior**: Blends faint text toward the background while preserving hue
+- **Use Cases**: Match iTerm2's "Faint text" slider or customize dimming strength
 
 ### Example Configuration
 
@@ -406,7 +430,8 @@ accept_osc7: true                   # Enable directory tracking (default)
 # Theme
 theme: "iterm2-dark"           # Default iTerm2-style theme
 bold_brightening: false        # Don't use bright colors for bold text (default)
-minimum_contrast: 0.0          # Disabled (iTerm2 default), use 0.5 for readability
+minimum_contrast: 0.5          # Moderate contrast for readability
+faint_text_alpha: 0.5          # 50% opacity for faint text
 ```
 
 ---
@@ -419,6 +444,14 @@ minimum_contrast: 0.0          # Disabled (iTerm2 default), use 0.5 for readabil
 |---------|------|---------|-------------|
 | `show_notifications` | `bool` | `true` | Display OSC 9/777 notifications as toast messages |
 | `notification_timeout` | `int` | `5` | Duration in seconds to display notifications |
+| `notification_bell_desktop` | `bool` | `false` | Forward BEL events to desktop notification center |
+| `notification_bell_sound` | `int` | `0` | Volume (0-100) for backend bell audio alerts |
+| `notification_bell_visual` | `bool` | `true` | Enable backend visual bell overlay |
+| `notification_activity_enabled` | `bool` | `false` | Notify when activity resumes after inactivity |
+| `notification_activity_threshold` | `int` | `10` | Seconds of inactivity before an activity alert |
+| `notification_silence_enabled` | `bool` | `false` | Notify after prolonged silence |
+| `notification_silence_threshold` | `int` | `300` | Seconds of silence before a silence alert |
+| `notification_max_buffer` | `int` | `64` | Max OSC 9/777 notifications retained by backend |
 
 **Notes:**
 - OSC 9 provides simple notifications (message only)
@@ -432,6 +465,27 @@ minimum_contrast: 0.0          # Disabled (iTerm2 default), use 0.5 for readabil
 # Notifications
 show_notifications: true      # Enable notification toasts
 notification_timeout: 5       # Auto-dismiss after 5 seconds
+notification_bell_desktop: false
+notification_bell_sound: 25   # Light chime on BEL
+notification_bell_visual: true
+notification_activity_enabled: true
+notification_activity_threshold: 30
+notification_silence_enabled: true
+notification_silence_threshold: 600
+notification_max_buffer: 64
+```
+
+### Clipboard Sync Limits
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `clipboard_max_sync_events` | `int` | `64` | Maximum clipboard sync events retained |
+| `clipboard_max_event_bytes` | `int` | `2048` | Maximum bytes stored per clipboard sync event |
+
+```yaml
+# Clipboard limits
+clipboard_max_sync_events: 32
+clipboard_max_event_bytes: 4096
 ```
 
 ---
@@ -444,15 +498,15 @@ notification_timeout: 5       # Auto-dismiss after 5 seconds
 |---------|------|---------|-------------|
 | `screenshot_directory` | `str \| None` | `None` | Directory to save screenshots (None = auto-detect) |
 | `screenshot_format` | `str` | `"png"` | File format: `"png"`, `"jpeg"`, `"bmp"`, `"svg"`, `"html"` |
-| `screenshot_minimum_contrast` | `float` | `0.0` | Minimum contrast adjustment (0.0-1.0, iTerm2-compatible) |
+| `screenshot_minimum_contrast` | `float \| None` | `None` | Minimum contrast override (None = inherit `minimum_contrast`) |
 | `open_screenshot_after_capture` | `bool` | `false` | Automatically open screenshot with system viewer |
 
 **Minimum Contrast Adjustment**:
 - **Range**: 0.0-1.0
-- **Default**: 0.0 (disabled, matches iTerm2 default)
+- **Default**: `None` (inherit the live `minimum_contrast`, default 0.5)
 - **Algorithm**: NTSC perceived brightness formula (30% red, 59% green, 11% blue)
 - **Behavior**: Automatically adjusts text colors when brightness difference < threshold
-- **Recommended**: 0.5 for improved readability
+- **Recommended**: 0.5 for improved readability; set to 0.0 to disable for screenshots only
 - **Use Cases**: Documentation, accessibility, dark-on-dark/light-on-light schemes
 
 **Screenshot Directory Auto-Detection** (when `None`):
@@ -474,9 +528,70 @@ notification_timeout: 5       # Auto-dismiss after 5 seconds
 # Screenshots
 screenshot_directory: null             # Auto-detect directory
 screenshot_format: "png"               # PNG format
-screenshot_minimum_contrast: 0.0       # Disabled (iTerm2 default), use 0.5 for readability
+screenshot_minimum_contrast: null      # Inherit live minimum_contrast (default 0.5)
 open_screenshot_after_capture: false   # Don't auto-open
 ```
+
+---
+
+## Recording Configuration
+
+### Recording Settings
+
+Record terminal sessions with full fidelity for playback with asciinema or custom players.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `recording_directory` | `str \| None` | `None` | Directory to save recordings (None = auto-detect) |
+| `recording_format` | `str` | `"asciicast"` | File format: `"asciicast"`, `"json"` |
+| `recording_title_template` | `str` | `"Terminal Session {timestamp}"` | Template for recording title (use {timestamp} for auto timestamp) |
+| `recording_auto_export_on_stop` | `bool` | `true` | Automatically export recording when stopped |
+| `open_recording_after_export` | `bool` | `false` | Automatically open recording with default application |
+
+**Recording Control:**
+- **Keyboard**: Ctrl+Shift+R to toggle recording (start/stop)
+- **Visual Indicator**: Recording icon (⏺️ REC) appears in header when active
+- **Flash Messages**: Confirmation messages for start/stop/save actions
+
+**Recording Directory Auto-Detection** (when `None`):
+1. Shell's current working directory (from OSC 7)
+2. XDG_VIDEOS_DIR/Recordings
+3. ~/Videos/Recordings
+4. Home directory
+
+**Recording Format Options:**
+- `asciicast` - Asciinema v2 format (default, playback with `asciinema play`)
+- `json` - JSON export with full session data for custom processing
+
+**Title Template:**
+- Use `{timestamp}` placeholder for automatic timestamp insertion
+- Example: `"Build Session {timestamp}"` → `"Build Session 2025-01-19 12:00:00 UTC"`
+
+**Playback:**
+```bash
+# Play recording with asciinema
+asciinema play terminal_recording_20250119_120000.cast
+
+# Upload to share
+asciinema upload terminal_recording_20250119_120000.cast
+```
+
+### Example Configuration
+
+```yaml
+# Recording
+recording_directory: null                              # Auto-detect directory
+recording_format: "asciicast"                         # Asciicast v2 format
+recording_title_template: "Terminal Session {timestamp}"  # Title with timestamp
+recording_auto_export_on_stop: true                   # Auto-export when stopped
+open_recording_after_export: false                    # Don't auto-open
+```
+
+**Use Cases:**
+- **Documentation**: Capture command sequences for tutorials
+- **Training**: Record demonstrations for team training
+- **Debugging**: Capture intermittent issues with precise timing
+- **Sharing**: Create reproducible examples for support
 
 ---
 

@@ -46,6 +46,38 @@ def _rgb_to_hex(r: int, g: int, b: int) -> str:
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
+def _hex_to_rgb(color: str | None) -> tuple[int, int, int] | None:
+    """Convert "#rrggbb" strings to RGB tuples."""
+
+    if not color:
+        return None
+    value = color.lstrip("#")
+    if len(value) != 6:
+        return None
+    try:
+        return (
+            int(value[0:2], 16),
+            int(value[2:4], 16),
+            int(value[4:6], 16),
+        )
+    except ValueError:
+        return None
+
+
+def _blend_with_background(
+    fg: tuple[int, int, int],
+    bg: tuple[int, int, int],
+    alpha: float,
+) -> tuple[int, int, int]:
+    """Premultiply foreground against background using alpha."""
+
+    alpha = max(0.0, min(1.0, alpha))
+    r = round(fg[0] * alpha + bg[0] * (1.0 - alpha))
+    g = round(fg[1] * alpha + bg[1] * (1.0 - alpha))
+    b = round(fg[2] * alpha + bg[2] * (1.0 - alpha))
+    return (r, g, b)
+
+
 @lru_cache(maxsize=512)
 def _create_style(
     color: str | None = None,
@@ -140,6 +172,7 @@ class Renderer:
 
         # Default background color from theme (hex string like "#2e3436")
         self._default_bg_color: str | None = None
+        self._default_bg_rgb: tuple[int, int, int] | None = None
 
     def set_default_background(self, bg_color: str) -> None:
         """Set the default background color to use when cells have no explicit background.
@@ -148,6 +181,7 @@ class Renderer:
             bg_color: Hex color string like "#rrggbb"
         """
         self._default_bg_color = bg_color
+        self._default_bg_rgb = _hex_to_rgb(bg_color)
 
     def prepare_frame(self, widget_id: str) -> None:
         """Prepare frame state for rendering.
@@ -546,6 +580,16 @@ class Renderer:
             if self.config.minimum_contrast > 0.0 and fg_rgb and bg_rgb:
                 adjusted_fg_rgb = adjust_contrast_rgb(fg_rgb, bg_rgb, self.config.minimum_contrast)
 
+            faint_applied = False
+            if attrs and attrs.dim and adjusted_fg_rgb:
+                faint_alpha = max(0.0, min(1.0, self.config.faint_text_alpha))
+                if faint_alpha < 1.0:
+                    background = bg_rgb
+                    if background is None or (background == (0, 0, 0) and self._default_bg_rgb):
+                        background = self._default_bg_rgb or (0, 0, 0)
+                    adjusted_fg_rgb = _blend_with_background(adjusted_fg_rgb, background, faint_alpha)
+                    faint_applied = True
+
             if is_reverse:
                 # Draw with reverse video (swap fg/bg)
                 style_kwargs["color"] = _rgb_to_hex(*bg_rgb) if bg_rgb else (self._default_bg_color or "#000000")
@@ -576,7 +620,7 @@ class Renderer:
                     style_kwargs["italic"] = True
                 if attrs.underline:
                     style_kwargs["underline"] = True
-                if attrs.dim:
+                if attrs.dim and not faint_applied:
                     style_kwargs["dim"] = True
                 if attrs.blink:
                     style_kwargs["blink"] = True
