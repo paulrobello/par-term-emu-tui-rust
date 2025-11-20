@@ -693,15 +693,18 @@ class Renderer:
 
         # Render Sixel graphics overlaid on text
         # Graphics are rendered using Unicode half-blocks for 2:1 vertical compression
-        # Only show graphics when viewing live terminal (not scrollback)
+        # Graphics are positioned in terminal coordinates, so adjust for scroll_offset
         graphics_at_row = []
-        if scroll_offset == 0:
-            # We're viewing the live terminal - show graphics
-            graphics_at_row = self.term.graphics_at_row(y)
+        if y >= scroll_offset:
+            # This widget row corresponds to a terminal row (not pure scrollback)
+            # Calculate which terminal row we're viewing
+            terminal_row = y - scroll_offset
+            graphics_at_row = self.term.graphics_at_row(terminal_row)
 
         if graphics_at_row:
             for graphic in graphics_at_row:
-                gfx_segments = self._render_graphic_line(graphic, y, term_cols)
+                # Pass terminal_row for proper pixel calculation
+                gfx_segments = self._render_graphic_line(graphic, terminal_row, term_cols)
                 if gfx_segments:
                     gfx_col, _ = graphic.position
                     # Overlay graphic segments onto text segments at the graphic's column position
