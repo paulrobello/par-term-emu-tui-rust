@@ -99,8 +99,10 @@ class ClipboardManager:
         On Linux: Reads from X11 PRIMARY selection (text selected with mouse).
         On macOS/Windows: Pastes from regular clipboard.
 
-        Middle-click paste is immediate without warnings or chunking.
+        IMPORTANT: PtyTerminal is NOT thread-safe and must be called from main thread only.
         """
+        import asyncio
+
         try:
             if sys.platform == "linux":
                 content = self._read_from_primary()
@@ -108,13 +110,22 @@ class ClipboardManager:
                 content = self._read_from_clipboard()
 
             if content:
-                # Middle click paste typically doesn't warn or chunk
-                # It's expected to be small (just selected text)
-                self.term.paste(content)
+                # Use small chunks with yields for middle-click too
+                chunk_size = 128
+                total_chunks = (len(content) + chunk_size - 1) // chunk_size
+
                 debug_log(
                     "PASTE",
-                    f"Middle-click pasted {len(content)} chars",
+                    f"Middle-click pasting {len(content)} chars in {total_chunks} chunks",
                 )
+
+                # Paste in small chunks with yields
+                for i in range(0, len(content), chunk_size):
+                    chunk = content[i : i + chunk_size]
+                    self.term.write_str(chunk)
+                    # Yield to event loop
+                    await asyncio.sleep(0.002)
+
         except Exception as e:
             debug_log("PASTE", f"Failed to paste: {e}")
 
@@ -161,6 +172,9 @@ class ClipboardManager:
         - paste_chunk_size: Splits paste into chunks if > 0
         - paste_chunk_delay_ms: Delay between chunks
 
+        IMPORTANT: PtyTerminal is NOT thread-safe and must be called from main thread only.
+        We use small chunks with async yields to keep UI responsive.
+
         Returns:
             Tuple of (success, message). Message may be a warning, error, or success message.
         """
@@ -182,31 +196,51 @@ class ClipboardManager:
             if content_size > self.config.paste_warn_size:
                 warning = f"Pasting large content ({content_size:,} bytes)"
 
-            # Check if chunking is enabled
+            # CRITICAL: Use very small chunks to avoid blocking the event loop
+            # PtyTerminal is not thread-safe, so we must stay on main thread
+            # but yield frequently to keep UI responsive
             if self.config.paste_chunk_size > 0:
-                # Paste in chunks
                 chunk_size = self.config.paste_chunk_size
                 delay_ms = self.config.paste_chunk_delay_ms
-                total_chunks = (len(content) + chunk_size - 1) // chunk_size
+            else:
+                # Use very small chunks (128 bytes) with minimal delay
+                # This keeps each write_str call very short
+                chunk_size = 128
+                delay_ms = 0
 
-                debug_log(
-                    "PASTE",
-                    f"Chunked paste: {len(content)} chars in {total_chunks} chunks of {chunk_size}",
-                )
+            total_chunks = (len(content) + chunk_size - 1) // chunk_size
 
-                for i in range(0, len(content), chunk_size):
-                    chunk = content[i : i + chunk_size]
-                    self.term.paste(chunk)
+            debug_log(
+                "PASTE",
+                f"Pasting {len(content)} chars in {total_chunks} chunks (async on main thread)",
+            )
 
-                    # Add delay between chunks (except after last chunk)
-                    if i + chunk_size < len(content):
-                        await asyncio.sleep(delay_ms / 1000.0)
+            # Paste in very small chunks, yielding between each
+            for i in range(0, len(content), chunk_size):
+                chunk = content[i : i + chunk_size]
 
+                try:
+                    # Write to PTY (must be on main thread)
+                    self.term.write_str(chunk)
+                except Exception as e:
+                    debug_log("PASTE", f"Error writing chunk: {e}")
+                    return False, f"Paste failed: {e}"
+
+                # CRITICAL: Yield control to event loop after each chunk
+                # This allows Textual to process other events and keep UI responsive
+                # Use create_task to ensure we don't block
+                await asyncio.sleep(0.002)  # 2ms per chunk - fast but responsive
+
+                # Add configured delay if specified
+                if delay_ms > 0 and i + chunk_size < len(content):
+                    await asyncio.sleep(delay_ms / 1000.0)
+
+            debug_log("PASTE", f"Completed pasting {len(content)} chars")
+
+            # Build result message
+            if self.config.paste_chunk_size > 0 and total_chunks > 1:
                 message = f"Pasted {len(content)} characters in {total_chunks} chunks"
             else:
-                # Paste all at once (default behavior)
-                self.term.paste(content)
-                # message = "Pasted from clipboard"
                 message = ""
 
             # Return warning if present, otherwise success message

@@ -232,10 +232,12 @@ class Renderer:
         _gfx_col, gfx_row = graphic.position
         gfx_width = graphic.width
         gfx_height = graphic.height
+        scroll_offset = graphic.scroll_offset_rows
 
         # Calculate which pixel rows of the graphic correspond to this terminal row
         # Each terminal row displays 2 pixel rows (using half blocks)
-        pixel_row_start = (row - gfx_row) * 2
+        # Add scroll_offset to account for portion that scrolled off the top
+        pixel_row_start = ((row - gfx_row) + scroll_offset) * 2
 
         # Check if this row overlaps the graphic
         if pixel_row_start < 0 or pixel_row_start >= gfx_height:
