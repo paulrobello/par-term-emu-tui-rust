@@ -695,16 +695,43 @@ class Renderer:
         # Graphics are rendered using Unicode half-blocks for 2:1 vertical compression
         # Graphics are positioned in terminal coordinates, so adjust for scroll_offset
         graphics_at_row = []
+        terminal_row = None
+
         if y >= scroll_offset:
             # This widget row corresponds to a terminal row (not pure scrollback)
             # Calculate which terminal row we're viewing
             terminal_row = y - scroll_offset
             graphics_at_row = self.term.graphics_at_row(terminal_row)
+        else:
+            # We're in pure scrollback - check for graphics with scrolled-off portions
+            # How far back in scrollback are we?
+            scrollback_distance = scroll_offset - y
+
+            # Check all graphics to see if any have portions at this scrollback position
+            for graphic in self.term.graphics():
+                # How many rows of this graphic have scrolled off?
+                scroll_off = graphic.scroll_offset_rows
+
+                # Calculate which "virtual row" this widget row represents
+                # relative to the graphic's original position
+                # If graphic at terminal row 0 with scroll_offset 200, and we're viewing
+                # 200 rows back (scrollback_distance=200), then we're at graphic row 0
+                graphic_virtual_row = scroll_off - scrollback_distance
+
+                # Check if this virtual row is within the graphic's height
+                if 0 <= graphic_virtual_row < (graphic.height + 1) // 2:
+                    graphics_at_row.append((graphic, graphic_virtual_row))
 
         if graphics_at_row:
-            for graphic in graphics_at_row:
-                # Pass terminal_row for proper pixel calculation
-                gfx_segments = self._render_graphic_line(graphic, terminal_row, term_cols)
+            for item in graphics_at_row:
+                if isinstance(item, tuple):
+                    # Scrollback graphic with virtual row
+                    graphic, virtual_row = item
+                    gfx_segments = self._render_graphic_line(graphic, virtual_row, term_cols)
+                else:
+                    # Terminal graphic
+                    graphic = item
+                    gfx_segments = self._render_graphic_line(graphic, terminal_row, term_cols)
                 if gfx_segments:
                     gfx_col, _ = graphic.position
                     # Overlay graphic segments onto text segments at the graphic's column position
