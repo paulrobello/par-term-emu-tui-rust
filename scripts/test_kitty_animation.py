@@ -21,9 +21,7 @@ import sys
 import time
 
 
-def create_solid_png(
-    color_rgb: tuple[int, int, int], width: int = 32, height: int = 32
-) -> bytes:
+def create_solid_png(color_rgb: tuple[int, int, int], width: int = 32, height: int = 32) -> bytes:
     """Create a simple solid color PNG image.
 
     Args:
@@ -35,8 +33,9 @@ def create_solid_png(
         PNG image bytes
     """
     try:
-        from PIL import Image
         import io
+
+        from PIL import Image
 
         img = Image.new("RGB", (width, height), color_rgb)
         buf = io.BytesIO()
@@ -109,7 +108,7 @@ def send_animation_control(image_id: int, state: str | None = None, num_plays: i
     """
     # Action: a=a (animation control)
     # Image ID: i=<id>
-    params = [f"a=a", f"i={image_id}"]
+    params = ["a=a", f"i={image_id}"]
     if state is not None:
         params.append(f"s={state}")
     if num_plays is not None:
@@ -240,9 +239,7 @@ def main() -> None:
         print("\nNote: Animation playback requires frontend integration.")
         print("Current status:")
         print("  ✅ Backend: Animation frames stored and controlled")
-        print(
-            "  🔄 Frontend: Needs to call update_animations() and render current frame"
-        )
+        print("  🔄 Frontend: Needs to call update_animations() and render current frame")
         print("\nTo verify backend storage, check debug logs for:")
         print("  - Animation frame additions")
         print("  - Animation control commands")

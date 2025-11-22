@@ -727,6 +727,7 @@ class Renderer:
 
         if graphics_at_row:
             for item in graphics_at_row:
+                gfx_segments = None
                 if isinstance(item, tuple):
                     # Scrollback graphic with virtual row
                     # virtual_row is a graphic row (0-N), but _render_graphic_line expects a terminal row
@@ -738,9 +739,10 @@ class Renderer:
                     equivalent_terminal_row = virtual_row - scroll_off + gfx_row
                     gfx_segments = self._render_graphic_line(graphic, equivalent_terminal_row, term_cols)
                 else:
-                    # Terminal graphic
+                    # Terminal graphic (only occurs when not in scrollback, so terminal_row is not None)
                     graphic = item
-                    gfx_segments = self._render_graphic_line(graphic, terminal_row, term_cols)
+                    if terminal_row is not None:
+                        gfx_segments = self._render_graphic_line(graphic, terminal_row, term_cols)
                 if gfx_segments:
                     gfx_col, _ = graphic.position
                     # Overlay graphic segments onto text segments at the graphic's column position

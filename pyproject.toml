@@ -84,6 +84,7 @@ target-version = "py314"
 line-length = 120
 exclude = [
     "debug_scripts",
+    "scripts",
     "__pycache__",
     ".git",
 ]
@@ -158,6 +159,7 @@ include = [
 ]
 exclude = [
     "debug_scripts",
+    "scripts",
     "__pycache__",
     ".git",
     ".venv",

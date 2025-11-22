@@ -1831,7 +1831,11 @@ class TerminalWidget(Widget, can_focus=True):
             before_flags = self.term.keyboard_flags()
             before_app = self._app_requested_protocol
 
-            debug_log("KEYBOARD", f"BEFORE reset: term_flags={before_flags}, app_requested={before_app}, last={self._last_keyboard_flags}")
+            debug_log(
+                "KEYBOARD",
+                f"BEFORE reset: term_flags={before_flags}, app_requested={before_app}, "
+                f"last={self._last_keyboard_flags}",
+            )
 
             # Force set keyboard protocol flags directly to 0
             # This bypasses protocol sequences and directly modifies the terminal's internal state
@@ -1844,7 +1848,9 @@ class TerminalWidget(Widget, can_focus=True):
 
             # Check state after reset
             after_flags = self.term.keyboard_flags()
-            debug_log("KEYBOARD", f"AFTER reset: term_flags={after_flags}, app_requested={self._app_requested_protocol}")
+            debug_log(
+                "KEYBOARD", f"AFTER reset: term_flags={after_flags}, app_requested={self._app_requested_protocol}"
+            )
 
             msg = f"Keyboard reset: {before_flags}→{after_flags} (Press Ctrl+L to clear screen)"
             self.post_message(messages.Flash(msg, "success", 4.0))
