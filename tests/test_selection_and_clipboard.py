@@ -109,7 +109,8 @@ class _ClipboardTestTerminal:
     def __init__(self) -> None:
         self.pasted: list[str] = []
 
-    def paste(self, content: str) -> None:
+    def write_str(self, content: str) -> None:
+        """Record written content - ClipboardManager calls write_str, not paste."""
         self.pasted.append(content)
 
 

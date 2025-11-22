@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **par-term-emu-tui-rust** is a modern terminal emulator TUI built with Textual and par-term-emu-core-rust (a Rust terminal emulation backend). This is a Python TUI application that wraps high-performance Rust terminal emulation with rich UI features.
 
+**Part of the par-term Ecosystem:**
+- **par-term-emu-core-rust**: Shared Rust terminal emulation backend (../par-term-emu-core-rust)
+- **par-term**: Native Rust GUI terminal emulator frontend (../par-term)
+- **par-term-emu-tui-rust** (this project): Python Textual TUI frontend
+
 **Key Stack:**
 - Python 3.12+ (requires 3.14 for development)
 - Textual 6.6.0+ (TUI framework)
@@ -343,9 +348,25 @@ uv run textual keys     # Key name helper
 ## Related Resources
 
 - [Textual Documentation](https://textual.textualize.io/)
-- [par-term-emu-core-rust](https://github.com/paulrobello/par-term-emu-core-rust)
 - [XDG Base Directory Spec](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+
+### Sister Projects
+
+This project is part of the par-term ecosystem with two sister projects:
+
+1. **par-term-emu-core-rust** (Rust terminal emulation backend)
+   - Location: `../par-term-emu-core-rust` (local)
+   - GitHub: https://github.com/paulrobello/par-term-emu-core-rust
+   - Purpose: Core terminal emulation engine (shared by both frontends)
+   - This TUI depends on it as a local package dependency
+
+2. **par-term** (Full Rust terminal emulator frontend)
+   - Location: `../par-term` (local)
+   - Purpose: Native Rust GUI terminal emulator using the same core backend
+   - Alternative frontend to this Python TUI
+
+### Important Reminders
+
 - Never run the tui, ask the user to run it
-- the sister project par-term-emu-core-rust is located locally in ../par-term-emu-core-rust and on github in https://github.com/paulrobello/par-term-emu-core-rust
 - *IMPORTANT* NEVER RUN THE TUI IT WILL CORRUPT YOUR TERMINAL, ASK THE USER TO RUN IT!
 - Do not store package versions in documentation. It is brittle and difficult to maintain.

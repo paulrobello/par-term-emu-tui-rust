@@ -584,9 +584,15 @@ wheels = [
 name = "par-term-emu-core-rust"
 version = "0.9.0"
 source = { directory = "../par-term-emu-core-rust" }
+dependencies = [
+    { name = "pillow" },
+]
 
 [package.metadata]
-requires-dist = [{ name = "pillow", marker = "extra == 'image'", specifier = ">=12.0.0" }]
+requires-dist = [
+    { name = "pillow", specifier = ">=12.0.0" },
+    { name = "pillow", marker = "extra == 'image'", specifier = ">=12.0.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [

@@ -293,6 +293,25 @@ nnoremap <C-i> <C-i>
 2. Verify the TUI app is using alternate screen mode (most do)
 3. Report as a bug - it should auto-reset
 
+### Keyboard Stuck After Running kitten icat or Similar Apps
+
+**Problem**: After running `kitten icat` or other apps that don't use alternate screen, keyboard shows codes like `u97 u105` instead of normal input.
+
+**Root Cause**: Some applications (like `kitten icat`) enable KITTY keyboard protocol with `CSI > flags u` but:
+- Don't use alternate screen mode (so auto-reset doesn't trigger)
+- Don't properly disable protocol on exit (fail to send `CSI < u`)
+
+**Quick Fix**: Press **Ctrl+Shift+K** to reset the keyboard protocol to normal mode.
+
+This will:
+- Reset terminal's internal keyboard flags to 0 (normal mode)
+- Clear the TUI's protocol tracking state
+- Restore normal keyboard input immediately
+
+**Note**: After reset, you may see escape characters in the prompt (e.g., `7;6u`). These are harmless remnants. Just press **Ctrl+L** to clear the screen or type `clear`.
+
+**Why This Happens**: The automatic reset only triggers when exiting alternate screen mode. Apps that run in the main screen (like `kitten icat` for inline image display) don't trigger this cleanup.
+
 ### Keys Not Working After Enabling Protocol
 
 **Problem**: Some keys stop working when protocol is enabled.

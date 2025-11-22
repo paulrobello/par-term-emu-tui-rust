@@ -23,6 +23,7 @@ Complete reference for keyboard shortcuts and mouse interactions in Par Term Emu
 | **Ctrl+Shift+Q** | Quit application | Exit the TUI immediately |
 | **Ctrl+Shift+S** | Take screenshot | Capture current terminal view |
 | **Ctrl+Shift+R** | Toggle recording | Start/stop terminal session recording |
+| **Ctrl+Shift+K** | Reset keyboard | Reset keyboard protocol to normal mode |
 | **Ctrl+Shift+C** | Copy selection | Copy selected text to clipboard |
 | **Ctrl+C** | Smart copy | Copy if text is selected, otherwise send SIGINT |
 | **Cmd+C** (macOS) | Copy selection | Copy selected text to clipboard |

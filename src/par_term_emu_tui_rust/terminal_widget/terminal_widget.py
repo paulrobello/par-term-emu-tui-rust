@@ -103,6 +103,7 @@ class TerminalWidget(Widget, can_focus=True):
         ("ctrl+shift+v", "paste_clipboard", "Paste"),
         ("ctrl+shift+s", "save_screenshot", "Screenshot"),
         ("ctrl+shift+r", "toggle_recording", "Record"),
+        ("ctrl+shift+k", "reset_keyboard_protocol", "Reset KB"),
         ("ctrl+shift+pageup", "scroll_up", "Page Up"),
         ("ctrl+shift+pagedown", "scroll_down", "Page Down"),
         ("shift+home", "scroll_top", "Scroll Top"),
@@ -624,6 +625,18 @@ class TerminalWidget(Widget, can_focus=True):
                     self.app.exit()
             return
 
+        # Update Kitty graphics animations (call at ~60Hz)
+        # This advances animation frames and returns list of changed image IDs
+        changed_animations = self.term.update_animations()
+        if changed_animations:
+            # Animations changed - trigger refresh to show new frame
+            debug_log(
+                "ANIMATION",
+                f"widget={widget_id} animations changed for images: {changed_animations}",
+            )
+            # Directly refresh the widget to show the new animation frame
+            self.refresh()
+
         # Check if there are updates using generation tracking
         current_gen = self.term.update_generation()
         if self.term.has_updates_since(self.last_update_generation):
@@ -944,6 +957,25 @@ class TerminalWidget(Widget, can_focus=True):
         }
         if key in app_level_keys:
             debug_log("KEY", f"Allowing app-level keybinding to pass through: {key}")
+            return
+
+        # Check for widget-level bindings that should not be sent to terminal
+        # These are handled by BINDINGS - we let the action run but don't send to terminal
+        widget_bindings = {
+            "ctrl+shift+c",  # Copy selection
+            "ctrl+shift+v",  # Paste
+            "ctrl+shift+s",  # Screenshot
+            "ctrl+shift+r",  # Recording
+            "ctrl+shift+k",  # Reset keyboard protocol
+            "ctrl+shift+pageup",  # Scroll up
+            "ctrl+shift+pagedown",  # Scroll down
+            "shift+home",  # Scroll to top
+            "shift+end",  # Scroll to bottom
+        }
+        if key in widget_bindings:
+            debug_log("KEY", f"Widget binding - not sending to terminal: {key}")
+            # Don't call event.stop() - let the action system handle it
+            # Just return early to avoid sending to terminal
             return
 
         # Check for copy/paste shortcuts before processing other keys
@@ -1780,6 +1812,47 @@ class TerminalWidget(Widget, can_focus=True):
                 debug_log("RECORDING", f"Opened recording {display_path} with default app")
             else:
                 debug_log("RECORDING", f"Failed to open recording {display_path}")
+
+    def action_reset_keyboard_protocol(self) -> None:
+        """Reset Kitty keyboard protocol to normal mode.
+
+        Some applications like 'kitten icat' enable the Kitty keyboard protocol
+        (CSI > flags u) but fail to disable it on exit, leaving the keyboard in
+        enhanced mode where keys show as u#### codes.
+
+        This action:
+        1. Directly sets keyboard protocol flags to 0 in the terminal backend
+        2. Resets the TUI's internal keyboard protocol tracking state
+
+        Triggered by: Ctrl+Shift+K
+        """
+        try:
+            # Check current state before reset
+            before_flags = self.term.keyboard_flags()
+            before_app = self._app_requested_protocol
+
+            debug_log("KEYBOARD", f"BEFORE reset: term_flags={before_flags}, app_requested={before_app}, last={self._last_keyboard_flags}")
+
+            # Force set keyboard protocol flags directly to 0
+            # This bypasses protocol sequences and directly modifies the terminal's internal state
+            self.term.force_set_keyboard_flags(0)
+            debug_log("KEYBOARD", "Called force_set_keyboard_flags(0)")
+
+            # Reset TUI's internal keyboard protocol tracking state
+            self._app_requested_protocol = False
+            self._last_keyboard_flags = 0
+
+            # Check state after reset
+            after_flags = self.term.keyboard_flags()
+            debug_log("KEYBOARD", f"AFTER reset: term_flags={after_flags}, app_requested={self._app_requested_protocol}")
+
+            msg = f"Keyboard reset: {before_flags}→{after_flags} (Press Ctrl+L to clear screen)"
+            self.post_message(messages.Flash(msg, "success", 4.0))
+            debug_log("KEYBOARD", f"Keyboard protocol reset complete: {before_flags} → {after_flags}")
+        except Exception as e:
+            error_msg = f"Failed to reset keyboard protocol: {e}"
+            self.post_message(messages.Flash(error_msg, "error", 5.0))
+            debug_log("KEYBOARD", error_msg)
 
     def action_scroll_up(self) -> None:
         """Scroll up one page in scrollback."""
