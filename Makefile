@@ -12,6 +12,9 @@ ruff    := $(run) ruff
 pyright := $(run) pyright
 export PIPENV_VERBOSITY=-1
 
+# Get the system temp directory dynamically (works on macOS and Linux)
+TEMP_DIR := $(shell $(python) -c "import tempfile; print(tempfile.gettempdir())")
+
 help:
 	@echo "==================================================================="
 	@echo "  par-term-emu-tui-rust Makefile"
@@ -114,8 +117,8 @@ debug: install debug-clear
 	@echo "  Running TUI with DEBUG_LEVEL=2 (INFO)"
 	@echo "======================================================================"
 	@echo ""
-	@echo "  Rust debug output: /tmp/par_term_emu_core_rust_debug_rust.log"
-	@echo "  Python debug output: /tmp/par_term_emu_debug_python.log"
+	@echo "  Rust debug output: $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log"
+	@echo "  Python debug output: $(TEMP_DIR)/par_term_emu_debug_python.log"
 	@echo "  Python TUI logs: debug_logs/terminal_debug_*.log"
 	@echo "  View in another terminal: make debug-tail"
 	@echo ""
@@ -130,8 +133,8 @@ debug-verbose: install debug-clear
 	@echo "  Running TUI with DEBUG_LEVEL=3 (DEBUG)"
 	@echo "======================================================================"
 	@echo ""
-	@echo "  Rust debug output: /tmp/par_term_emu_core_rust_debug_rust.log"
-	@echo "  Python debug output: /tmp/par_term_emu_debug_python.log"
+	@echo "  Rust debug output: $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log"
+	@echo "  Python debug output: $(TEMP_DIR)/par_term_emu_debug_python.log"
 	@echo "  Python TUI logs: debug_logs/terminal_debug_*.log"
 	@echo "  View in another terminal: make debug-tail"
 	@echo ""
@@ -146,8 +149,8 @@ debug-trace: install debug-clear
 	@echo "  Running TUI with DEBUG_LEVEL=4 (TRACE)"
 	@echo "======================================================================"
 	@echo ""
-	@echo "  Rust debug output: /tmp/par_term_emu_core_rust_debug_rust.log"
-	@echo "  Python debug output: /tmp/par_term_emu_debug_python.log"
+	@echo "  Rust debug output: $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log"
+	@echo "  Python debug output: $(TEMP_DIR)/par_term_emu_debug_python.log"
 	@echo "  Python TUI logs: debug_logs/terminal_debug_*.log"
 	@echo "  View in another terminal: make debug-tail"
 	@echo ""
@@ -162,18 +165,18 @@ debug-trace: install debug-clear
 
 debug-clear:
 	@echo "Clearing debug logs..."
-	@rm -f /tmp/par_term_emu_core_rust_debug_rust.log
-	@rm -f /tmp/par_term_emu_debug_python.log
+	@rm -f $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log
+	@rm -f $(TEMP_DIR)/par_term_emu_debug_python.log
 	@echo "Debug logs cleared:"
-	@echo "  - /tmp/par_term_emu_core_rust_debug_rust.log"
-	@echo "  - /tmp/par_term_emu_debug_python.log"
+	@echo "  - $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log"
+	@echo "  - $(TEMP_DIR)/par_term_emu_debug_python.log"
 
 debug-tail:
 	@echo "======================================================================"
 	@echo "  Showing debug logs in real-time (Ctrl+C to exit)"
 	@echo "======================================================================"
 	@echo ""
-	@if [ ! -f /tmp/par_term_emu_core_rust_debug_rust.log ] && [ ! -f /tmp/par_term_emu_debug_python.log ]; then \
+	@if [ ! -f $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log ] && [ ! -f $(TEMP_DIR)/par_term_emu_debug_python.log ]; then \
 		echo "Debug logs not found. Run a debug target first:"; \
 		echo "  make debug"; \
 		echo "  make debug-verbose"; \
@@ -182,20 +185,20 @@ debug-tail:
 	fi
 	@echo "Tailing both Rust and Python logs..."
 	@echo ""
-	tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log 2>/dev/null || true
+	tail -f $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log $(TEMP_DIR)/par_term_emu_debug_python.log 2>/dev/null || true
 
 debug-view:
 	@echo "======================================================================"
 	@echo "  Debug Log Viewer"
 	@echo "======================================================================"
 	@echo ""
-	@if [ -f /tmp/par_term_emu_core_rust_debug_rust.log ]; then \
+	@if [ -f $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log ]; then \
 		echo "--- Rust Debug Log ---"; \
-		less /tmp/par_term_emu_core_rust_debug_rust.log; \
+		less $(TEMP_DIR)/par_term_emu_core_rust_debug_rust.log; \
 	fi
-	@if [ -f /tmp/par_term_emu_debug_python.log ]; then \
+	@if [ -f $(TEMP_DIR)/par_term_emu_debug_python.log ]; then \
 		echo "--- Python Debug Log ---"; \
-		less /tmp/par_term_emu_debug_python.log; \
+		less $(TEMP_DIR)/par_term_emu_debug_python.log; \
 	fi
 
 # ============================================================================
