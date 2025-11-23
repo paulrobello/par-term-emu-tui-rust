@@ -24,7 +24,7 @@ print(f"\n3. After command '{command.rstrip()}':")
 print(f"   Cursor: {term.cursor_position()}")
 
 # Step 4: Load just the first few bytes of Sixel to see what happens
-with open("snake.sixel", "rb") as f:
+with open("images/snake.sixel", "rb") as f:
     sixel_data = f.read()
 
 print(f"\n4. Loading Sixel data ({len(sixel_data)} bytes)...")

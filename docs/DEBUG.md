@@ -30,12 +30,12 @@ This document describes the comprehensive debugging infrastructure for par-term-
 
 The debugging system provides extensive logging capabilities across Rust and Python components. There are **three separate log sources**:
 
-1. **Rust core debug logs**: `/tmp/par_term_emu_core_rust_debug_rust.log`
+1. **Rust core debug logs**: `/tmp/par_term_emu_core_rust_debug_rust.log` (Unix/macOS) or `%TEMP%\par_term_emu_core_rust_debug_rust.log` (Windows)
    - Terminal emulation, VT parsing, PTY operations
    - Controlled by `DEBUG_LEVEL` environment variable (0-4)
    - From par-term-emu-core-rust Rust backend
 
-2. **Python core debug logs**: `/tmp/par_term_emu_debug_python.log`
+2. **Python core debug logs**: `/tmp/par_term_emu_debug_python.log` (Unix/macOS) or `%TEMP%\par_term_emu_debug_python.log` (Windows)
    - Core Python bindings debug output
    - Controlled by `DEBUG_LEVEL` environment variable (0-4)
    - From par-term-emu-core-rust Python module
@@ -665,8 +665,8 @@ A: Set `DEBUG_LEVEL` and use the Python debug module directly. The Rust side wil
 
 **Q: Can I change the debug output location?**
 A: For core logs (Rust/Python bindings), edit the file paths in the par-term-emu-core-rust package:
-  - Rust: `src/debug.rs` (uses `std::env::temp_dir()` to get platform-specific temp directory)
-  - Python: `python/par_term_emu_core_rust/debug.py` (uses `tempfile.gettempdir()`)
+  - Rust: `src/debug.rs` (hardcoded to `/tmp` on Unix/macOS, uses `std::env::temp_dir()` on Windows)
+  - Python: `python/par_term_emu_core_rust/debug.py` (uses `tempfile.gettempdir()` for platform-specific temp directory)
 
 For TUI application logs, they are always created in `debug_logs/` subdirectory of the current working directory. To change this, edit `setup_debug_logging()` in `src/par_term_emu_tui_rust/app.py`.
 
@@ -732,6 +732,8 @@ The project Makefile provides convenient targets for debugging:
 | `make debug-clear` | Clear core debug logs | N/A | Removes Rust and Python core log files |
 | `make debug-tail` | Tail core logs in real-time | N/A | Shows Rust + Python core logs |
 | `make debug-view` | View core logs with less | N/A | Opens Rust + Python core logs |
+
+**Note**: The `debug-copy-logs` target is mentioned in the Makefile help but not yet implemented.
 
 **Note**:
 - The `make debug-clear` target only clears core logs, not TUI application logs

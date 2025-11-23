@@ -36,7 +36,7 @@ from par_term_emu_tui_rust.terminal_widget.clipboard import ClipboardManager
 from par_term_emu_tui_rust.terminal_widget.recording import RecordingManager
 from par_term_emu_tui_rust.terminal_widget.rendering import Renderer
 from par_term_emu_tui_rust.terminal_widget.screenshot import ScreenshotManager
-from par_term_emu_tui_rust.terminal_widget.selection import SelectionManager
+from par_term_emu_tui_rust.terminal_widget.selection import SelectionManager, SelectionMode
 from par_term_emu_tui_rust.utils import open_with_default_app
 from par_term_emu_tui_rust.widgets.bell_flash import BellFlash
 
@@ -1355,20 +1355,8 @@ class TerminalWidget(Widget, can_focus=True):
         # Handle triple-click (line selection)
         if event.button == 1 and self._click_count >= 3:
             self.selection.select_line_at(event.y, self.renderer._frame_snapshot)
-            self.selection.selecting = False
+            self.selection.selecting = True  # Enable dragging to extend line selection
             self._click_count = 3  # Cap at 3 to avoid overflow
-            # Auto-copy if configured (default: True)
-            if self.config.auto_copy_selection:
-                selected_text = self.selection.get_selected_text()
-                if selected_text:
-                    # Keep selection visible if configured (default: True, like iTerm2)
-                    clear_after_copy = not self.config.keep_selection_after_copy
-                    success, _error = self.clipboard.copy_to_clipboard(
-                        selected_text,
-                        to_primary=True,
-                    )
-                    if success and clear_after_copy:
-                        self.selection.clear()
             self.refresh()
             event.stop()
             return
@@ -1531,7 +1519,12 @@ class TerminalWidget(Widget, can_focus=True):
         """
         # Update selection end while dragging
         if self.selection.selecting:
-            self.selection.end = (event.x, event.y)
+            # Handle line-based selection extension (triple-click + drag)
+            if self.selection.selection_mode == SelectionMode.LINE:
+                self.selection.extend_line_selection_to(event.y, self.renderer._frame_snapshot)
+            else:
+                # Normal character-based selection
+                self.selection.end = (event.x, event.y)
             self.refresh()
             event.stop()
             return

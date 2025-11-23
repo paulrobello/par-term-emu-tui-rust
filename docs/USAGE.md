@@ -114,10 +114,13 @@ par-term-emu-tui-rust --debug
 
 **View debug output:**
 ```bash
-# Tail debug log in real-time
+# Tail Python TUI debug log in real-time
 tail -f debug_logs/terminal_debug_*.log
 
-# Search for specific events
+# Tail Rust backend debug logs
+tail -f /tmp/par_term_emu_core_rust_debug_rust.log
+
+# Search for specific events in TUI logs
 grep "ERROR" debug_logs/terminal_debug_*.log
 ```
 
@@ -192,7 +195,7 @@ paste_warn_size: 100000
 # ============================================================================
 focus_follows_mouse: false
 middle_click_paste: true
-mouse_wheel_scroll_lines: 1
+mouse_wheel_scroll_lines: 3
 
 # ============================================================================
 # Security & Advanced
@@ -205,7 +208,7 @@ accept_osc7: true
 # ============================================================================
 theme: "Dark Background"
 bold_brightening: false
-minimum_contrast: 0.5
+minimum_contrast: 0.0
 faint_text_alpha: 0.5
 
 # ============================================================================
@@ -273,7 +276,6 @@ par-term-emu-tui-rust --list-themes
 **Available themes:**
 - `Dark Background` - Classic dark terminal (default)
 - `High Contrast` - High contrast for accessibility
-- `iTerm2 Dark` - iTerm2-style colors with pure black background
 - `Light Background` - Classic light terminal
 - `Pastel (Dark Background)` - Soft pastel colors on dark background
 - `Regular` - Balanced colors for general use
@@ -283,6 +285,7 @@ par-term-emu-tui-rust --list-themes
 - `Solarized Light` - Solarized Light variant
 - `Tango Dark` - Tango colors on dark gray background
 - `Tango Light` - Tango colors on light background
+- `iTerm2 Dark` - iTerm2-style colors with pure black background
 
 ### Apply Themes
 
@@ -388,7 +391,9 @@ done
 par-term-emu-tui-rust --debug
 
 # 2. Monitor logs in another terminal
-tail -f debug_logs/debug_*.log
+tail -f debug_logs/terminal_debug_*.log
+# Or for Rust backend logs:
+tail -f /tmp/par_term_emu_core_rust_debug_rust.log
 
 # 3. Test specific functionality
 par-term-emu-tui-rust --command "test-command" --debug

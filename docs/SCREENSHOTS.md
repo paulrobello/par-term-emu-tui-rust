@@ -302,7 +302,7 @@ screenshot_format: "png"
 #   - 0.0 = disabled
 #   - 0.5 = moderate contrast (recommended for readability)
 #   - 1.0 = maximum contrast
-# Default: null (inherit live `minimum_contrast`, default 0.5)
+# Default: null (inherit live `minimum_contrast`, default 0.0)
 screenshot_minimum_contrast: null
 
 # Automatically open screenshot after capture
@@ -331,9 +331,9 @@ screenshot_minimum_contrast: 0.5
 - Matches iTerm2's minimum contrast algorithm
 
 **Example values:**
-- `0.0` - Disabled (default, matches iTerm2)
+- `0.0` - Disabled (default for `minimum_contrast`)
 - `0.3` - Subtle adjustment
-- `0.5` - Moderate adjustment (recommended)
+- `0.5` - Moderate adjustment (recommended for screenshots)
 - `0.7` - Strong adjustment
 - `1.0` - Maximum contrast
 
@@ -386,7 +386,7 @@ done
 #!/bin/bash
 # capture-all-themes.sh
 
-themes=("dark-background" "solarized-dark" "high-contrast" "pastel-dark")
+themes=("Dark Background" "Solarized Dark" "High Contrast" "Pastel (Dark Background)")
 
 for theme in "${themes[@]}"; do
     par-term-emu-tui-rust \

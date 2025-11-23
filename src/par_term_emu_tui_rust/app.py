@@ -63,7 +63,7 @@ class TerminalApp(App):
     TITLE = "PAR TERM"
     SUB_TITLE = ""
     ALLOW_SELECT = False
-    ENABLE_COMMAND_PALETTE = False
+    ENABLE_COMMAND_PALETTE = True
 
     BINDINGS: ClassVar = [
         ("ctrl+q", "", ""),  # Disable default Ctrl+Q quit binding

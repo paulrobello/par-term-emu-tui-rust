@@ -11,10 +11,12 @@ Comprehensive architecture documentation for the par-term-emu-tui-rust terminal 
   - [Selection System](#4-selection-system-selectionmanager)
   - [Clipboard System](#5-clipboard-system-clipboardmanager)
   - [Screenshot System](#6-screenshot-system-screenshotmanager)
-  - [Theme System](#7-theme-system-themespy--theme_managerpy)
-  - [Configuration System](#8-configuration-system-tuiconfig)
-  - [Message System](#9-message-system-messagespy)
-  - [Supporting Widgets](#10-supporting-widgets)
+  - [Recording System](#7-recording-system-recordingmanager)
+  - [Theme System](#8-theme-system-themespy--theme_managerpy)
+  - [Backend Controls](#9-backend-controls-backend_controlspy)
+  - [Configuration System](#10-configuration-system-tuiconfig)
+  - [Message System](#11-message-system-messagespy)
+  - [Supporting Widgets](#12-supporting-widgets)
 - [Data Flow Diagrams](#data-flow-diagrams)
   - [Update/Render Flow](#updaterender-flow)
   - [Input/Write Flow](#inputwrite-flow)
@@ -68,7 +70,9 @@ par-term-emu-tui-rust/
 │   │   ├── selection.py                # SelectionManager for text selection
 │   │   ├── clipboard.py                # ClipboardManager for clipboard ops
 │   │   ├── screenshot.py               # ScreenshotManager for screenshot capture
-│   │   └── theme_manager.py            # Apply themes to terminal
+│   │   ├── recording.py                # RecordingManager for session recording
+│   │   ├── theme_manager.py            # Apply themes to terminal
+│   │   └── backend_controls.py         # Backend configuration helpers
 │   └── widgets/
 │       ├── __init__.py
 │       ├── terminal_header.py          # TerminalHeader widget (custom header with bell)
@@ -240,6 +244,7 @@ render_generation: int       # Generation being rendered (atomic snapshot)
 selection: SelectionManager
 clipboard: ClipboardManager
 screenshot: ScreenshotManager
+recording: RecordingManager
 renderer: Renderer
 ```
 
@@ -282,11 +287,11 @@ _get_cell_metrics()           # Get pixel metrics from environment
 
 **Configuration Integration:**
 
-The widget accepts a `TuiConfig` object and respects 57 configuration options including scrollback_lines, cursor settings, clipboard and clipboard-sync behavior, mouse handling, security options, theme selection, backend notification controls, screenshots, recording, URL handling, visual bell, keyboard protocol (KITTY), and search highlighting.
+The widget accepts a `TuiConfig` object and respects 55 configuration options including scrollback_lines, cursor settings, clipboard and clipboard-sync behavior, mouse handling, security options, theme selection, backend notification controls, screenshots, recording, URL handling, visual bell, keyboard protocol (KITTY), and search highlighting.
 
 **Message Production:**
 
-- Posts `DirectoryChanged(directory, stats_summary)` when OSC 7 cwd or shell stats change
+- Posts `DirectoryChanged(directory, stats_summary)` when OSC 7 cwd changes or shell stats change
 - Posts `TitleChanged(title)` when OSC 0/1/2 title changes
 - Posts `Flash(content, style, duration)` for notifications
 
@@ -308,14 +313,15 @@ Shift+End           Scroll to bottom
 
 **File:** `terminal_widget/rendering.py`
 
-Handles efficient line-by-line rendering of terminal content to Rich Segments, with support for colors, text attributes, selections, cursor, hyperlinks, and graphics (Sixel).
+Handles efficient line-by-line rendering of terminal content to Rich Segments, with support for colors, text attributes, selections, cursor, hyperlinks, and inline graphics (Sixel, Kitty, iTerm2 protocols).
 
 **Key Responsibilities:**
 - Create atomic frame snapshots from terminal state
 - Pre-fetch all lines from snapshot (optimization)
 - Render each line with colors, attributes, selections, cursor, hyperlinks
 - Handle wide characters (CJK)
-- Render Sixel graphics as Unicode half-blocks
+- Render inline graphics using Unicode half-block technique
+- Integrate graphics with scrollback (graphics scroll with text)
 - Cache color conversions and style objects
 
 **Key Methods:**
@@ -331,13 +337,16 @@ def render_line(y, widget_id, widget_size, rendering_ready) -> Strip
     # Apply selection highlighting
     # Apply cursor if on this line
     # Apply hyperlink styling
-    # Handle Sixel graphics
+    # Overlay inline graphics (Sixel/Kitty/iTerm2)
+    # Handle scrollback graphics integration
     # Return Rich Strip with Segments
 
 def _render_graphic_line(graphic, row, term_cols) -> list[Segment]
-    # Render Sixel graphic using Unicode half-blocks
-    # Top pixel = foreground color
-    # Bottom pixel = background color
+    # Render graphics using Unicode half-blocks (▀ U+2580)
+    # Achieves 2:1 vertical compression
+    # Top pixel = foreground color (top half)
+    # Bottom pixel = background color (bottom half)
+    # Supports alpha channel transparency
 ```
 
 **Optimization Techniques:**
@@ -375,11 +384,21 @@ Manages text selection state and operations for the terminal widget.
 
 **Key Responsibilities:**
 - Track selection start/end positions (col, row)
-- Detect double-click (word selection)
-- Detect triple-click (line selection)
-- Handle shift+click to extend selection
+- Detect double-click (word selection) and triple-click (line selection)
+- Support drag-to-extend for word and line selections
+- Handle shift+click for character-based selection
+- Maintain anchor point during multi-click drag operations
 - Provide selected text to clipboard manager
 - Clear selection on input
+
+**Selection Modes:**
+
+```python
+class SelectionMode(Enum):
+    NORMAL = "normal"  # Character-by-character selection
+    WORD = "word"      # Word-based selection (double-click)
+    LINE = "line"      # Line-based selection (triple-click)
+```
 
 **Key Methods:**
 
@@ -387,10 +406,10 @@ Manages text selection state and operations for the terminal widget.
 def __init__(term, config, get_terminal_cols)
 def clear()
 def select_word_at(col, row, frame_snapshot)
-def select_line(row, term_cols)
-def select_region(start, end)
-def set_selection(start, end)
-def get_selected_text(frame_snapshot) -> str
+def select_line_at(row, frame_snapshot)
+def extend_line_selection_to(row, frame_snapshot)
+def is_cell_selected(col, row) -> bool
+def get_selected_text() -> str
 ```
 
 **Selection State:**
@@ -399,7 +418,18 @@ def get_selected_text(frame_snapshot) -> str
 self.start: tuple[int, int] | None  # (col, row) or None
 self.end: tuple[int, int] | None    # (col, row) or None
 self.selecting: bool                # True during mouse drag
+self.selection_mode: SelectionMode  # Current selection mode
+self.anchor_row: int | None         # Original row for line/word selection dragging
 ```
+
+**Drag-to-Extend Behavior:**
+
+- **Double-click + drag**: Extends selection by words (future enhancement)
+- **Triple-click + drag**: Extends selection by full lines
+  - Dragging upward: Updates `start`, keeps `end` at anchor line
+  - Dragging downward: Keeps `start` at anchor line, updates `end`
+  - Dragging back to anchor: Resets to anchor line only
+  - Respects `triple_click_selects_wrapped_lines` setting
 
 **Word Boundary Detection:**
 
@@ -470,7 +500,42 @@ def capture_screenshot(format) -> str
 
 ---
 
-### 7. Theme System (`themes.py` + `theme_manager.py`)
+### 7. Recording System (`RecordingManager`)
+
+**File:** `terminal_widget/recording.py`
+
+Manages terminal session recording with support for multiple output formats.
+
+**Key Responsibilities:**
+- Start and stop terminal session recording
+- Determine save directory (config → OSC 7 cwd → XDG_VIDEOS_DIR → home)
+- Export recordings in multiple formats
+- Generate timestamped filenames with customizable titles
+- Notify user of success/failure
+
+**Supported Formats:**
+- asciicast (asciinema v2 format, default - playback with asciinema)
+- json (JSON export with full session data)
+
+**Key Methods:**
+
+```python
+def start() -> tuple[bool, str | None]
+    # Start recording session with timestamped title
+
+def stop() -> tuple[bool, str | None]
+    # Stop recording and optionally export
+
+def export_to_file(format) -> str
+    # Export recording to file, return path
+
+def is_recording() -> bool
+    # Check if currently recording
+```
+
+---
+
+### 8. Theme System (`themes.py` + `theme_manager.py`)
 
 **File:** `themes.py`
 
@@ -539,7 +604,42 @@ def parse_color(color_hex: str) -> tuple[int, int, int]
 
 ---
 
-### 8. Configuration System (`TuiConfig`)
+### 9. Backend Controls (`backend_controls.py`)
+
+**File:** `terminal_widget/backend_controls.py`
+
+Helper module that bridges TUI configuration settings to backend runtime options.
+
+**Key Responsibilities:**
+- Apply notification configuration to backend (bell settings, activity/silence thresholds)
+- Configure clipboard synchronization limits
+- Safe method invocation with fallback for missing backend features
+
+**Key Functions:**
+
+```python
+def apply_notification_settings(term: PtyTerminal, config: TuiConfig)
+    # Configure notification preferences and buffer limits
+    # Sets bell_desktop, bell_sound, bell_visual
+    # Sets activity/silence thresholds and enabled state
+    # Sets max_notifications buffer size
+
+def apply_clipboard_limits(term: PtyTerminal, config: TuiConfig)
+    # Apply clipboard event buffer limits
+    # Sets max_clipboard_sync_events and max_clipboard_event_bytes
+
+def _safe_call(method_name: str, term: PtyTerminal, *args, **kwargs)
+    # Safely invoke backend method if it exists
+    # Ignores missing attributes for backwards compatibility
+```
+
+**Integration:**
+
+Called from `TerminalWidget.on_mount()` after terminal initialization to configure backend behavior based on TuiConfig settings.
+
+---
+
+### 10. Configuration System (`TuiConfig`)
 
 **File:** `config.py`
 
@@ -558,7 +658,7 @@ Manages application configuration with YAML persistence and XDG directory compli
 ~/.config/par-term-emu-tui-rust/config.yaml
 ```
 
-**Configuration Options (57 total):**
+**Configuration Options (55 total):**
 
 **Selection & Clipboard:**
 - `auto_copy_selection` - Copy on selection complete (default: true)
@@ -651,7 +751,7 @@ def to_dict() -> dict[str, Any]
 
 ---
 
-### 9. Message System (`messages.py`)
+### 11. Message System (`messages.py`)
 
 **File:** `messages.py`
 
@@ -694,7 +794,7 @@ class TitleChanged(Message):
 
 ---
 
-### 10. Supporting Widgets
+### 12. Supporting Widgets
 
 #### TerminalHeader (`widgets/terminal_header.py`)
 
@@ -869,7 +969,7 @@ graph LR
     C --> D[par_term_emu parses]
     D --> E[Stores in<br/>shell_integration_state]
     E --> F[_poll_updates<br/>detects change]
-    F --> G[Posts DirectoryChanged<br/>message<br/>dir and stats]
+    F --> G[Posts DirectoryChanged<br/>message with dir and stats]
     G --> H[TerminalApp<br/>.on_directory_changed]
     H --> I[Updates<br/>StatusBar]
 
@@ -898,7 +998,7 @@ graph LR
 ```mermaid
 graph TB
     subgraph "TerminalWidget"
-        A[Detect OSC 7<br/>directory/stats change] --> B[Post DirectoryChanged<br/>message]
+        A[Detect OSC 7<br/>directory or stats change] --> B[Post DirectoryChanged<br/>message]
         C[Detect OSC 0/1/2<br/>title change] --> D[Post TitleChanged<br/>message]
         E[Clipboard/Screenshot<br/>operation] --> F[Post Flash<br/>message]
     end
@@ -995,6 +1095,7 @@ Feature-specific functionality isolated in manager classes:
 self.selection = SelectionManager(...)
 self.clipboard = ClipboardManager(...)
 self.screenshot = ScreenshotManager(...)
+self.recording = RecordingManager(...)
 self.renderer = Renderer(...)
 ```
 
@@ -1208,7 +1309,7 @@ Then use: `par-term-emu-tui-rust --theme my-theme`
 1. Shell sends ESC ] 7 ; file://hostname/path ST
 2. `par_term_emu` parses and stores in `shell_integration_state()`
 3. `_poll_updates()` checks for change
-4. Posts `DirectoryChanged` message (directory plus optional stats summary)
+4. Posts `DirectoryChanged` message with directory and optional stats summary
 5. App updates StatusBar with directory and shell stats summary
 
 **Title tracking (OSC 0/1/2):**
@@ -1226,6 +1327,48 @@ Then use: `par-term-emu-tui-rust --theme my-theme`
 3. `_poll_updates()` calls `drain_notifications()`
 4. App calls `self.notify(message, timeout=config.notification_timeout)`
 5. Textual displays as toast message
+
+### 8. Graphics Protocol (Sixel, Kitty, iTerm2)
+
+**Supported protocols:**
+- **Sixel**: DEC VT340 palette-based graphics
+- **Kitty**: Modern PNG/RGB graphics with animation
+- **iTerm2**: Inline image protocol
+
+**Graphics rendering flow:**
+1. Application sends graphics escape sequence (DCS/APC/OSC)
+2. Rust backend parses protocol and stores pixel data
+3. Backend maintains graphics positions in terminal coordinates
+4. Frontend calls `term.graphics_at_row(row)` during rendering
+5. `_render_graphic_line()` converts pixels to Unicode half-blocks
+6. Graphics overlay on top of text segments
+
+**Scrollback integration:**
+1. Graphics track `scroll_offset_rows` as content scrolls
+2. When rendering scrollback, calculate which portion of graphic is visible
+3. Render only the visible portion at correct offset
+4. Full graphic preserved in scrollback history
+
+**Animation support (Kitty protocol):**
+1. Backend stores animation frames with timing data
+2. `_poll_updates()` calls `term.update_animations()` at ~60Hz
+3. Backend advances frame based on elapsed time
+4. Returns list of changed animation IDs
+5. Widget calls `self.refresh()` to render new frame
+6. Animation controls: play, pause, stop, loop count
+
+**Rendering technique:**
+- Uses Unicode half-block character (▀ U+2580)
+- Top pixel → foreground color
+- Bottom pixel → background color
+- Achieves 2:1 vertical compression
+- Full RGB color with alpha transparency
+- Efficient terminal cell usage (50% reduction)
+
+**Code path:**
+- `PtyTerminal.graphics_at_row(row)` → list of graphics overlapping row
+- `Renderer._render_graphic_line(graphic, row, cols)` → list of Segments
+- Overlay graphic segments onto text segments at graphic position
 
 ---
 
@@ -1320,6 +1463,7 @@ graph TB
         Term --> Sel[SelectionManager]
         Term --> Clip[ClipboardManager]
         Term --> Shot[ScreenshotManager]
+        Term --> Rec[RecordingManager]
         Term --> Rend[Renderer]
     end
 
@@ -1383,8 +1527,8 @@ The par-term-emu-tui-rust architecture is a well-structured Python TUI wrapper a
 1. **Clean separation of concerns** - App, Widget, Managers, Config, Themes
 2. **Thread-safe design** - Atomic snapshots, generation tracking
 3. **Performance-optimized** - Debounced refresh, LRU caching, line API
-4. **Feature-rich** - Selection, clipboard, themes, screenshots, shell integration
-5. **User-configurable** - 30 options in YAML config
+4. **Feature-rich** - Selection, clipboard, themes, screenshots, recording, shell integration
+5. **User-configurable** - 55 options in YAML config
 6. **Debuggable** - Comprehensive logging infrastructure
 7. **Extensible** - Manager pattern allows easy feature additions
 
@@ -1395,7 +1539,7 @@ The architecture successfully demonstrates how to integrate a high-performance R
 ## Related Documentation
 
 - [README](../README.md) - Project overview and quickstart
-- [CONFIG_REFERENCE](CONFIG_REFERENCE.md) - Complete configuration reference (39 options)
+- [CONFIG_REFERENCE](CONFIG_REFERENCE.md) - Complete configuration reference
 - [DEBUG](DEBUG.md) - Debugging guide and troubleshooting
 - [DOCUMENTATION_STYLE_GUIDE](DOCUMENTATION_STYLE_GUIDE.md) - Documentation standards
 - [KEYBOARD_PROTOCOL](KEYBOARD_PROTOCOL.md) - KITTY keyboard protocol support

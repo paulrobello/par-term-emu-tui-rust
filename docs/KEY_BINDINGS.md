@@ -4,35 +4,44 @@ Complete reference for keyboard shortcuts and mouse interactions in Par Term Emu
 
 ## Table of Contents
 - [Keyboard Shortcuts](#keyboard-shortcuts)
+  - [Application-Level Shortcuts](#application-level-shortcuts)
+  - [Terminal Widget Shortcuts](#terminal-widget-shortcuts)
+  - [Navigation Shortcuts](#navigation-shortcuts)
 - [Mouse Actions](#mouse-actions)
 - [Text Selection](#text-selection)
 - [Scrollback Navigation](#scrollback-navigation)
 - [Clipboard Operations](#clipboard-operations)
 - [Special Keys](#special-keys)
 - [KITTY Keyboard Protocol](#kitty-keyboard-protocol)
+  - [Resetting the Keyboard Protocol](#resetting-the-keyboard-protocol)
 - [Application-Specific Bindings](#application-specific-bindings)
 - [Customization](#customization)
 - [Related Documentation](#related-documentation)
 
 ## Keyboard Shortcuts
 
-### Global Shortcuts
+### Application-Level Shortcuts
 
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | **Ctrl+Shift+Q** | Quit application | Exit the TUI immediately |
-| **Ctrl+Shift+S** | Take screenshot | Capture current terminal view |
-| **Ctrl+Shift+R** | Toggle recording | Start/stop terminal session recording |
-| **Ctrl+Shift+K** | Reset keyboard | Reset keyboard protocol to normal mode |
-| **Ctrl+Shift+C** | Copy selection | Copy selected text to clipboard |
-| **Ctrl+C** | Smart copy | Copy if text is selected, otherwise send SIGINT |
-| **Cmd+C** (macOS) | Copy selection | Copy selected text to clipboard |
-| **Ctrl+Shift+V** | Paste | Paste clipboard content to terminal |
-| **Ctrl+V** | Paste | Paste clipboard content to terminal |
-| **Cmd+V** (macOS) | Paste | Paste clipboard content to terminal |
 | **Alt+Ctrl+Shift+C** | Edit config | Open config editor dialog |
 | **Escape** (in config) | Cancel | Close config editor without saving |
 | **Ctrl+S** (in config) | Save config | Save changes in config editor |
+
+### Terminal Widget Shortcuts
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| **Ctrl+Shift+S** | Take screenshot | Capture current terminal view |
+| **Ctrl+Shift+R** | Toggle recording | Start/stop terminal session recording |
+| **Ctrl+Shift+K** | Reset keyboard | Reset KITTY keyboard protocol to normal mode (see [KITTY Keyboard Protocol](#kitty-keyboard-protocol)) |
+| **Ctrl+Shift+C** | Copy selection | Copy selected text to clipboard |
+| **Ctrl+C** | Smart copy | Copy if text is selected, otherwise send SIGINT to terminal |
+| **Cmd+C** (macOS) | Copy selection | Copy selected text to clipboard (macOS only) |
+| **Ctrl+Shift+V** | Paste | Paste clipboard content to terminal |
+| **Ctrl+V** | Paste | Paste clipboard content to terminal |
+| **Cmd+V** (macOS) | Paste | Paste clipboard content to terminal (macOS only) |
 
 ### Navigation Shortcuts
 
@@ -92,10 +101,12 @@ mouse_wheel_scroll_lines: 3  # Lines per wheel tick (default)
 
 | Method | Keys | Selection Type |
 |--------|------|----------------|
-| **Rectangular** | Shift + Click & Drag | Arbitrary text region |
+| **Character** | Shift + Click & Drag | Character-by-character selection |
 | **Word** | Double-Click | Word at cursor |
+| **Word Extend** | Double-Click + Drag | Extend selection by words |
 | **Line** | Triple-Click | Entire line |
-| **Extend** | Shift + Click | Extend selection |
+| **Line Extend** | Triple-Click + Drag | Extend selection by lines (up/down) |
+| **Extend** | Shift + Click | Extend current selection |
 
 ### Selection Behavior Flow
 
@@ -145,9 +156,16 @@ word_characters: "/-+\\~_."  # Default (paths)
 - **Wrapped lines enabled**: Selects complete logical line (follows wrapping)
 - **Wrapped lines disabled**: Selects only visible screen line
 
+**Triple-click + drag:**
+- Drag up or down after triple-click to extend selection by full lines
+- Original click position serves as anchor point
+- Respects wrapped line settings during extension
+- Auto-copy on mouse release (when `auto_copy_selection` enabled)
+
 **Configuration:**
 ```yaml
-triple_click_selects_wrapped_lines: true
+triple_click_selects_wrapped_lines: true  # Follow wrapped lines
+auto_copy_selection: true                  # Auto-copy on release
 ```
 
 ### Selection Copy Behavior
@@ -354,6 +372,19 @@ When KITTY protocol is active, keys are sent as:
 
 This allows applications to distinguish between Tab and Ctrl+I, which produce the same escape sequence in traditional terminal emulation.
 
+### Resetting the Keyboard Protocol
+
+Some applications like `kitten icat` may enable the KITTY keyboard protocol but fail to disable it on exit, leaving the keyboard in enhanced mode where keys show as `u####` codes.
+
+**Solution:** Press `Ctrl+Shift+K` to reset the keyboard protocol to normal mode.
+
+This action:
+1. Directly sets keyboard protocol flags to 0 in the terminal backend
+2. Resets the TUI's internal keyboard protocol tracking state
+3. Clears any stuck protocol state from applications
+
+After resetting, press `Ctrl+L` to clear the screen if needed.
+
 ## Application-Specific Bindings
 
 ### When Mouse Tracking Enabled
@@ -434,5 +465,6 @@ visual_bell_enabled: true  # Show bell icon on BEL character
 - [Features](FEATURES.md) - Complete feature list
 - [Usage Guide](USAGE.md) - Command-line options
 - [Configuration Reference](CONFIG_REFERENCE.md) - All settings
+- [Keyboard Protocol](KEYBOARD_PROTOCOL.md) - Detailed KITTY keyboard protocol documentation
 - [Mouse Support Details](FEATURES.md#mouse-support) - Extended mouse documentation
 - [Clipboard Integration](FEATURES.md#clipboard-integration) - Clipboard features

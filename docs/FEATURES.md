@@ -7,6 +7,7 @@ Comprehensive overview of Par Term Emu TUI Rust features and capabilities.
 - [Core Features](#core-features)
 - [Configuration Editor](#configuration-editor)
 - [Terminal Emulation](#terminal-emulation)
+- [Graphics Protocol](#graphics-protocol)
 - [Scrollback Buffer](#scrollback-buffer)
 - [Mouse Support](#mouse-support)
 - [Hyperlinks](#hyperlinks)
@@ -35,7 +36,7 @@ Par Term Emu TUI Rust is a modern terminal emulator TUI built with Textual and p
 | **Clipboard** | pyperclip | Cross-platform clipboard support |
 | **Paths** | xdg-base-dirs | XDG Base Directory compliance |
 
-> **📝 Note:** See `pyproject.toml` for current package versions.
+> **📝 Note:** See `pyproject.toml` for current dependency versions.
 
 ## Core Features
 
@@ -99,7 +100,7 @@ A built-in tabbed configuration screen for managing settings directly within the
 **Keyboard Shortcuts:**
 - **Ctrl+S** - Save changes and close screen
 - **Escape** - Cancel and discard changes
-- **Tab** / **Shift+Tab** - Navigate between tabs and widgets
+- **Tab** and **Shift+Tab** - Navigate between tabs and widgets
 - Standard text editing (arrow keys, home/end, page up/down, etc.)
 
 **Configuration Sections:**
@@ -166,8 +167,6 @@ graph TD
     YAMLEdit[Edit Raw YAML]
     Save{Save or<br/>Cancel?}
     ValidateWidget[Validate Widget Values]
-    ValidateYAML[Validate YAML Syntax]
-    Error[Show Error]
     Backup[Create Timestamped Backup]
     Write[Write to File]
     Close[Close Screen]
@@ -187,9 +186,6 @@ graph TD
     Save -->|Cancel| Close
     Backup --> Write
     Write --> Close
-    ValidateYAML -->|Invalid| Error
-    ValidateYAML -->|Valid| Backup
-    Error --> YAMLEdit
 
     style Trigger fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
     style Check fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
@@ -197,8 +193,6 @@ graph TD
     style Screen fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
     style TabChoice fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
     style ValidateWidget fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
-    style ValidateYAML fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
-    style Error fill:#c62828,stroke:#ef5350,stroke-width:2px,color:#ffffff
     style Backup fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
     style Write fill:#2e7d32,stroke:#66bb6a,stroke-width:2px,color:#ffffff
 ```
@@ -257,6 +251,145 @@ graph TD
 - Auto-detection of application protocol requests
 - See [Keyboard Protocol Guide](KEYBOARD_PROTOCOL.md) for details
 
+## Graphics Protocol
+
+Full support for inline graphics display using industry-standard graphics protocols. Graphics are rendered directly in the terminal using Unicode half-block characters for efficient display.
+
+### Supported Graphics Protocols
+
+**Sixel Graphics:**
+- Original DEC VT340 graphics protocol
+- Widely supported across terminal emulators
+- Lossless bitmap image transmission
+- Palette-based color encoding
+
+**Kitty Graphics Protocol:**
+- Modern graphics protocol with advanced features
+- Direct PNG/RGB image transmission
+- Animation support with frame control
+- Placement control (columns, rows, offsets)
+- Virtual image IDs for efficient management
+
+**iTerm2 Inline Images Protocol:**
+- Inline image display protocol
+- Base64-encoded image transmission
+- Multiple format support (PNG, JPEG, GIF, etc.)
+- Preserves aspect ratio
+
+### Graphics Rendering
+
+**Rendering technique:**
+- Uses Unicode half-block character (▀ U+2580)
+- Achieves 2:1 vertical compression
+- Foreground color = top pixel
+- Background color = bottom pixel
+- Efficient terminal-space utilization
+
+**Display capabilities:**
+- Full RGB color support
+- Alpha channel transparency
+- Scrollback integration - graphics scroll with text
+- Multiple graphics per screen
+- Overlapping graphics support
+
+### Animation Support
+
+**Kitty Animation Features:**
+- Multi-frame animation transmission
+- Frame delay control (milliseconds)
+- Looping control:
+  - Infinite looping
+  - Finite loop count
+  - Single play
+- Animation state control:
+  - Play/pause
+  - Stop
+  - Frame loading mode
+- Automatic frame updates at ~60Hz
+
+**Animation workflow:**
+
+```mermaid
+graph TD
+    A[Application Sends Frames] --> B[Backend Stores Animation]
+    B --> C[update_animations Called ~60Hz]
+    C --> D{Frame Changed?}
+    D -->|Yes| E[Trigger Refresh]
+    D -->|No| C
+    E --> F[Render Current Frame]
+    F --> C
+
+    style A fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
+    style B fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
+    style C fill:#e65100,stroke:#ff9800,stroke-width:2px,color:#ffffff
+    style D fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
+    style E fill:#b71c1c,stroke:#f44336,stroke-width:2px,color:#ffffff
+    style F fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
+```
+
+### Testing Graphics
+
+**Display Sixel images:**
+```bash
+# Using included utility script
+uv run python scripts/display_image_sixel.py path/to/image.png
+
+# With scaling
+uv run python scripts/display_image_sixel.py path/to/image.png --scale 0.5
+```
+
+**Test Kitty animations:**
+```bash
+# Run animation test script
+uv run python scripts/test_kitty_animation.py
+```
+
+### Use Cases
+
+**Sixel graphics:**
+- Image viewers (viu, chafa, img2sixel)
+- Terminal-based image browsers
+- Data visualization tools
+- ASCII art with color
+
+**Kitty graphics:**
+- Modern terminal applications
+- Advanced image viewers
+- Animation playback
+- Rich media display
+
+**iTerm2 inline images:**
+- Shell integration image display
+- Preview utilities
+- Cross-platform compatibility
+
+### Implementation Details
+
+**Backend integration:**
+- Graphics managed by Rust terminal core (`par-term-emu-core-rust`)
+- Storage, parsing, and state management in Rust
+- Python TUI handles rendering via half-block technique
+
+**Scrollback behavior:**
+- Graphics scroll with text content
+- `scroll_offset_rows` tracks scrolled portions
+- Efficient rendering only for visible portions
+- Full graphics preserved in scrollback history
+
+**Performance:**
+- Animation updates at ~60Hz via `update_animations()`
+- Only changed animations trigger refresh
+- Cached style objects for rendering efficiency
+- Half-block technique reduces terminal cell usage by 50%
+
+### Related Scripts
+
+Graphics testing utilities in `scripts/`:
+- `display_image_sixel.py` - Sixel image display utility with auto-sizing
+- `test_kitty_animation.py` - Kitty animation protocol demonstration
+
+See `scripts/README.md` for complete documentation.
+
 ## Scrollback Buffer
 
 Navigate through terminal history to view previous output.
@@ -296,15 +429,19 @@ mouse_wheel_scroll_lines: 3      # Lines per wheel tick
 
 | Action | Selection Type | Description |
 |--------|---------------|-------------|
-| **Shift + Click & Drag** | Rectangular | Select arbitrary text region |
+| **Shift + Click & Drag** | Character | Select arbitrary text region character-by-character |
 | **Double-Click** | Word | Select word at cursor |
+| **Double-Click + Drag** | Word | Extend selection by words |
 | **Triple-Click** | Line | Select entire line |
+| **Triple-Click + Drag** | Line | Extend selection by lines (up or down) |
 
 **Selection behavior:**
-- **Auto-copy**: Selection automatically copied to clipboard
+- **Auto-copy**: Selection automatically copied to clipboard on mouse up
 - **Keep selection**: Highlighting persists after copy (configurable)
-- **Word boundaries**: Configurable word characters
+- **Word boundaries**: Configurable word characters for word selection
 - **Wrapped lines**: Triple-click follows line wrapping (configurable)
+- **Drag extension**: After double/triple-click, drag to extend selection by words/lines
+- **Anchor point**: When dragging after multi-click, original click position remains anchored
 
 ### Mouse Actions
 
@@ -419,15 +556,16 @@ Cross-platform clipboard support for seamless copy/paste.
 
 **Copy methods:**
 - Auto-copy on selection release
-- Ctrl+Shift+C manual copy
+- Ctrl+Shift+C manual copy (also Cmd+C on macOS)
 - Double-click word copy
 - Triple-click line copy
 
 **Paste methods:**
 - Middle-click paste (Linux: PRIMARY selection)
-- Ctrl+Shift+V keyboard paste (also Cmd+V on macOS, Ctrl+V on Windows/Linux)
+- Ctrl+Shift+V keyboard paste
+- Cmd+V on macOS, Ctrl+V on Windows and Linux
 - Paste confirmation for large content
-- Chunked pasting support for large content (configurable chunk size and delay)
+- Chunked pasting for large content (configurable chunk size and delay)
 
 ### OSC 52 Support
 
@@ -704,7 +842,7 @@ Enhanced features through shell integration scripts.
 - Tracked via OSC 7 sequences (requires shell integration)
 - Displayed in status bar with shell statistics: total commands, failed commands, average duration
 - Used for screenshot and recording directory selection
-- Compact display format: "📁 ~/path/to/dir  |  ⚙ cmds 42 | 2 fail | avg 15ms"
+- Compact display format: "📁 ~/path/to/dir | ⚙ cmds 42 | 2 fail | avg 15ms"
 
 **Prompt navigation:**
 - Mark prompt locations
@@ -718,12 +856,16 @@ Enhanced features through shell integration scripts.
 
 ### Installation
 
+Shell integration is installed using the built-in installer:
+
 ```bash
 # Install for current shell
 par-term-emu-tui-rust install shell-integration
 
-# Install for specific shell (bash, zsh, or fish)
+# Install for specific shell
+par-term-emu-tui-rust install shell-integration bash
 par-term-emu-tui-rust install shell-integration zsh
+par-term-emu-tui-rust install shell-integration fish
 
 # Install for all shells
 par-term-emu-tui-rust install shell-integration --all

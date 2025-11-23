@@ -13,7 +13,7 @@ for i in range(20):
 
 # Load Sixel
 print("1. Loading Sixel after 20 lines...")
-with open("snake.sixel", "rb") as f:
+with open("images/snake.sixel", "rb") as f:
     term.process(f.read())
 
 print(f"   Scrollback len: {term.scrollback_len()}")

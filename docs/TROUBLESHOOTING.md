@@ -117,7 +117,7 @@ DEBUG_LEVEL=3 par-term-emu-tui-rust --debug
 
 # Check core debug logs
 cat /tmp/par_term_emu_core_rust_debug_rust.log
-cat /tmp/par_term_emu_core_rust_debug_python.log
+cat /tmp/par_term_emu_debug_python.log
 ```
 
 **Common Causes:**
@@ -266,8 +266,8 @@ par-term-emu-tui-rust --list-themes
 theme: "dark-background"
 
 # Adjust minimum contrast (0.0-1.0)
-minimum_contrast: 0.5  # Default, like iTerm2
-minimum_contrast: 0.0  # Disabled
+minimum_contrast: 0.0  # Disabled (default)
+minimum_contrast: 0.5  # Moderate contrast (like iTerm2)
 minimum_contrast: 1.0  # Maximum contrast
 ```
 
@@ -361,7 +361,7 @@ cursor_blink_enabled: false
 scrollback_lines: 1000
 
 # Reduce mouse wheel scroll speed
-mouse_wheel_scroll_lines: 1  # Default is 3
+mouse_wheel_scroll_lines: 1  # Reduce from default 3
 
 # Note: Polling interval is optimized at 16ms (~60Hz)
 # This is needed for responsive updates and smooth rendering
@@ -769,7 +769,7 @@ make debug-clear     # Clear core debug logs
 - Error stack traces
 - User interactions
 
-**Python Core Log (`/tmp/par_term_emu_core_rust_debug_python.log`):**
+**Python Core Log (`/tmp/par_term_emu_debug_python.log`):**
 - Widget lifecycle (mount, unmount, resize)
 - Render operations and generation tracking
 - Corruption detection warnings
@@ -803,11 +803,11 @@ tail -f debug_logs/terminal_debug_*.log
 ```bash
 # Monitor both core logs in real-time
 tail -f /tmp/par_term_emu_core_rust_debug_rust.log \
-        /tmp/par_term_emu_core_rust_debug_python.log
+        /tmp/par_term_emu_debug_python.log
 
 # Search for specific patterns
 grep "SCREEN_SWITCH" /tmp/par_term_emu_core_rust_debug_rust.log
-grep "CORRUPTION" /tmp/par_term_emu_core_rust_debug_python.log
+grep "CORRUPTION" /tmp/par_term_emu_debug_python.log
 grep "VT_INPUT" /tmp/par_term_emu_core_rust_debug_rust.log
 
 # Or use make shortcuts
@@ -916,7 +916,7 @@ cat ~/.config/par-term-emu-tui-rust/config.yaml
 | Issue | Quick Fix |
 |-------|-----------|
 | Clipboard not working (Linux) | `sudo apt-get install xclip` |
-| URLs not clickable | Set `url_modifier: "none"` in config.yaml |
+| URLs not opening (default: Ctrl+Click) | Set `url_modifier: "none"` for click-only in config.yaml |
 | Colors wrong | Check `theme` setting in config, try `--theme dark-background` |
 | Mouse selection not working | Use Shift+Click when mouse tracking is enabled |
 | Config file errors | Use interactive recovery or `--init-config` |

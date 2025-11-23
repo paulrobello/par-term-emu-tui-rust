@@ -61,11 +61,11 @@ Launch the TUI in your default shell:
 # Using make (recommended)
 make run
 
-# Using installed script
+# Using uv run
 uv run par-term-emu-tui-rust
 
-# As Python module
-uv run python -m par_term_emu_tui_rust
+# Using short alias
+uv run ptr
 ```
 
 You should see a terminal interface with:
@@ -82,9 +82,9 @@ graph TD
     Start --> Shell
     Shell --> Ready
 
-    style Start fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
-    style Shell fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
-    style Ready fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
+    style Start fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
+    style Shell fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
+    style Ready fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
 ```
 
 ## Basic Configuration
@@ -102,17 +102,7 @@ Configuration location: `~/.config/par-term-emu-tui-rust/config.yaml`
 
 ### Essential Settings
 
-**Option 1: Use the built-in config editor (recommended):**
-
-While the TUI is running, press **Alt+Ctrl+Shift+C** to open the interactive config editor. This provides:
-- Syntax highlighting for YAML
-- Live validation of config syntax
-- Auto-creation of config file if it doesn't exist
-- Easy keyboard shortcuts (Ctrl+S to save, Escape to cancel)
-
-**Option 2: Edit manually:**
-
-Edit your config file directly with these recommended settings:
+Edit your config file with these recommended settings:
 
 ```yaml
 # Clipboard & Selection
@@ -123,7 +113,7 @@ keep_selection_after_copy: true
 scrollback_lines: 10000
 
 # Theme (use exact name from --list-themes)
-theme: "Dark Background"
+theme: "dark-background"
 
 # Notifications
 show_notifications: true
@@ -134,7 +124,7 @@ screenshot_format: "png"
 screenshot_directory: null  # Auto-detect best location
 ```
 
-> **✅ Tip:** Use `--dump-config` to view current settings without editing.
+> **✅ Tip:** Theme names in the config file use lowercase with hyphens (e.g., `dark-background`), while display names shown by `--list-themes` use title case with spaces (e.g., "Dark Background").
 
 ## Essential Commands
 
@@ -145,7 +135,6 @@ screenshot_directory: null  # Auto-detect best location
 | **Ctrl+Shift+Q** | Quit application |
 | **Ctrl+Shift+S** | Take screenshot |
 | **Ctrl+Shift+C** | Copy selection |
-| **Alt+Ctrl+Shift+C** | Edit config |
 | **PageUp/Down** | Scroll history |
 | **Home/End** | Jump to top/bottom |
 
@@ -153,10 +142,12 @@ screenshot_directory: null  # Auto-detect best location
 
 | Action | Result |
 |--------|--------|
-| **Shift + Click & Drag** | Select text |
+| **Shift + Click & Drag** | Select text character-by-character |
 | **Double-Click** | Select word |
+| **Double-Click + Drag** | Extend selection by words |
 | **Triple-Click** | Select line |
-| **Click URL** | Open in browser |
+| **Triple-Click + Drag** | Extend selection by lines (up/down) |
+| **Ctrl + Click URL** | Open URL in browser |
 | **Mouse Wheel** | Scroll history (when mouse tracking off) |
 | **Middle Click** | Paste PRIMARY selection (Linux) or clipboard (macOS/Windows) |
 
@@ -183,9 +174,7 @@ par-term-emu-tui-rust --list-themes
 make themes
 ```
 
-Available themes: Dark Background, High Contrast, iTerm2 Dark, Light Background, Pastel (Dark Background), Regular, Smoooooth, Solarized, Solarized Dark, Solarized Light, Tango Dark, Tango Light
-
-> **📝 Note:** Theme names are case-sensitive. Use the exact names as shown by `--list-themes`.
+> **📝 Note:** Use `--list-themes` to see all available themes. Theme names for CLI flags should match the display names exactly (with spaces and title case), while theme names in the config file use lowercase with hyphens.
 
 ### Take Screenshots
 
@@ -207,6 +196,42 @@ screenshot_format: "svg"  # Options: png, jpeg, bmp, svg, html
 ```
 
 > **📝 Note:** Screenshots are saved with timestamped filenames. The directory location can be configured with `screenshot_directory` in config.yaml, or will auto-detect the best location (e.g., `~/Pictures/Screenshots` on macOS, `~/Pictures` on Linux, or current working directory as fallback).
+
+### Display Graphics
+
+The terminal supports inline graphics using Sixel, Kitty, and iTerm2 protocols:
+
+**Display images with Sixel:**
+```bash
+# Using the included utility script
+uv run python scripts/display_image_sixel.py path/to/image.png
+
+# Scale image to 50% size
+uv run python scripts/display_image_sixel.py path/to/image.png --scale 0.5
+
+# Specify terminal size in characters
+uv run python scripts/display_image_sixel.py path/to/image.png --width 80 --height 24
+```
+
+**Test Kitty graphics animations:**
+```bash
+# Run animation demo (creates red/blue and color cycle animations)
+uv run python scripts/test_kitty_animation.py
+```
+
+**Use standard graphics tools:**
+```bash
+# Using viu (Sixel/Kitty image viewer)
+viu image.png
+
+# Using chafa (multi-protocol image viewer)
+chafa image.png
+
+# Using img2sixel (if libsixel installed)
+img2sixel image.png
+```
+
+> **📝 Note:** Graphics are rendered using Unicode half-blocks (▀) for 2:1 vertical compression. They scroll with text and are preserved in scrollback history. Kitty animations update automatically at ~60Hz.
 
 ### Custom Shell
 
@@ -239,14 +264,20 @@ make debug-view      # View logs with less
 make debug-clear     # Clear all debug logs
 ```
 
-> **📝 Note:** Rust backend debug logs are written to `/tmp/par_term_emu_core_rust_debug_rust.log` and `/tmp/par_term_emu_core_rust_debug_python.log` when using `make debug*` commands.
+**Debug Log Locations:**
+- Python TUI logs: `debug_logs/terminal_debug_YYYYMMDD_HHMMSS.log` (when using `--debug`)
+- Rust backend logs: `/tmp/par_term_emu_core_rust_debug_rust.log` (when using `make debug*` with DEBUG_LEVEL)
+- Python backend logs: `/tmp/par_term_emu_debug_python.log` (when using `make debug*` with DEBUG_LEVEL)
+
+> **📝 Note:** The `--debug` flag creates timestamped Python logs in `debug_logs/`, while `make debug*` commands set DEBUG_LEVEL environment variable to enable Rust backend logging to `/tmp/`.
 
 ## Next Steps
 
 ### Learn More Features
 
 Explore advanced features:
-- **Scrollback buffer** - Navigate terminal history efficiently
+- **Graphics Protocol** - Sixel, Kitty, and iTerm2 inline images with animation support
+- **Scrollback buffer** - Navigate terminal history efficiently (graphics scroll with text)
 - **Hyperlink support** - Click URLs (OSC 8 and plain text)
 - **Notifications** - Terminal application notifications (OSC 9/777)
 - **Cursor styles** - Blinking and steady cursor modes
@@ -278,10 +309,10 @@ par-term-emu-tui-rust --apply-theme-from ~/.config/par-term-emu-tui-rust/themes/
 # Install for current shell (auto-detected)
 par-term-emu-tui-rust install shell-integration
 
-# Or install for all available shells
+# Install for all available shells
 par-term-emu-tui-rust install shell-integration --all
 
-# Or install for specific shell
+# Install for specific shell
 par-term-emu-tui-rust install shell-integration zsh
 
 # Restart shell to activate
@@ -297,11 +328,11 @@ Shell integration provides:
 
 ### Extend the TUI
 
-For developers:
-- Review [ARCHITECTURE.md](ARCHITECTURE.md) - Comprehensive system design and implementation details
-- See [CONTRIBUTING.md](../CONTRIBUTING.md) - Development setup and contribution guidelines
-- Check [DEBUG.md](DEBUG.md) - Debugging tools and techniques
-- Read [CLAUDE.md](../CLAUDE.md) - AI assistant instructions for working with this codebase
+**For Developers:**
+- [Architecture](ARCHITECTURE.md) - Comprehensive system design and implementation details
+- [Contributing](../CONTRIBUTING.md) - Development setup and contribution guidelines
+- [Debug Guide](DEBUG.md) - Debugging tools and techniques
+- [CLAUDE.md](../CLAUDE.md) - AI assistant instructions for working with this codebase
 
 ## Troubleshooting
 
@@ -412,6 +443,6 @@ You're now ready to use Par Term Emu TUI Rust! This quick start covered:
 3. **Essential commands** - Key bindings and mouse actions
 4. **Common tasks** - Themes, screenshots, and shell customization
 
-For advanced features and detailed documentation, see the [README](../README.md).
+For advanced features and comprehensive documentation, explore the guides in the [Related Documentation](#related-documentation) section below.
 
 > **✅ Tip:** Join the discussion at [GitHub Discussions](https://github.com/paulrobello/par-term-emu-tui-rust/discussions) to ask questions and share tips!

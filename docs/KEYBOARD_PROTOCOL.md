@@ -69,8 +69,8 @@ par-term-emu-tui-rust --no-keyboard-protocol-auto-detect
 
 **How Auto-Detect Works:**
 
-1. **App requests protocol**: When an application (like Neovim) sends `CSI >flags u`, the TUI automatically detects this and starts forwarding enhanced keyboard sequences
-2. **App disables protocol**: When the app sends `CSI <u` or exits, the TUI automatically reverts to legacy sequences
+1. **App requests protocol**: When an application (like Neovim) sends `CSI > flags u`, the TUI automatically detects this and starts forwarding enhanced keyboard sequences
+2. **App disables protocol**: When the app sends `CSI < u` or exits, the TUI automatically reverts to legacy sequences
 3. **Zero configuration**: Works seamlessly with supporting apps - no manual setup needed
 4. **Backward compatible**: Legacy apps that don't use KITTY protocol continue to work normally
 
@@ -177,13 +177,17 @@ cat -v
 
 # Press Ctrl+I
 # Expected output: ^[[105;5u
+# (^[ represents ESC, so this is ESC[105;5u)
 
 # Press Tab
 # Expected output: ^[[9u
+# (This is ESC[9u)
 
 # They should be DIFFERENT!
 # Press Ctrl+C to exit cat
 ```
+
+**Note:** In `cat -v` output, `^[` represents the ESC character (0x1b). So `^[[105;5u` means the escape sequence `ESC [ 105 ; 5 u`.
 
 ### Test with Legacy Mode
 
@@ -210,7 +214,7 @@ cat -v
 par-term-emu-tui-rust --keyboard-protocol-auto-detect --debug
 
 # Inside terminal, manually request protocol (simulate what nvim does)
-printf '\x1b[>1u'  # Request protocol with flag 1
+printf '\x1b[>1u'  # Request protocol with flag 1 (push to stack)
 
 # Now test with cat
 cat -v
@@ -222,7 +226,7 @@ cat -v
 # Expected: ^[[9u  (different from Ctrl+I!)
 
 # Exit cat, then manually disable protocol
-printf '\x1b[<1u'  # Disable protocol
+printf '\x1b[<u'  # Disable protocol (pop from stack)
 
 # Test again
 cat -v
@@ -235,18 +239,19 @@ cat -v
 
 ### Query Protocol Support
 
-Applications can query if the terminal supports KITTY protocol:
+Applications can query if the terminal supports KITTY protocol by sending `CSI ? u`:
 
 ```bash
 # Send query
 printf '\x1b[?u'
 
-# With protocol enabled, terminal responds:
-# ^[[?1u  (flags = 1)
-
-# Without protocol enabled:
-# (no response or different response)
+# The terminal backend responds with the current keyboard flags
+# Response format: CSI ? flags u
+# Example: ^[[?1u  (flags = 1 - disambiguation enabled)
+# Example: ^[[?0u  (flags = 0 - protocol disabled)
 ```
+
+**Note:** In terminal output, `^[` represents the ESC character. So `^[[?1u` is the escape sequence `ESC [ ? 1 u`.
 
 ## Neovim Configuration
 
@@ -459,42 +464,52 @@ CSI unicode ; modifiers u
 ```
 
 Where:
-- **CSI** = `\x1b[` (Control Sequence Introducer)
-- **unicode** = Unicode codepoint of the key (e.g., 97 for 'a')
-- **modifiers** = Modifier bitmask + 1 (optional)
+- **CSI** = `\x1b[` (escape sequence: bytes 0x1b 0x5b)
+- **unicode** = Unicode codepoint of the key as a decimal number (e.g., 97 for lowercase 'a')
+- **modifiers** = Modifier bitmask + 1 (optional, omitted if no modifiers)
   - Shift = 1
   - Alt = 2
   - Ctrl = 4
   - Super = 8
   - Hyper = 16
   - Meta = 32
-- **u** = Final character
+  - Combined modifiers: OR the values together, then add 1
+- **u** = Final character (byte 0x75)
 
 ### Examples
 
-| Input | Unicode | Modifiers | Sequence |
-|-------|---------|-----------|----------|
-| `a` | 97 | 0 | `\x1b[97u` |
-| Ctrl+A | 97 | 4+1=5 | `\x1b[97;5u` |
-| Ctrl+Shift+A | 97 | (4\|1)+1=6 | `\x1b[97;6u` |
-| Tab | 9 | 0 | `\x1b[9u` |
-| Ctrl+I | 105 | 4+1=5 | `\x1b[105;5u` |
-| F1 | 57376 | 0 | `\x1b[57376u` |
+| Input | Unicode | Modifiers | Modifier Calculation | Sequence |
+|-------|---------|-----------|---------------------|----------|
+| `a` | 97 | none | - | `\x1b[97u` |
+| Ctrl+A | 97 | Ctrl | 4+1=5 | `\x1b[97;5u` |
+| Ctrl+Shift+A | 97 | Ctrl+Shift | (4\|1)+1=6 | `\x1b[97;6u` |
+| Tab | 9 | none | - | `\x1b[9u` |
+| Ctrl+I | 105 | Ctrl | 4+1=5 | `\x1b[105;5u` |
+| Ctrl+Alt+A | 97 | Ctrl+Alt | (4\|2)+1=7 | `\x1b[97;7u` |
+| F1 | 57376 | none | - | `\x1b[57376u` |
+| Ctrl+F1 | 57376 | Ctrl | 4+1=5 | `\x1b[57376;5u` |
 
 ### Protocol Activation
 
-Applications request KITTY protocol by sending sequences to the terminal:
+Applications request KITTY protocol by sending control sequences to the terminal:
 
 ```
-CSI > flags u     (push flags to protocol stack)
-CSI < flags u     (pop from protocol stack)
+CSI > flags u     Push flags to protocol stack (enable/update protocol)
+CSI < u           Pop from protocol stack (disable protocol)
+CSI ? u           Query current protocol flags
 ```
 
-Example:
-- `\x1b[>1u` - Application requests protocol with flag 1 (disambiguation)
-- `\x1b[<1u` - Application disables protocol (pops from stack)
+**Examples:**
+- `\x1b[>1u` - Application requests protocol with flag 1 (disambiguation only)
+- `\x1b[>3u` - Application requests flags 3 (disambiguation + key events)
+- `\x1b[<u` - Application disables protocol by popping from stack
+- `\x1b[?u` - Application queries protocol support (terminal responds with `CSI ? flags u`)
 
-The terminal detects these sequences and responds by sending enhanced keyboard events back to the application. When auto-detect mode is enabled, the TUI automatically switches between KITTY and legacy key sequences based on these requests.
+**Terminal Response to Query:**
+- `\x1b[?1u` - Protocol enabled with flags=1
+- `\x1b[?0u` - Protocol disabled (flags=0)
+
+The terminal detects these sequences in the PTY output stream and responds by sending enhanced keyboard events back to the application. When auto-detect mode is enabled, the TUI automatically switches between KITTY and legacy key sequences based on these requests.
 
 ### Automatic State Reset
 

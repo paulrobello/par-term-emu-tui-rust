@@ -17,11 +17,11 @@ Before installing Par Term Emu TUI Rust, ensure your system meets these requirem
 
 ### Required Software
 
-| Requirement | Minimum Version | Check Command |
-|-------------|----------------|---------------|
-| Python | 3.12+ | `python --version` |
-| uv | Latest | `uv --version` |
-| Terminal | True color support | See below |
+| Requirement | Notes | Check Command |
+|-------------|-------|---------------|
+| Python | Requires 3.12 or later | `python --version` |
+| uv | Package manager | `uv --version` |
+| Terminal | True color support recommended | See below |
 
 ### Verify Terminal Capabilities
 
@@ -83,14 +83,18 @@ make install
 ### Install from PyPI
 
 ```bash
-# Install from PyPI
+# Install using uv (recommended)
+uv tool install par-term-emu-tui-rust
+
+# Or install in a virtual environment
+uv venv
 uv pip install par-term-emu-tui-rust
 
-# Or using pip directly
+# Traditional pip installation also works
 pip install par-term-emu-tui-rust
 ```
 
-> **📝 Note:** The package is available on PyPI. For development work or testing latest features, install from source instead.
+> **📝 Note:** The package is available on PyPI for easy installation. For development work or testing the latest unreleased features, install from source instead.
 
 ### Development Installation
 
@@ -104,11 +108,14 @@ cd par-term-emu-tui-rust
 # Install with development dependencies
 uv sync
 
-# Install pre-commit hooks
-uv run pre-commit install
+# Install pre-commit hooks (recommended)
+make pre-commit-install
 ```
 
-> **📝 Note:** This project depends on `par-term-emu-core-rust`, which is automatically fetched from PyPI during installation. For local development of the Rust backend, the `pyproject.toml` can be configured to use a local path dependency.
+> **📝 Note:** This project depends on `par-term-emu-core-rust` (Rust terminal emulation backend).
+> - **PyPI Installation**: The backend is automatically fetched from PyPI when installing the published package
+> - **Source Installation**: By default, `pyproject.toml` is configured to use a local path dependency (`../par-term-emu-core-rust`) for development
+> - For local development of both TUI and backend, ensure the Rust backend is cloned alongside this repository
 
 ## Post-Installation Setup
 
@@ -336,7 +343,7 @@ While the TUI is running, press **Alt+Ctrl+Shift+C** to open the built-in config
 - Automatic backup on save
 - Interactive error recovery
 
-**Configuration features (v0.4.0+):**
+**Configuration features:**
 - Automatic timestamped backups on every save
 - Type validation for all config values
 - Range clamping for numeric settings

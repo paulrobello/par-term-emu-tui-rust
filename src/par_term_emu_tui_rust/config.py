@@ -106,10 +106,10 @@ class TuiConfig:
                          Uses NTSC perceived brightness formula. Applied to both live display
                          and screenshots unless screenshot_minimum_contrast is explicitly set.
                          Range: 0.0-1.0 where:
-                         - 0.0 = disabled
-                         - 0.5 = moderate contrast (default, matches iTerm2 slider at 50%)
+                         - 0.0 = disabled (default)
+                         - 0.5 = moderate contrast (recommended, matches iTerm2 slider at 50%)
                          - 1.0 = maximum contrast
-                         (default: 0.5)
+                         (default: 0.0)
         faint_text_alpha: Alpha multiplier for faint/dim text (SGR 2).
                          0.0 makes faint text invisible, 1.0 renders it normally.
                          (default: 0.5)

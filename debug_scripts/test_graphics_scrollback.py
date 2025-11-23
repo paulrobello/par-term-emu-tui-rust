@@ -10,8 +10,8 @@ term = Terminal(80, 40)
 print(f"Terminal: {term.size()}")
 
 # Load snake.sixel
-print("\n1. Loading snake.sixel...")
-with open("snake.sixel", "rb") as f:
+print("\n1. Loading images/snake.sixel...")
+with open("images/snake.sixel", "rb") as f:
     term.process(f.read())
 
 print(f"   Graphics count: {term.graphics_count()}")

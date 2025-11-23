@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-11-22
+
+### Added
+- **Enhanced Text Selection**: Drag-to-extend support for multi-click selections
+  - Triple-click + drag to extend selection by full lines (upward or downward)
+  - Anchor point tracking maintains original selection position during drag
+  - Respects `triple_click_selects_wrapped_lines` configuration
+  - Auto-copy on mouse up (when `auto_copy_selection` enabled)
+
+- **Graphics Protocol Support**: Full inline graphics rendering with multiple protocol support
+  - **Sixel Graphics**: DEC VT340 palette-based graphics protocol
+  - **Kitty Graphics Protocol**: Modern PNG/RGB image transmission with animation support
+  - **iTerm2 Inline Images**: Base64-encoded image display protocol
+  - **Unicode Half-Block Rendering**: Efficient 2:1 vertical compression using ▀ (U+2580)
+  - **Animation Support**: Kitty protocol animations with ~60Hz updates
+    - Multi-frame animation transmission
+    - Frame delay control (milliseconds)
+    - Looping control (infinite, finite, single play)
+    - Animation state control (play, pause, stop)
+  - **Scrollback Integration**: Graphics scroll with text and preserved in history
+  - **Full RGB Support**: 24-bit color with alpha channel transparency
+
+- **Graphics Testing Utilities**:
+  - `scripts/display_image_sixel.py`: Sixel image display utility with scaling and auto-detection
+  - `scripts/test_kitty_animation.py`: Kitty animation protocol test and demonstration
+
+- **Comprehensive Documentation**: Added detailed graphics protocol documentation
+  - Graphics Protocol section in FEATURES.md with Mermaid diagrams
+  - Architecture details for graphics rendering in ARCHITECTURE.md
+  - Quick start examples in QUICK_START.md
+  - Updated README.md with graphics features
+
+### Changed
+- Enhanced rendering system to overlay graphics on text content
+- Updated scrollback buffer description to note graphics integration
+
 ## [0.5.0] - 2025-01-19
 
 ### Added

@@ -17,7 +17,7 @@ print(f"   Scrollback len: {term.scrollback_len()}")
 
 # Now load Sixel
 print("\n2. Loading Sixel...")
-with open("snake.sixel", "rb") as f:
+with open("images/snake.sixel", "rb") as f:
     term.process(f.read())
 
 print(f"   Cursor: {term.cursor_position()}")

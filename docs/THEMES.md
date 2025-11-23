@@ -48,7 +48,7 @@ theme: "dark-background"  # Default theme
 par-term-emu-tui-rust --theme solarized-dark
 
 # Apply a built-in theme to config.yaml permanently
-par-term-emu-tui-rust --apply-theme dark-background
+par-term-emu-tui-rust --apply-theme iterm2-dark
 
 # Import and apply a custom theme from a YAML file
 par-term-emu-tui-rust --apply-theme-from ~/mytheme.yaml
@@ -69,12 +69,14 @@ make themes
 
 ## Built-in Themes
 
+The terminal includes 12 built-in themes across dark, light, and specialty categories. Each theme provides a complete color palette with 16 ANSI colors plus UI element colors.
+
 ### Dark Themes
 
-#### Dark Background (Default)
+#### Dark Background
 **Key:** `dark-background`
 
-Traditional dark terminal with black background and standard ANSI colors.
+Traditional dark terminal with black background and standard ANSI colors. This is the default theme.
 
 - **Background:** `#000000` (Black)
 - **Foreground:** `#bbbbbb` (Gray)
@@ -83,7 +85,7 @@ Traditional dark terminal with black background and standard ANSI colors.
 #### iTerm2 Dark
 **Key:** `iterm2-dark`
 
-Classic iTerm2-style color scheme with pure black background. Perfect for OLED displays and users who prefer deep blacks.
+Classic iTerm2-style color scheme with pure black background and vibrant custom palette. Perfect for OLED displays and users who prefer deep blacks.
 
 - **Background:** `#000000` (Pure black)
 - **Foreground:** `#b2b2b2` (Light gray)
@@ -109,7 +111,7 @@ Ethan Schoonover's carefully designed low-contrast dark theme.
 - **Foreground:** `#839496` (Gray-blue)
 - **Best for:** Long coding sessions, color consistency
 
-#### Pastel Dark
+#### Pastel (Dark Background)
 **Key:** `pastel-dark`
 
 Soft pastel colors on dark background.
@@ -212,12 +214,12 @@ palette:
   - "#eeeeec"  # Bright White (Color 15)
 
 # Default Colors
-background: "#000000"      # Default background
+background: "#2e3436"      # Default background
 foreground: "#d3d7cf"      # Default text color
 
 # Cursor Colors
 cursor: "#d3d7cf"          # Cursor color
-cursor_text: "#000000"     # Text inside cursor (reverse video)
+cursor_text: "#2e3436"     # Text inside cursor (reverse video)
 
 # Selection Colors
 selection: "#eeeeec"       # Selection background
@@ -244,7 +246,7 @@ When you import a custom theme using `--apply-theme-from`, it is saved to:
 
 Each theme is stored as a separate YAML file named `{theme-name}.yaml`.
 
-**Important Limitation:** Custom themes are currently **not fully supported**. While `--apply-theme-from` saves the theme file and updates your config, the application cannot load custom themes from the themes directory. Only the 12 built-in themes listed in `--list-themes` can be used. Custom theme support (loading themes from `~/.config/par-term-emu-tui-rust/themes/`) is planned for a future release.
+**Important Limitation:** Custom themes are currently **not fully supported**. While `--apply-theme-from` saves the theme file and updates your config, the application only loads built-in themes. To use a custom theme, it must be added to the built-in themes in `src/par_term_emu_tui_rust/themes.py`. Support for loading custom themes from the themes directory is planned for a future release.
 
 ### Theme File Format
 
@@ -319,18 +321,17 @@ After importing a custom theme with `--apply-theme-from`, the theme file is save
 par-term-emu-tui-rust --theme nord-inspired  # ❌ Will fail
 
 # Only built-in theme keys work
-par-term-emu-tui-rust --theme dark-background    # ✓ Works
+par-term-emu-tui-rust --theme iterm2-dark    # ✓ Works
 ```
 
 **Workarounds:**
 
 Until custom theme loading is implemented, you can:
 
-1. **Export and modify a built-in theme:** Use `--export-theme` to create a custom theme file, modify it, then contribute it as a built-in theme via PR
-2. **Modify source code:** Add your theme directly to `src/par_term_emu_tui_rust/themes.py` in the `THEMES` dictionary
-3. **Contribute:** Submit a PR to add your theme as a new built-in theme for all users
+1. **Export and modify a built-in theme:** Use `--export-theme` to create a custom theme file, modify it, then add it to `src/par_term_emu_tui_rust/themes.py`
+2. **Contribute:** Submit a PR to add your theme as a new built-in theme for all users
 
-The `--apply-theme-from` command saves the theme file structure for future use, but the application's theme loader (`get_theme()` function in `themes.py`) only searches the built-in `THEMES` dictionary, not the user themes directory.
+The `--apply-theme-from` command validates and saves the theme file structure for future use, but the application's theme loader (`get_theme()` function in `themes.py`) only searches the built-in `THEMES` dictionary, not the user themes directory. The saved theme files in `~/.config/par-term-emu-tui-rust/themes/` will be ready to use once custom theme loading support is implemented.
 
 ## Theme Application
 
@@ -338,11 +339,11 @@ Themes are applied early in the widget initialization lifecycle to ensure correc
 
 ```mermaid
 graph TD
-    A[TerminalWidget.__init__] --> B[Create PtyTerminal]
+    A[TerminalWidget init] --> B[Create PtyTerminal]
     B --> C[Apply Theme]
     C --> D[Configure Terminal Settings]
     D --> E[Initialize Managers]
-    E --> F[on_mount: Resize Terminal]
+    E --> F[on mount: Resize Terminal]
     F --> G[Spawn Shell]
     G --> H[Start Polling]
 

@@ -13,52 +13,46 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/probello3)
 
-## What's New in v0.5.0
+## What's New in v0.6.0
 
-### Interactive Configuration Editor
-- **Tabbed Configuration Screen**: Press `Alt+Ctrl+Shift+C` to access comprehensive configuration UI
-  - **Settings Tab**: Widget-based form editor with organized sections
-    - 15 configuration categories with proper input widgets (checkboxes, selects, number inputs)
-    - Immediate validation and type checking
-    - Descriptive labels and help text for all options
-  - **Raw YAML Tab**: Direct YAML editing with syntax highlighting
-    - Full access to all configuration options
-    - Real-time syntax validation
-  - **Automatic Backup**: Creates timestamped backup before saving changes
-  - **Restart Reminder**: Toast notification reminds user to restart after changes
+### Graphics Protocol Support 🎨
+- **Full Inline Graphics Rendering**: Display images directly in the terminal
+  - **Sixel Graphics**: DEC VT340 palette-based graphics protocol
+  - **Kitty Graphics Protocol**: Modern PNG/RGB image transmission
+  - **iTerm2 Inline Images**: Base64-encoded image display
+  - **Unicode Half-Block Rendering**: Efficient 2:1 vertical compression using ▀ (U+2580)
+  - **Full RGB Color**: 24-bit color with alpha channel transparency
 
-### Terminal Session Recording
-- **Record Terminal Sessions**: Capture all terminal activity with `Ctrl+Shift+R`
-  - Recording indicator (⏺️) in header shows active status
-  - Start/stop recording with single keypress
-- **Multiple Export Formats**:
-  - Asciicast (.cast) - Compatible with asciinema players
-  - JSON (.json) - Raw event data for custom processing
-- **Smart Directory Selection**:
-  1. Configured `recording_directory` (if set)
-  2. Shell's current working directory (from OSC 7)
-  3. `XDG_VIDEOS_DIR/Recordings` or `~/Videos/Recordings`
-  4. Home directory fallback
-- **Auto-Export**: Optionally export recording immediately when stopped
-- **Customizable Titles**: Template-based titles with `{timestamp}` placeholder
-- **Optional Auto-Open**: Launch recording in default application after export
+### Animation Support 🎬
+- **Kitty Protocol Animations**: Smooth graphics animation at ~60Hz
+  - Multi-frame animation transmission
+  - Frame delay control in milliseconds
+  - Looping modes: infinite, finite, or single play
+  - Animation controls: play, pause, stop
+  - Automatic frame updates without manual refresh
 
-### Backend Integration Enhancements
-- **Native Notification Control**: TUI configuration now surfaces Rust backend notification settings
-  - Bell sound volume (0-100)
-  - Desktop notifications
-  - Visual bell overlay
-  - Activity/silence detection thresholds
-  - Max notification buffer size
-- **Clipboard Limits**: Configure backend clipboard sync event limits
-  - Max sync events retained
-  - Max bytes per event
-- **Shell Integration Stats**: Status bar displays shell command statistics
-  - Total commands executed
-  - Failed command count
-  - Average command duration
+### Enhanced Text Selection 🖱️
+- **Drag-to-Extend Multi-Click Selections**: Powerful selection extension
+  - Triple-click + drag to extend selection by full lines (upward or downward)
+  - Anchor point tracking maintains original selection position during drag
+  - Respects `triple_click_selects_wrapped_lines` configuration
+  - Auto-copy on mouse up (when `auto_copy_selection` enabled)
 
-See [CHANGELOG.md](CHANGELOG.md) for previous releases.
+### Graphics Integration
+- **Scrollback Preservation**: Graphics scroll with text content and remain visible in history
+- **Multiple Graphics**: Display multiple images on screen simultaneously
+- **Overlapping Support**: Graphics overlay properly on text content
+- **Testing Utilities**:
+  - `scripts/display_image_sixel.py` - Display images using Sixel protocol
+  - `scripts/test_kitty_animation.py` - Test Kitty animation features
+
+### Use Cases
+- **Image Viewers**: Use terminal image viewers like `viu`, `chafa`, or `img2sixel`
+- **Data Visualization**: Display charts, graphs, and plots inline
+- **Rich Media**: Preview images, animations, and graphics without leaving the terminal
+- **Documentation**: Show diagrams and images in terminal-based documentation
+
+See [CHANGELOG.md](CHANGELOG.md) for complete release history and v0.5.0 features.
 
 ## Quick Start
 
@@ -82,9 +76,10 @@ See the [Quick Start Guide](docs/QUICK_START.md) for detailed instructions.
 - **Efficient Rendering** - Textual Line API for optimal performance
 - **Full ANSI Support** - 16/256/true color, bold, italic, underline, and more
 - **Advanced Color System** - Bold brightening and automatic contrast adjustment (iTerm2-compatible)
+- **Graphics Protocol** - Sixel, Kitty, and iTerm2 inline images with animation support
 - **Interactive Configuration** - Tabbed UI with widget-based and raw YAML editing modes
 - **Session Recording** - Record terminal sessions to asciicast or JSON with auto-export
-- **Scrollback Buffer** - Navigate history with keyboard and mouse
+- **Scrollback Buffer** - Navigate history with keyboard and mouse (graphics scroll with text)
 - **Mouse Support** - Text selection, clickable URLs, and mouse tracking
 - **Hyperlinks** - OSC 8 hyperlinks and auto-detected plain text URLs
 - **Notifications** - OSC 9/777 notification support with toast messages and backend integration

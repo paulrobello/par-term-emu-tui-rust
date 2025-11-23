@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from par_term_emu_core_rust.debug import debug_log
@@ -12,6 +13,14 @@ if TYPE_CHECKING:
     from par_term_emu_core_rust import PtyTerminal
 
     from par_term_emu_tui_rust.config import TuiConfig
+
+
+class SelectionMode(Enum):
+    """Selection mode for tracking how selection was initiated."""
+
+    NORMAL = "normal"  # Character-by-character selection
+    WORD = "word"  # Word-based selection (double-click)
+    LINE = "line"  # Line-based selection (triple-click)
 
 
 class SelectionManager:
@@ -38,12 +47,16 @@ class SelectionManager:
         self.start: tuple[int, int] | None = None  # (col, row) or None
         self.end: tuple[int, int] | None = None  # (col, row) or None
         self.selecting = False  # True when mouse drag in progress
+        self.selection_mode = SelectionMode.NORMAL  # Track selection mode
+        self.anchor_row: int | None = None  # Original row for line/word selection dragging
 
     def clear(self) -> None:
         """Clear the current selection."""
         self.start = None
         self.end = None
         self.selecting = False
+        self.selection_mode = SelectionMode.NORMAL
+        self.anchor_row = None
 
     def select_word_at(self, col: int, row: int, frame_snapshot: Any) -> None:
         """Select the word at the given position.
@@ -95,6 +108,7 @@ class SelectionManager:
             # Set selection bounds
             self.start = (word_start, row)
             self.end = (word_end, row)
+            self.selection_mode = SelectionMode.WORD
 
         except Exception as e:
             debug_log("SELECT", f"Error in select_word_at({col},{row}): {e}")
@@ -166,6 +180,81 @@ class SelectionManager:
         # Select from beginning of start row to end of end row
         self.start = (0, start_row)
         self.end = (cols - 1, end_row)
+        self.selection_mode = SelectionMode.LINE
+        self.anchor_row = row  # Store original click row for drag extension
+
+    def extend_line_selection_to(self, row: int, frame_snapshot: Any) -> None:
+        """Extend line selection to include the given row.
+
+        This is called when dragging after a triple-click to extend the selection
+        by full lines. Respects wrapped lines if configured.
+
+        Args:
+            row: Row position to extend to
+            frame_snapshot: Terminal snapshot to use for wrapped line detection
+        """
+        if not self.start or self.anchor_row is None:
+            debug_log("SELECT", "Cannot extend line selection: no initial selection or anchor")
+            return
+
+        # Ensure we have a snapshot
+        if not frame_snapshot:
+            frame_snapshot = self.term.create_snapshot()
+
+        cols, rows = frame_snapshot.size
+
+        # Helper function to find start of wrapped line
+        def find_line_start(start_row: int) -> int:
+            if not self.config.triple_click_selects_wrapped_lines:
+                return start_row
+            target_row = start_row
+            while target_row > 0:
+                prev_row = target_row - 1
+                if prev_row < len(frame_snapshot.wrapped_lines):
+                    if frame_snapshot.wrapped_lines[prev_row]:
+                        target_row = prev_row
+                    else:
+                        break
+                else:
+                    break
+            return target_row
+
+        # Helper function to find end of wrapped line
+        def find_line_end(end_row: int) -> int:
+            if not self.config.triple_click_selects_wrapped_lines:
+                return end_row
+            target_row = end_row
+            while target_row < rows - 1:
+                if target_row < len(frame_snapshot.wrapped_lines):
+                    if frame_snapshot.wrapped_lines[target_row]:
+                        target_row += 1
+                    else:
+                        break
+                else:
+                    break
+            return target_row
+
+        # Find the anchor line boundaries
+        anchor_start = find_line_start(self.anchor_row)
+        anchor_end = find_line_end(self.anchor_row)
+
+        if row < self.anchor_row:
+            # Extending upward - update start, keep end at anchor line end
+            new_start_row = find_line_start(row)
+            self.start = (0, new_start_row)
+            self.end = (cols - 1, anchor_end)
+            debug_log("SELECT", f"Extended line selection upward: rows {new_start_row}-{anchor_end}")
+        elif row > self.anchor_row:
+            # Extending downward - keep start at anchor line start, update end
+            new_end_row = find_line_end(row)
+            self.start = (0, anchor_start)
+            self.end = (cols - 1, new_end_row)
+            debug_log("SELECT", f"Extended line selection downward: rows {anchor_start}-{new_end_row}")
+        else:
+            # Back to anchor row - select just the anchor line
+            self.start = (0, anchor_start)
+            self.end = (cols - 1, anchor_end)
+            debug_log("SELECT", f"Selection reset to anchor line: rows {anchor_start}-{anchor_end}")
 
     def is_cell_selected(self, col: int, row: int) -> bool:
         """Check if a cell is within the current selection.

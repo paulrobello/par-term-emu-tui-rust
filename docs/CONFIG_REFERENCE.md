@@ -115,7 +115,7 @@ Choose recovery option:
 
 ## Currently Implemented Settings
 
-**Implementation Status** (Last Updated: 2025-11-19):
+**Implementation Status**:
 - ✅ **56 options fully implemented**
 
 | Setting | Config Key | Default | Notes |
@@ -140,9 +140,9 @@ Choose recovery option:
 | Disable insecure sequences | `disable_insecure_sequences` | `false` | Blocks OSC 8/52/9/777 and Sixel when enabled |
 | Accept OSC 7 | `accept_osc7` | `true` | Directory tracking via shell integration |
 | Visual bell enabled | `visual_bell_enabled` | `true` | Shows bell icon (🔔) in header on BEL character |
-| Theme | `theme` | `"iterm2-dark"` | Color theme name |
+| Theme | `theme` | `"dark-background"` | Color theme name |
 | Bold brightening | `bold_brightening` | `false` | Use bright colors (8-15) for bold text with colors 0-7 |
-| Minimum contrast | `minimum_contrast` | `0.5` | Live display contrast adjustment (0.0-1.0, iTerm2-compatible) |
+| Minimum contrast | `minimum_contrast` | `0.0` | Live display contrast adjustment (0.0-1.0, iTerm2-compatible) |
 | Faint text alpha | `faint_text_alpha` | `0.5` | Alpha multiplier for faint/dim text (0.0-1.0) |
 | Show notifications | `show_notifications` | `true` | Display OSC 9/777 notifications |
 | Notification timeout | `notification_timeout` | `5` | Notification display duration (seconds) |
@@ -393,14 +393,14 @@ accept_osc7: true                   # Enable directory tracking (default)
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `theme` | `str` | `"iterm2-dark"` | Color theme name to use for terminal colors |
+| `theme` | `str` | `"dark-background"` | Color theme name to use for terminal colors |
 | `bold_brightening` | `bool` | `false` | Use bright ANSI colors (8-15) for bold text with normal colors (0-7) |
-| `minimum_contrast` | `float` | `0.5` | Minimum contrast adjustment for live terminal display (0.0-1.0) |
+| `minimum_contrast` | `float` | `0.0` | Minimum contrast adjustment for live terminal display (0.0-1.0) |
 | `faint_text_alpha` | `float` | `0.5` | Alpha multiplier for faint/dim text (0.0-1.0) |
 
 **Available Themes:**
 - Use `par-term-emu-tui-rust --list-themes` to see all available themes
-- Default theme is `iterm2-dark` (iTerm2-style colors with pure black background)
+- Default theme is `dark-background`
 - Themes control the terminal's color palette and appearance
 
 **Bold Brightening:**
@@ -411,10 +411,10 @@ accept_osc7: true                   # Enable directory tracking (default)
 
 **Minimum Contrast (Live Display):**
 - **Range**: 0.0-1.0
-- **Default**: 0.5 (matches iTerm2 slider at 50%)
+- **Default**: 0.0 (disabled)
 - **Algorithm**: NTSC perceived brightness formula (30% red, 59% green, 11% blue)
 - **Behavior**: Automatically adjusts text colors when brightness difference < threshold
-- **Recommended**: 0.5 for improved readability
+- **Recommended**: 0.5 for improved readability (matches iTerm2 slider at 50%)
 - **Use Cases**: Accessibility, dark-on-dark/light-on-light color schemes
 - **Note**: This affects live terminal display; use `screenshot_minimum_contrast` for screenshots
 
@@ -428,9 +428,9 @@ accept_osc7: true                   # Enable directory tracking (default)
 
 ```yaml
 # Theme
-theme: "iterm2-dark"           # Default iTerm2-style theme
+theme: "dark-background"       # Default theme
 bold_brightening: false        # Don't use bright colors for bold text (default)
-minimum_contrast: 0.5          # Moderate contrast for readability
+minimum_contrast: 0.0          # Disabled by default (0.5 recommended for improved readability)
 faint_text_alpha: 0.5          # 50% opacity for faint text
 ```
 
@@ -503,10 +503,10 @@ clipboard_max_event_bytes: 4096
 
 **Minimum Contrast Adjustment**:
 - **Range**: 0.0-1.0
-- **Default**: `None` (inherit the live `minimum_contrast`, default 0.5)
+- **Default**: `None` (inherit the live `minimum_contrast`, default 0.0)
 - **Algorithm**: NTSC perceived brightness formula (30% red, 59% green, 11% blue)
 - **Behavior**: Automatically adjusts text colors when brightness difference < threshold
-- **Recommended**: 0.5 for improved readability; set to 0.0 to disable for screenshots only
+- **Recommended**: 0.5 for improved readability in screenshots
 - **Use Cases**: Documentation, accessibility, dark-on-dark/light-on-light schemes
 
 **Screenshot Directory Auto-Detection** (when `None`):
@@ -528,7 +528,7 @@ clipboard_max_event_bytes: 4096
 # Screenshots
 screenshot_directory: null             # Auto-detect directory
 screenshot_format: "png"               # PNG format
-screenshot_minimum_contrast: null      # Inherit live minimum_contrast (default 0.5)
+screenshot_minimum_contrast: null      # Inherit live minimum_contrast (default 0.0)
 open_screenshot_after_capture: false   # Don't auto-open
 ```
 
