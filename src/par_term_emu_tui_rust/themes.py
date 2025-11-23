@@ -358,7 +358,7 @@ THEMES: dict[str, Theme] = {
     "iterm2-dark": Theme(
         name="iTerm2 Dark",
         palette=[
-            "#a64431",  # Black
+            "#000000",  # Black (matches background for correct default bg rendering)
             "#ab3525",  # Red
             "#57bf37",  # Green
             "#c6c43f",  # Yellow

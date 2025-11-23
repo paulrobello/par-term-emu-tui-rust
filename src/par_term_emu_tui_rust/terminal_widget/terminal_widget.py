@@ -48,6 +48,7 @@ if TYPE_CHECKING:
         Key,
         MouseDown,
         MouseMove,
+        MouseRelease,
         MouseScrollDown,
         MouseScrollUp,
         MouseUp,
@@ -93,6 +94,11 @@ class TerminalWidget(Widget, can_focus=True):
         color: white;
         padding: 0;
         margin: 0;
+    }
+
+    /* Enable hover events for mouse tracking (Textual 6.2.0+ requirement) */
+    TerminalWidget:hover {
+        /* No visual change - just enables hover event delivery */
     }
 
     """
@@ -346,6 +352,11 @@ class TerminalWidget(Widget, can_focus=True):
             # Poll every 16ms (~60Hz) for responsive updates and smooth scrollbar rendering
             # Higher polling rate reduces chance of capturing partial updates during scrollbar drags
             self._poll_interval = self.set_interval(0.016, self._poll_updates)
+
+            # Capture mouse to receive all mouse move events (including hover)
+            # This is required for nested TUI apps that use mouse tracking mode 1003 (any event)
+            # Without this, we only get mouse move events during drag (after mouse down)
+            self.capture_mouse()
 
             # Check for initial directory from shell integration (OSC 7)
             # This will display the directory if shell integration is already active
@@ -1459,9 +1470,6 @@ class TerminalWidget(Widget, can_focus=True):
 
         self._send_mouse_event(button, col, row, pressed=True, modifiers=modifiers)
 
-        # Capture mouse to ensure we get move/up events even if cursor leaves widget
-        self.capture_mouse()
-
     async def on_mouse_up(self, event: MouseUp) -> None:
         """Handle mouse button release.
 
@@ -1504,8 +1512,19 @@ class TerminalWidget(Widget, can_focus=True):
         self._send_mouse_event(button, col, row, pressed=False, modifiers=modifiers)
         self._mouse_button_state = None  # Clear button state
 
-        # Release mouse capture
-        self.release_mouse()
+    async def on_mouse_release(self, event: MouseRelease) -> None:
+        """Handle mouse capture being released.
+
+        This event fires when another widget steals mouse capture or when
+        the system releases it. We immediately re-capture to ensure we
+        continue receiving hover events for nested TUI applications.
+
+        Args:
+            event: The mouse release event
+        """
+        debug_log("MOUSE_RELEASE", "Mouse capture lost, re-capturing for hover events")
+        # Immediately re-capture to continue receiving hover events
+        self.capture_mouse()
 
     async def on_mouse_move(self, event: MouseMove) -> None:
         """Handle mouse movement and dragging.
@@ -1556,7 +1575,16 @@ class TerminalWidget(Widget, can_focus=True):
         elif mouse_mode == "any":
             # AnyEvent mode - send motion even without button pressed
             # Use button code 35 (3 + 32) for motion without button
+            debug_log(
+                "MOUSE_HOVER",
+                f"Sending hover event: pos=({col},{row}) mode={mouse_mode}",
+            )
             self._send_mouse_event(35, col, row, pressed=True, modifiers=modifiers)
+        else:
+            debug_log(
+                "MOUSE_MOVE_SKIP",
+                f"Not sending: pos=({col},{row}) mode={mouse_mode} button_state={self._mouse_button_state}",
+            )
 
         self._last_mouse_pos = (col, row)
 
@@ -1621,11 +1649,16 @@ class TerminalWidget(Widget, can_focus=True):
     async def on_focus(self, event: Focus) -> None:
         """Handle widget gaining focus.
 
-        Sends focus in event if focus tracking mode is enabled.
+        Ensures mouse capture is active and sends focus in event if focus tracking mode is enabled.
 
         Args:
             event: The focus event
         """
+        # Ensure we have mouse capture for hover events
+        # This handles the case where mouse is already inside widget at mount
+        self.capture_mouse()
+        debug_log("FOCUS", "Widget gained focus, ensuring mouse capture for hover events")
+
         if not self.term.is_running():
             return
 
@@ -1670,9 +1703,15 @@ class TerminalWidget(Widget, can_focus=True):
         Respects config.focus_follows_mouse setting (default: False).
         When enabled, automatically focuses the terminal when mouse enters.
 
+        Also ensures mouse capture is active for hover events in nested TUIs.
+
         Args:
             event: The enter event
         """
+        # Ensure we have mouse capture for hover events
+        self.capture_mouse()
+        debug_log("MOUSE_ENTER", "Mouse entered widget, ensuring capture for hover events")
+
         if self.config.focus_follows_mouse:
             self.focus()
             debug_log("FOCUS", "auto-focused on mouse enter")

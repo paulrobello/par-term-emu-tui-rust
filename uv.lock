@@ -582,28 +582,26 @@ wheels = [
 
 [[package]]
 name = "par-term-emu-core-rust"
-version = "0.9.0"
-source = { registry = "https://pypi.org/simple" }
+version = "0.9.1"
+source = { directory = "../par-term-emu-core-rust" }
 dependencies = [
     { name = "pillow" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cd/a9/47c0fca0b4b39842f09ed9e77e5085278e5c7280fb99a3b7c26a7945f818/par_term_emu_core_rust-0.9.0.tar.gz", hash = "sha256:5a1dea4a837b373dd163f3273b0957562fa8b3ea94fb93db3f71b4e228d1b9a5", size = 1195418 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/e8/809983c544f6e39d46c81a6cfd0946469820bd8dca916a86d31d03aec4b3/par_term_emu_core_rust-0.9.0-cp312-cp312-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:049b0cbf1893b0482f7597d3ff5499f3c03af3944f69a21815c6746f3c1908f5", size = 6465875 },
-    { url = "https://files.pythonhosted.org/packages/10/e4/8762f6b30a3f5b7c5bc575be0dca4b8f43723fa3fa3807f9325dde0d8b07/par_term_emu_core_rust-0.9.0-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:6ceed34c4bac697d75d79b32891fb66978e180b8dddbd56d4b5ab57f3c9d15ad", size = 3322486 },
-    { url = "https://files.pythonhosted.org/packages/17/00/00a7033026dcadd127716e19009c3a9a118717e05f2a53498e5451f764b6/par_term_emu_core_rust-0.9.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:25f97def5ac34581a6e3f8a7cc4721486d3fa738822c4993dd1970080951f8a3", size = 3275663 },
-    { url = "https://files.pythonhosted.org/packages/1a/c6/b0b93d72966f80e15c4ff8fc8eedf7f1e117873ef27019566fc471ed1ef6/par_term_emu_core_rust-0.9.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2cc01ddbfd0f0e60256a73a16166142e0263fc0c6409182dd671e1b81127805e", size = 3425891 },
-    { url = "https://files.pythonhosted.org/packages/15/47/21c70071075df65ce0b3f1bc1ce2992b0fc8570d86fdad4a4a8df13fd6b7/par_term_emu_core_rust-0.9.0-cp312-cp312-win_amd64.whl", hash = "sha256:9c5a0ff709be5444793c18ccd6547dc4d150fc444c81efac4b0e14f2beb3fad7", size = 3403309 },
-    { url = "https://files.pythonhosted.org/packages/2d/28/ab66a605aa6eb253559e2fa16cfdf1fdb6fce23f54e838a2a67d81be067f/par_term_emu_core_rust-0.9.0-cp313-cp313-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:172676ff5073eecebf96e8b40a43b8c3c79016668e8b1969b78472ece3ce73df", size = 6465445 },
-    { url = "https://files.pythonhosted.org/packages/ff/1c/a61c74d71902185544cfd708ea4f346b1cf4cb198ae7b00b13758a5f6485/par_term_emu_core_rust-0.9.0-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:58bac0a5dab1ebb674bff83de5451c2fd1ad6e75dd4501b4cd91a52eae7f91ee", size = 3322235 },
-    { url = "https://files.pythonhosted.org/packages/c4/23/90a338d8ca02faca2e2d3689ba4bf8265f9d58dbb7d91825178b50dfd9d9/par_term_emu_core_rust-0.9.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d4a1a74abe8ba6f341603c5f383bdd3abffa99dfac33bc60731361f56f128538", size = 3275630 },
-    { url = "https://files.pythonhosted.org/packages/c0/14/4c45c6f2982376551425c2abf3f41e0cc36963ea9c1e9353100f6ac289be/par_term_emu_core_rust-0.9.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3c2b0b475ae81272d7c9b91c757be09f2863e47710490eeb3881c73e0a4ec3a4", size = 3425462 },
-    { url = "https://files.pythonhosted.org/packages/e9/a6/9cbe14db649121487d1062391c951122c84bd1683910e4710a458de1d3b4/par_term_emu_core_rust-0.9.0-cp313-cp313-win_amd64.whl", hash = "sha256:c94125416fe8f2fb1b1be3d51d5f1787f7ffb45a818d1065e30947f977731144", size = 3403235 },
-    { url = "https://files.pythonhosted.org/packages/4e/4f/177ddb5f22efbf7667aba1afc86f0b12b3db33af1fccbce3808e967932bd/par_term_emu_core_rust-0.9.0-cp314-cp314-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:51fb7c9702fb09dac7546d271bdc90a2dc11fa21cebf7f155281d11edbbacd06", size = 6529983 },
-    { url = "https://files.pythonhosted.org/packages/6c/b1/f7a6ab2819ad8e30edeacd75588ab0f27b38dee45e71c64656bce648ebdb/par_term_emu_core_rust-0.9.0-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:5662042d269f50e5861b43de8c757b2b0d9527155e7a60c8b02070734213405e", size = 3357014 },
-    { url = "https://files.pythonhosted.org/packages/c9/44/216cfb89c210f1209b79f35568b0d27a8624566f64b52a38a5d5ece06653/par_term_emu_core_rust-0.9.0-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b1cabd60c28e1291cd2d255ac30d1fe85a054b57aa3f60767adf0e0a09837f68", size = 3303436 },
-    { url = "https://files.pythonhosted.org/packages/26/1b/71e1f8889f89833cbd8dfc6b4ac3ed6d65cbf8cd688aa407b692a0cfe8ee/par_term_emu_core_rust-0.9.0-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6698bb80d30b1496c13fdfa7b515f6367696400a43e4e606baff469ee64cca9b", size = 3455455 },
-    { url = "https://files.pythonhosted.org/packages/35/72/2aeb457d34b21b34851db1cba9effbaceda6aaa3476822fefdf100e56277/par_term_emu_core_rust-0.9.0-cp314-cp314-win_amd64.whl", hash = "sha256:45b123aff456e7326beca25da8c4f2c4e2a9206df33705edd86cbe2f0ceba21c", size = 3446250 },
+
+[package.metadata]
+requires-dist = [
+    { name = "pillow", specifier = ">=12.0.0" },
+    { name = "pillow", marker = "extra == 'image'", specifier = ">=12.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "maturin", specifier = ">=1.10.1" },
+    { name = "pre-commit", specifier = ">=4.4.0" },
+    { name = "pyright", specifier = ">=1.1.407" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-timeout", specifier = ">=2.4.0" },
+    { name = "ruff", specifier = ">=0.14.5" },
 ]
 
 [[package]]
@@ -633,7 +631,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "par-term-emu-core-rust", specifier = ">=0.9.0" },
+    { name = "par-term-emu-core-rust", directory = "../par-term-emu-core-rust" },
     { name = "pillow", specifier = ">=12.0.0" },
     { name = "pyperclip", specifier = ">=1.11.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
