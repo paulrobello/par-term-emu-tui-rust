@@ -20,7 +20,7 @@ Before installing Par Term Emu TUI Rust, ensure you have:
 - **Python 3.12 or higher** - Check with `python --version`
 - **uv package manager** - Install from [astral.sh/uv](https://astral.sh/uv)
 - **Terminal with true color support** - Most modern terminals (iTerm2, Alacritty, Wezterm, etc.)
-- **par-term-emu-core-rust** - Rust terminal emulation backend (automatically installed as local dependency)
+- **par-term-emu-core-rust** - Rust terminal emulation backend (automatically installed as dependency)
 
 ## Installation
 
@@ -112,7 +112,7 @@ keep_selection_after_copy: true
 # Scrollback
 scrollback_lines: 10000
 
-# Theme (use exact name from --list-themes)
+# Theme (use lowercase with hyphens)
 theme: "dark-background"
 
 # Notifications
@@ -124,7 +124,7 @@ screenshot_format: "png"
 screenshot_directory: null  # Auto-detect best location
 ```
 
-> **✅ Tip:** Theme names in the config file use lowercase with hyphens (e.g., `dark-background`), while display names shown by `--list-themes` use title case with spaces (e.g., "Dark Background").
+> **✅ Tip:** Theme names in config.yaml use lowercase with hyphens (e.g., `dark-background`). The `--list-themes` command displays them with title case and spaces for readability (e.g., "Dark Background").
 
 ## Essential Commands
 
@@ -157,13 +157,13 @@ screenshot_directory: null  # Auto-detect best location
 
 **Temporary (session only):**
 ```bash
-# Use theme for this session (use exact display name from --list-themes)
+# Use theme for this session (use display name from --list-themes)
 par-term-emu-tui-rust --theme "Solarized Dark"
 ```
 
 **Permanent:**
 ```bash
-# Apply theme to config file (use exact display name)
+# Apply theme to config file (use display name)
 par-term-emu-tui-rust --apply-theme "Solarized Dark"
 ```
 
@@ -174,7 +174,7 @@ par-term-emu-tui-rust --list-themes
 make themes
 ```
 
-> **📝 Note:** Use `--list-themes` to see all available themes. Theme names for CLI flags should match the display names exactly (with spaces and title case), while theme names in the config file use lowercase with hyphens.
+> **📝 Note:** Available themes include Dark Background, High Contrast, Light Background, Pastel (Dark Background), Regular, Smoooooth, Solarized, Solarized Dark, Solarized Light, Tango Dark, Tango Light, and iTerm2 Dark. Use the exact display names shown by `--list-themes` for CLI flags, while config.yaml uses lowercase with hyphens (e.g., `solarized-dark`).
 
 ### Take Screenshots
 
@@ -266,10 +266,15 @@ make debug-clear     # Clear all debug logs
 
 **Debug Log Locations:**
 - Python TUI logs: `debug_logs/terminal_debug_YYYYMMDD_HHMMSS.log` (when using `--debug`)
-- Rust backend logs: `/tmp/par_term_emu_core_rust_debug_rust.log` (when using `make debug*` with DEBUG_LEVEL)
-- Python backend logs: `/tmp/par_term_emu_debug_python.log` (when using `make debug*` with DEBUG_LEVEL)
+- Rust backend logs: `<TEMP_DIR>/par_term_emu_core_rust_debug_rust.log` (when using `make debug*` with DEBUG_LEVEL)
+- Python backend logs: `<TEMP_DIR>/par_term_emu_debug_python.log` (when using `make debug*` with DEBUG_LEVEL)
 
-> **📝 Note:** The `--debug` flag creates timestamped Python logs in `debug_logs/`, while `make debug*` commands set DEBUG_LEVEL environment variable to enable Rust backend logging to `/tmp/`.
+Where `<TEMP_DIR>` is:
+- macOS: `/tmp`
+- Linux: `/tmp`
+- Windows: System temp directory
+
+> **📝 Note:** The `--debug` flag creates timestamped Python logs in `debug_logs/`, while `make debug*` commands set DEBUG_LEVEL environment variable to enable Rust backend logging to the system temp directory.
 
 ## Next Steps
 
@@ -277,13 +282,16 @@ make debug-clear     # Clear all debug logs
 
 Explore advanced features:
 - **Graphics Protocol** - Sixel, Kitty, and iTerm2 inline images with animation support
+- **Interactive Configuration** - Tabbed UI with widget-based and raw YAML editing modes
+- **Session Recording** - Record terminal sessions to asciicast or JSON with auto-export
 - **Scrollback buffer** - Navigate terminal history efficiently (graphics scroll with text)
 - **Hyperlink support** - Click URLs (OSC 8 and plain text)
-- **Notifications** - Terminal application notifications (OSC 9/777)
+- **Notifications** - Terminal application notifications (OSC 9/777) with toast messages
+- **Shell Integration** - Working directory tracking, prompt navigation, command statistics
 - **Cursor styles** - Blinking and steady cursor modes
 - **Mouse support** - Full mouse tracking for applications
 - **KITTY Keyboard Protocol** - Enhanced keyboard handling with auto-detection
-- **Color System** - Bold brightening and automatic contrast adjustment
+- **Color System** - Bold brightening and automatic contrast adjustment (iTerm2-compatible)
 
 See [Features](FEATURES.md) and [README](../README.md) for comprehensive feature documentation.
 
@@ -422,10 +430,10 @@ mouse_wheel_scroll_lines: 1  # Default value
 - [README](../README.md) - Complete project overview and feature documentation
 - [Installation Guide](INSTALLATION.md) - Detailed installation instructions
 - [Usage Guide](USAGE.md) - Command-line options and workflows
-- [Configuration Reference](CONFIG_REFERENCE.md) - All configuration options
+- [Configuration Reference](CONFIG_REFERENCE.md) - All 57 configuration options
 - [Features](FEATURES.md) - Comprehensive feature descriptions
 - [Key Bindings](KEY_BINDINGS.md) - Keyboard shortcuts and mouse actions
-- [Themes Guide](THEMES.md) - Theme system and customization
+- [Themes Guide](THEMES.md) - Theme system and 12 built-in themes
 - [Screenshots Guide](SCREENSHOTS.md) - Screenshot functionality
 - [KITTY Protocol](KEYBOARD_PROTOCOL.md) - Enhanced keyboard protocol
 - [Architecture](ARCHITECTURE.md) - System design and implementation
@@ -443,6 +451,6 @@ You're now ready to use Par Term Emu TUI Rust! This quick start covered:
 3. **Essential commands** - Key bindings and mouse actions
 4. **Common tasks** - Themes, screenshots, and shell customization
 
-For advanced features and comprehensive documentation, explore the guides in the [Related Documentation](#related-documentation) section below.
+For advanced features and comprehensive documentation, explore the guides in the [Related Documentation](#related-documentation) section above.
 
 > **✅ Tip:** Join the discussion at [GitHub Discussions](https://github.com/paulrobello/par-term-emu-tui-rust/discussions) to ask questions and share tips!

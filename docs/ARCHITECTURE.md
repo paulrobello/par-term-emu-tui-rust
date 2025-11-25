@@ -43,9 +43,10 @@ Comprehensive architecture documentation for the par-term-emu-tui-rust terminal 
 - Python 3.12+ (requires >=3.12)
 - Textual (TUI framework)
 - par-term-emu-core-rust (Rust terminal emulator backend)
-- PyYAML (configuration management)
+- PyYAML, ruamel.yaml (configuration management)
 - xdg-base-dirs (XDG directory compliance)
 - pyperclip (cross-platform clipboard)
+- Pillow (image processing and screenshots)
 
 See `pyproject.toml` for current dependency versions.
 
@@ -145,7 +146,7 @@ The top-level Textual application that manages the overall UI structure and appl
 
 ### 2. Terminal Widget Layer (`TerminalWidget`)
 
-**File:** `terminal_widget/terminal_widget.py`
+**File:** `terminal_widget/terminal_widget.py` (1982 lines)
 
 The core custom Textual widget that wraps `par_term_emu_core_rust.PtyTerminal` and provides interactive shell access with advanced terminal features.
 
@@ -711,7 +712,7 @@ Manages application configuration with YAML persistence and XDG directory compli
 
 **Theme & Appearance (continued):**
 - `bold_brightening` - Use bright ANSI colors (8-15) for bold text with normal colors (0-7) (default: false)
-- `minimum_contrast` - Minimum contrast adjustment for live terminal display, 0.0-1.0 (default: 0.5)
+- `minimum_contrast` - Minimum contrast adjustment for live terminal display, 0.0-1.0 (default: 0.0)
 - `faint_text_alpha` - Alpha multiplier for faint/dim text, 0.0-1.0 (default: 0.5)
 
 **Screenshots (continued):**
@@ -1511,9 +1512,10 @@ graph TB
 |-------|-----------|---------|
 | **Frontend** | Textual | TUI framework |
 | **Terminal Emulation** | par-term-emu-core-rust | VT100/220/420 terminal emulation (Rust) |
-| **Configuration** | PyYAML | YAML config parsing |
+| **Configuration** | PyYAML, ruamel.yaml | YAML config parsing and manipulation |
 | **Clipboard** | pyperclip | Cross-platform clipboard |
 | **XDG Compliance** | xdg-base-dirs | XDG directory handling |
+| **Image Processing** | Pillow | Screenshot capture and image manipulation |
 | **Runtime** | Python 3.12+ | Application runtime (requires >=3.12) |
 | **Build** | hatchling | Python packaging |
 | **Quality** | ruff, pyright, pytest | Linting, type checking, testing |

@@ -17,11 +17,11 @@ Before installing Par Term Emu TUI Rust, ensure your system meets these requirem
 
 ### Required Software
 
-| Requirement | Notes | Check Command |
-|-------------|-------|---------------|
-| Python | Requires 3.12 or later | `python --version` |
-| uv | Package manager | `uv --version` |
-| Terminal | True color support recommended | See below |
+| Requirement | Minimum Version | Notes | Check Command |
+|-------------|----------------|-------|---------------|
+| Python | 3.12 | Required for running the application | `python --version` |
+| uv | Latest | Package manager for dependency installation | `uv --version` |
+| Terminal | N/A | True color support recommended | See below |
 
 ### Verify Terminal Capabilities
 
@@ -75,26 +75,9 @@ cd par-term-emu-tui-rust
 
 # Install dependencies
 uv sync
-
-# Or use make
-make install
 ```
 
-### Install from PyPI
-
-```bash
-# Install using uv (recommended)
-uv tool install par-term-emu-tui-rust
-
-# Or install in a virtual environment
-uv venv
-uv pip install par-term-emu-tui-rust
-
-# Traditional pip installation also works
-pip install par-term-emu-tui-rust
-```
-
-> **📝 Note:** The package is available on PyPI for easy installation. For development work or testing the latest unreleased features, install from source instead.
+> **📝 Note:** The `make install` command is equivalent to `uv sync` and checks for the existence of `.venv` directory.
 
 ### Development Installation
 
@@ -109,13 +92,10 @@ cd par-term-emu-tui-rust
 uv sync
 
 # Install pre-commit hooks (recommended)
-make pre-commit-install
+uv run pre-commit install
 ```
 
-> **📝 Note:** This project depends on `par-term-emu-core-rust` (Rust terminal emulation backend).
-> - **PyPI Installation**: The backend is automatically fetched from PyPI when installing the published package
-> - **Source Installation**: By default, `pyproject.toml` is configured to use a local path dependency (`../par-term-emu-core-rust`) for development
-> - For local development of both TUI and backend, ensure the Rust backend is cloned alongside this repository
+> **📝 Note:** This project depends on `par-term-emu-core-rust` (Rust terminal emulation backend). The minimum required version is specified in `pyproject.toml`. For local development of both TUI and backend, ensure the Rust backend is cloned alongside this repository.
 
 ## Post-Installation Setup
 
@@ -338,16 +318,18 @@ cat ~/.config/par-term-emu-tui-rust/config.yaml
 **Edit configuration interactively:**
 
 While the TUI is running, press **Alt+Ctrl+Shift+C** to open the built-in config editor with:
-- YAML syntax highlighting
-- Live validation before saving
+- Tabbed interface with Settings and Raw YAML editing modes
+- Widget-based form editor with organized configuration sections
+- Immediate validation and type checking with descriptive help text
+- YAML syntax highlighting in Raw YAML tab with real-time validation
 - Automatic backup on save
 - Interactive error recovery
 
 **Configuration features:**
-- Automatic timestamped backups on every save
+- Automatic timestamped backups on every save (format: `config.yaml.backup.YYYYMMDD_HHMMSS`)
 - Type validation for all config values
 - Range clamping for numeric settings
-- Interactive recovery when parsing fails
+- Interactive recovery when parsing fails with options to reset, restore from backup, or exit
 
 See [Configuration Reference](CONFIG_REFERENCE.md) for all available options.
 

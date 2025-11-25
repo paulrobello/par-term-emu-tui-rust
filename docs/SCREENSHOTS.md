@@ -202,8 +202,8 @@ screenshot_format: "html"
 
 Screenshot directory is selected in this priority order:
 
-1. **Configured directory** (if set in config)
-2. **Current working directory** (from OSC 7 shell integration)
+1. **Configured directory** (if set in config and directory exists or can be created)
+2. **Shell's current working directory** (from OSC 7 shell integration)
 3. **XDG_PICTURES_DIR/Screenshots** or `~/Pictures/Screenshots`
 4. **Home directory** as fallback
 
@@ -277,11 +277,12 @@ terminal_screenshot_YYYYMMDD_HHMMSS.<format>
 # ============================================================================
 
 # Directory to save screenshots
-# When not set (null), uses smart directory selection:
+# When not set (null), tries in order:
 # 1. Shell's current working directory (from OSC 7)
 # 2. XDG_PICTURES_DIR/Screenshots
 # 3. ~/Pictures/Screenshots
 # 4. Home directory
+# Set to a custom path to override default behavior.
 # Default: null
 screenshot_directory: null
 
@@ -302,11 +303,11 @@ screenshot_format: "png"
 #   - 0.0 = disabled
 #   - 0.5 = moderate contrast (recommended for readability)
 #   - 1.0 = maximum contrast
-# Default: null (inherit live `minimum_contrast`, default 0.0)
+# Default: null (inherits minimum_contrast)
 screenshot_minimum_contrast: null
 
 # Automatically open screenshot after capture
-# When enabled, opens the screenshot file with the system's default viewer
+# When enabled, opens the screenshot file with the system's default image viewer
 # (macOS: open, Linux: xdg-open, Windows: start) immediately after capturing.
 # Default: false
 open_screenshot_after_capture: false

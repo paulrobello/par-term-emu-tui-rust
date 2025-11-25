@@ -78,24 +78,24 @@ Usage: par-term-emu-tui-rust [OPTIONS]
        par-term-emu-tui-rust install <component> [OPTIONS]
 
 Options:
-  -d, --debug                            Enable debug logging to debug_logs/
+  -h, --help                             Show this help message and exit
+  -d, --debug                            Enable debug logging to timestamped file in debug_logs/
   -s, --shell SHELL                      Shell to execute (default: $SHELL on Unix, PowerShell/cmd.exe on Windows)
-  -c, --command CMD                      Command to inject after 1 second delay
+  -c, --command COMMAND                  Command to inject into prompt after 1 second delay
   -q, --auto-quit SECONDS                Automatically quit after specified seconds
-  --screenshot SECONDS                   Take screenshot after specified seconds
-  --open-screenshot                      Open screenshot with default viewer after capture
-  --init-config                          Create default config.yaml and exit
-  --export-theme NAME                    Export current theme as NAME and exit
-  --apply-theme NAME                     Apply built-in theme NAME and exit
-  --list-themes                          List available themes and exit
-  --apply-theme-from FILE                Apply theme from YAML file and exit
-  --theme NAME                           Use theme for this session (overrides config)
+  --screenshot SECONDS                   Take screenshot of terminal buffer after specified seconds
+  --open-screenshot                      Open screenshot with default system viewer after capture
+  --init-config                          Create default config.yaml in the XDG config directory and exit
+  --export-theme NAME                    Export the current theme as NAME and exit
+  --apply-theme NAME                     Apply a built-in theme NAME to config.yaml and exit
+  --list-themes                          List available built-in themes and exit
+  --apply-theme-from FILE                Apply a theme from a YAML file path to config.yaml and exit
+  --theme THEME                          Color theme to use for this session (overrides config file)
   --keyboard-protocol                    Enable KITTY keyboard protocol for embedded applications
   --no-keyboard-protocol                 Disable KITTY keyboard protocol (override config file)
   --keyboard-protocol-flags FLAGS        KITTY protocol flags: 1=disambiguate, 2=events, 4=alternate, 8=report_all, 16=text (combine by adding)
   --keyboard-protocol-auto-detect        Auto-detect and enable KITTY protocol when embedded apps request it
   --no-keyboard-protocol-auto-detect     Disable auto-detection (override config file)
-  -h, --help                             Show this help message and exit
 
 Subcommands:
   install                                Install shell integration, terminfo, or fonts
@@ -109,7 +109,8 @@ Subcommands:
 # Create timestamped debug log
 par-term-emu-tui-rust --debug
 
-# Log location: debug_logs/terminal_debug_YYYYMMDD_HHMMSS.log
+# Python TUI log location: debug_logs/terminal_debug_YYYYMMDD_HHMMSS.log
+# Rust backend log location: System temp directory (platform-specific)
 ```
 
 **View debug output:**
@@ -117,8 +118,12 @@ par-term-emu-tui-rust --debug
 # Tail Python TUI debug log in real-time
 tail -f debug_logs/terminal_debug_*.log
 
-# Tail Rust backend debug logs
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log
+# Tail Rust backend debug logs (macOS/Linux)
+# Note: Log location is in system temp directory
+tail -f "$(python3 -c 'import tempfile; print(tempfile.gettempdir())')/par_term_emu_core_rust_debug_rust.log"
+
+# Or use make command to tail all logs
+make debug-tail
 
 # Search for specific events in TUI logs
 grep "ERROR" debug_logs/terminal_debug_*.log
@@ -206,7 +211,7 @@ accept_osc7: true
 # ============================================================================
 # Theme & Colors
 # ============================================================================
-theme: "Dark Background"
+theme: "dark-background"
 bold_brightening: false
 minimum_contrast: 0.0
 faint_text_alpha: 0.5
@@ -392,8 +397,12 @@ par-term-emu-tui-rust --debug
 
 # 2. Monitor logs in another terminal
 tail -f debug_logs/terminal_debug_*.log
-# Or for Rust backend logs:
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log
+
+# Or for Rust backend logs (system temp directory):
+tail -f "$(python3 -c 'import tempfile; print(tempfile.gettempdir())')/par_term_emu_core_rust_debug_rust.log"
+
+# Or use make command for both:
+make debug-tail
 
 # 3. Test specific functionality
 par-term-emu-tui-rust --command "test-command" --debug

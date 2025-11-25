@@ -116,8 +116,11 @@ cat debug_logs/terminal_debug_*.log
 DEBUG_LEVEL=3 par-term-emu-tui-rust --debug
 
 # Check core debug logs
-cat /tmp/par_term_emu_core_rust_debug_rust.log
-cat /tmp/par_term_emu_debug_python.log
+# Note: Replace $TEMP with your system temp directory
+# Unix/macOS: /tmp or /var/folders/...
+# Windows: %TEMP% (e.g., C:\Users\YourName\AppData\Local\Temp)
+cat $TEMP/par_term_emu_core_rust_debug_rust.log
+cat $TEMP/par_term_emu_debug_python.log
 ```
 
 **Common Causes:**
@@ -514,7 +517,7 @@ exec $SHELL
 
 **Problem:** After exiting nvim, htop, or other TUI apps, keyboard input appears as codes like "8u 5u" or "105;5u"
 
-**Status:** **FIXED** automatically as of v0.4.0
+**Status:** **FIXED** automatically as of v0.6.1
 
 **How it's fixed:**
 - Terminal core automatically resets keyboard protocol state when:
@@ -523,7 +526,7 @@ exec $SHELL
 - No manual intervention needed
 
 **If you still see this:**
-1. Verify you're running v0.4.0 or later: `par-term-emu-tui-rust --version`
+1. Verify you're running v0.6.1 or later: `par-term-emu-tui-rust --version`
 2. Try Ctrl+L to force screen refresh
 3. As a workaround, type: `reset` and press Enter
 
@@ -734,10 +737,16 @@ ls -l debug_logs/terminal_debug_*.log
 DEBUG_LEVEL=3 par-term-emu-tui-rust --debug
 
 # Rust core log location (terminal emulation, VT parsing, PTY)
-/tmp/par_term_emu_core_rust_debug_rust.log
+# Location: System temp directory
+# Unix/macOS: /tmp/par_term_emu_core_rust_debug_rust.log
+# Windows: %TEMP%\par_term_emu_core_rust_debug_rust.log
+$TEMP/par_term_emu_core_rust_debug_rust.log
 
 # Python core log location (bindings, widget integration)
-/tmp/par_term_emu_core_rust_debug_python.log
+# Location: System temp directory
+# Unix/macOS: /tmp/par_term_emu_debug_python.log
+# Windows: %TEMP%\par_term_emu_debug_python.log
+$TEMP/par_term_emu_debug_python.log
 ```
 
 **Makefile Shortcuts:**
@@ -802,15 +811,18 @@ tail -f debug_logs/terminal_debug_*.log
 **Core Debug Logs:**
 ```bash
 # Monitor both core logs in real-time
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log \
-        /tmp/par_term_emu_debug_python.log
+# Note: Replace $TEMP with your system temp directory
+# Unix/macOS: /tmp
+# Windows: %TEMP%
+tail -f $TEMP/par_term_emu_core_rust_debug_rust.log \
+        $TEMP/par_term_emu_debug_python.log
 
 # Search for specific patterns
-grep "SCREEN_SWITCH" /tmp/par_term_emu_core_rust_debug_rust.log
-grep "CORRUPTION" /tmp/par_term_emu_debug_python.log
-grep "VT_INPUT" /tmp/par_term_emu_core_rust_debug_rust.log
+grep "SCREEN_SWITCH" $TEMP/par_term_emu_core_rust_debug_rust.log
+grep "CORRUPTION" $TEMP/par_term_emu_debug_python.log
+grep "VT_INPUT" $TEMP/par_term_emu_core_rust_debug_rust.log
 
-# Or use make shortcuts
+# Or use make shortcuts (recommended)
 make debug-tail  # Tail core logs
 make debug-view  # View core logs with less
 ```

@@ -13,9 +13,11 @@ Complete guide to color themes in par-term-emu-tui-rust, including built-in them
   - [Specialty Themes](#specialty-themes)
 - [Theme Anatomy](#theme-anatomy)
 - [Creating Custom Themes](#creating-custom-themes)
+  - [Custom Theme Limitations](#custom-theme-limitations)
   - [Custom Theme Location](#custom-theme-location)
   - [Theme File Format](#theme-file-format)
   - [Example Custom Theme](#example-custom-theme)
+  - [Using Custom Themes (Current Workaround)](#using-custom-themes-current-workaround)
 - [Theme Application](#theme-application)
 - [Related Documentation](#related-documentation)
 
@@ -28,6 +30,8 @@ The theme system provides complete control over terminal colors, including:
 - Support for custom user-defined themes
 
 Themes are applied **before the shell starts**, ensuring consistent colors from the first prompt.
+
+> **📝 Note:** Custom themes saved to the themes directory are not yet supported. Only the 12 built-in themes can be loaded. See [Custom Theme Limitations](#custom-theme-limitations) for details.
 
 ## Using Themes
 
@@ -74,9 +78,9 @@ The terminal includes 12 built-in themes across dark, light, and specialty categ
 ### Dark Themes
 
 #### Dark Background
-**Key:** `dark-background`
+**Key:** `dark-background` *(Default theme)*
 
-Traditional dark terminal with black background and standard ANSI colors. This is the default theme.
+Traditional dark terminal with black background and standard ANSI colors.
 
 - **Background:** `#000000` (Black)
 - **Foreground:** `#bbbbbb` (Gray)
@@ -236,17 +240,31 @@ match: "#fce94f"           # Search match highlight
 
 ## Creating Custom Themes
 
+### Custom Theme Limitations
+
+**Current Status:** Custom theme files can be created and saved, but **cannot be loaded** by the application. Only the 12 built-in themes are supported.
+
+**What works:**
+- `--export-theme NAME` - Exports current theme to `~/.config/par-term-emu-tui-rust/themes/NAME.yaml`
+- `--apply-theme-from FILE` - Validates and saves custom theme file to themes directory
+- Theme file validation and storage
+
+**What doesn't work:**
+- Loading custom themes at runtime
+- Using `--theme custom-theme-name` with a custom theme
+- Referencing custom themes in `config.yaml`
+
+**Why:** The `get_theme()` function in `themes.py` only searches the built-in `THEMES` dictionary, not the filesystem. Custom theme loading support is planned for a future release.
+
 ### Custom Theme Location
 
-When you import a custom theme using `--apply-theme-from`, it is saved to:
+Custom theme files are stored in:
 
 ```
 ~/.config/par-term-emu-tui-rust/themes/
 ```
 
-Each theme is stored as a separate YAML file named `{theme-name}.yaml`.
-
-**Important Limitation:** Custom themes are currently **not fully supported**. While `--apply-theme-from` saves the theme file and updates your config, the application only loads built-in themes. To use a custom theme, it must be added to the built-in themes in `src/par_term_emu_tui_rust/themes.py`. Support for loading custom themes from the themes directory is planned for a future release.
+Each theme is saved as a separate YAML file named `{theme-name}.yaml`.
 
 ### Theme File Format
 
@@ -312,26 +330,41 @@ badge: "#bf616a"
 match: "#ebcb8b"
 ```
 
-**Current Limitation:**
+### Using Custom Themes (Current Workaround)
 
-After importing a custom theme with `--apply-theme-from`, the theme file is saved to `~/.config/par-term-emu-tui-rust/themes/` but cannot be loaded by the application. The theme system currently only supports the 12 built-in themes.
+Since custom theme loading is not yet implemented, you have these options:
+
+**Option 1: Add to Built-in Themes**
+
+1. Export and modify a built-in theme:
+   ```bash
+   par-term-emu-tui-rust --export-theme my-custom
+   ```
+2. Edit the exported file in `~/.config/par-term-emu-tui-rust/themes/my-custom.yaml`
+3. Add it to `src/par_term_emu_tui_rust/themes.py` in the `THEMES` dictionary
+4. Rebuild/reinstall the application
+
+**Option 2: Contribute Your Theme**
+
+Submit a pull request to add your custom theme as a new built-in theme for all users.
+
+**What happens with `--apply-theme-from`:**
 
 ```bash
-# This does NOT work - custom themes cannot be loaded yet
-par-term-emu-tui-rust --theme nord-inspired  # ❌ Will fail
+# Validates and saves theme file, but cannot load it
+par-term-emu-tui-rust --apply-theme-from ~/mytheme.yaml
+# ✓ Saves to ~/.config/par-term-emu-tui-rust/themes/mytheme.yaml
+# ✓ Updates config.yaml with theme: "mytheme"
+# ❌ But application startup will fail to find "mytheme"
+
+# This will NOT work after --apply-theme-from
+par-term-emu-tui-rust --theme mytheme  # ❌ Theme not found error
 
 # Only built-in theme keys work
-par-term-emu-tui-rust --theme iterm2-dark    # ✓ Works
+par-term-emu-tui-rust --theme iterm2-dark  # ✓ Works
 ```
 
-**Workarounds:**
-
-Until custom theme loading is implemented, you can:
-
-1. **Export and modify a built-in theme:** Use `--export-theme` to create a custom theme file, modify it, then add it to `src/par_term_emu_tui_rust/themes.py`
-2. **Contribute:** Submit a PR to add your theme as a new built-in theme for all users
-
-The `--apply-theme-from` command validates and saves the theme file structure for future use, but the application's theme loader (`get_theme()` function in `themes.py`) only searches the built-in `THEMES` dictionary, not the user themes directory. The saved theme files in `~/.config/par-term-emu-tui-rust/themes/` will be ready to use once custom theme loading support is implemented.
+The saved theme files in `~/.config/par-term-emu-tui-rust/themes/` are ready for when custom theme loading support is implemented in a future release.
 
 ## Theme Application
 
@@ -372,13 +405,16 @@ graph TD
 **Mount Phase (`on_mount`):**
 1. Resize terminal to match actual widget size
 2. **Spawn shell process** (theme already applied)
-3. Start update polling timer
+3. Re-apply theme to update widget background color
+4. **Apply cursor style** from config (blinking_block, steady_bar, etc.)
+5. Start update polling timer (16ms interval for ~60Hz)
 
 **Key Points:**
 - Theme is applied **before shell spawns** - ensures correct colors from first prompt
 - Theme colors are set on PtyTerminal, not on the renderer
 - Renderer reads colors from PtyTerminal for each cell
 - Widget background automatically matches theme background
+- Cursor style is applied after shell spawn in `on_mount`
 
 ### Cell Rendering Logic
 

@@ -36,7 +36,7 @@ Par Term Emu TUI Rust is a modern terminal emulator TUI built with Textual and p
 | **Clipboard** | pyperclip | Cross-platform clipboard support |
 | **Paths** | xdg-base-dirs | XDG Base Directory compliance |
 
-> **📝 Note:** See `pyproject.toml` for current dependency versions.
+> **📝 Note:** See `pyproject.toml` for current dependency information.
 
 ## Core Features
 
@@ -488,13 +488,13 @@ echo -e '\e]8;;https://example.com\e\\Click me!\e]8;;\e\\'
 # Hyperlink settings
 clickable_urls: true                               # Enable URL clicking
 link_color: [100, 150, 255]                       # RGB color for links
-url_modifier: "ctrl"                               # Modifier key: none, ctrl, shift, alt
+url_modifier: "ctrl"                               # Modifier key: none, ctrl, shift, alt (default: ctrl)
 allowed_url_schemes: ["http", "https", "ftp", "ftps", "file", "mailto"]  # Allowed URL schemes
 warn_on_unknown_url_scheme: true                   # Warn when blocking unsupported schemes
 ```
 
 **Modifier options:**
-- `none` - Click URLs directly
+- `none` - Click URLs directly without modifier
 - `ctrl` - Require Ctrl+Click (default)
 - `shift` - Require Shift+Click
 - `alt` - Require Alt+Click
@@ -842,7 +842,7 @@ Enhanced features through shell integration scripts.
 - Tracked via OSC 7 sequences (requires shell integration)
 - Displayed in status bar with shell statistics: total commands, failed commands, average duration
 - Used for screenshot and recording directory selection
-- Compact display format: "📁 ~/path/to/dir | ⚙ cmds 42 | 2 fail | avg 15ms"
+- Compact display format example: "📁 ~/path/to/dir | ⚙ cmds 42 | 2 fail | avg 15ms"
 
 **Prompt navigation:**
 - Mark prompt locations
@@ -882,18 +882,18 @@ par-term-emu-tui-rust install shell-integration --all
 
 | Theme | Description | Best For |
 |-------|-------------|----------|
-| `dark-background` | Classic dark terminal | General use (default) |
-| `high-contrast` | High contrast colors | Accessibility |
-| `iterm2-dark` | iTerm2 Dark theme | macOS terminal users |
-| `light-background` | Classic light terminal | Bright environments |
-| `pastel-dark` | Soft pastel on dark | Reduced eye strain |
-| `regular` | Regular theme | Balanced colors |
-| `smoooooth` | Smooth dark theme | Easy on eyes |
-| `solarized` | Solarized theme | Consistent scheme |
-| `solarized-dark` | Solarized Dark | Precise color matching |
-| `solarized-light` | Solarized Light | Bright, balanced |
-| `tango-dark` | Tango Dark | GNOME-style dark |
-| `tango-light` | Tango Light | GNOME-style light |
+| `Dark Background` | Classic dark terminal | General use (default) |
+| `High Contrast` | High contrast colors | Accessibility |
+| `iTerm2 Dark` | iTerm2 Dark theme | macOS terminal users |
+| `Light Background` | Classic light terminal | Bright environments |
+| `Pastel (Dark Background)` | Soft pastel on dark | Reduced eye strain |
+| `Regular` | Regular theme | Balanced colors |
+| `Smoooooth` | Smooth dark theme | Easy on eyes |
+| `Solarized` | Solarized theme | Consistent scheme |
+| `Solarized Dark` | Solarized Dark | Precise color matching |
+| `Solarized Light` | Solarized Light | Bright, balanced |
+| `Tango Dark` | Tango Dark | GNOME-style dark |
+| `Tango Light` | Tango Light | GNOME-style light |
 
 ### Theme Components
 
@@ -919,10 +919,10 @@ par-term-emu-tui-rust --list-themes
 **Apply theme:**
 ```bash
 # Temporary (session only)
-par-term-emu-tui-rust --theme solarized-dark
+par-term-emu-tui-rust --theme "Solarized Dark"
 
 # Permanent (save to config)
-par-term-emu-tui-rust --apply-theme solarized-dark
+par-term-emu-tui-rust --apply-theme "Solarized Dark"
 ```
 
 **Custom themes:**

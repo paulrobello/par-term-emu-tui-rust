@@ -30,26 +30,30 @@ This document describes the comprehensive debugging infrastructure for par-term-
 
 The debugging system provides extensive logging capabilities across Rust and Python components. There are **three separate log sources**:
 
-1. **Rust core debug logs**: `/tmp/par_term_emu_core_rust_debug_rust.log` (Unix/macOS) or `%TEMP%\par_term_emu_core_rust_debug_rust.log` (Windows)
-   - Terminal emulation, VT parsing, PTY operations
-   - Controlled by `DEBUG_LEVEL` environment variable (0-4)
-   - From par-term-emu-core-rust Rust backend
+1. **Rust core debug logs**: `$TEMP/par_term_emu_core_rust_debug_rust.log`
+   - Location: System temp directory (e.g., `/tmp` on Unix/macOS, `%TEMP%` on Windows)
+   - Content: Terminal emulation, VT parsing, PTY operations
+   - Controlled by: `DEBUG_LEVEL` environment variable (0-4)
+   - Source: par-term-emu-core-rust Rust backend
 
-2. **Python core debug logs**: `/tmp/par_term_emu_debug_python.log` (Unix/macOS) or `%TEMP%\par_term_emu_debug_python.log` (Windows)
-   - Core Python bindings debug output
-   - Controlled by `DEBUG_LEVEL` environment variable (0-4)
-   - From par-term-emu-core-rust Python module
+2. **Python core debug logs**: `$TEMP/par_term_emu_debug_python.log`
+   - Location: System temp directory (e.g., `/tmp` on Unix/macOS, `%TEMP%` on Windows)
+   - Content: Core Python bindings debug output
+   - Controlled by: `DEBUG_LEVEL` environment variable (0-4)
+   - Source: par-term-emu-core-rust Python module
 
 3. **Python TUI application logs**: `debug_logs/terminal_debug_YYYYMMDD_HHMMSS.log`
-   - TUI application logic, widget lifecycle, user interactions
-   - Enabled via `--debug` CLI flag
-   - Created in current working directory
+   - Location: Current working directory
+   - Content: TUI application logic, widget lifecycle, user interactions
+   - Controlled by: `--debug` CLI flag
    - Timestamped for multiple debugging sessions
 
 This three-layer separation makes it easier to identify whether issues originate in:
 - The core terminal emulation layer (Rust)
 - The Python bindings layer (Python core)
 - The TUI application layer (Python TUI)
+
+> **📝 Note:** The Makefile uses `$(TEMP_DIR)` variable to automatically detect the correct system temp directory on your platform.
 
 ## Quick Start
 
@@ -64,21 +68,24 @@ make debug-verbose  # DEBUG_LEVEL=3 (debug)
 make debug-trace    # DEBUG_LEVEL=4 (trace)
 
 # View debug output in real-time (all three log sources)
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log \
-        /tmp/par_term_emu_debug_python.log \
+# Note: Replace $TEMP with your system temp directory
+# Unix/macOS: /tmp or /var/folders/...
+# Windows: %TEMP% (e.g., C:\Users\YourName\AppData\Local\Temp)
+tail -f $TEMP/par_term_emu_core_rust_debug_rust.log \
+        $TEMP/par_term_emu_debug_python.log \
         debug_logs/terminal_debug_*.log
 
 # Or view individually
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log    # Rust core only
-tail -f /tmp/par_term_emu_debug_python.log  # Python core only
-tail -f debug_logs/terminal_debug_*.log                # Python TUI application only
+tail -f $TEMP/par_term_emu_core_rust_debug_rust.log    # Rust core only
+tail -f $TEMP/par_term_emu_debug_python.log             # Python core only
+tail -f debug_logs/terminal_debug_*.log                 # Python TUI application only
 
 # Or after the fact
-less /tmp/par_term_emu_core_rust_debug_rust.log
-less /tmp/par_term_emu_debug_python.log
+less $TEMP/par_term_emu_core_rust_debug_rust.log
+less $TEMP/par_term_emu_debug_python.log
 less debug_logs/terminal_debug_*.log
 
-# Or use Makefile shortcuts
+# Or use Makefile shortcuts (recommended - handles paths automatically)
 make debug-tail  # Tail Rust and Python core logs
 make debug-view  # View Rust and Python core logs with less
 ```
@@ -322,21 +329,22 @@ uv run par-term-emu-tui-rust
 
 ```bash
 # Find corruption events (check both logs)
-grep CORRUPTION /tmp/par_term_emu_core_rust_debug_rust.log
-grep CORRUPTION /tmp/par_term_emu_debug_python.log
+# Note: Replace $TEMP with your system temp directory
+grep CORRUPTION $TEMP/par_term_emu_core_rust_debug_rust.log
+grep CORRUPTION $TEMP/par_term_emu_debug_python.log
 
 # Find screen switches (Rust log - core terminal operations)
-grep SCREEN_SWITCH /tmp/par_term_emu_core_rust_debug_rust.log
+grep SCREEN_SWITCH $TEMP/par_term_emu_core_rust_debug_rust.log
 
 # Find device queries (Rust log - VT sequence handling)
-grep DEVICE_QUERY /tmp/par_term_emu_core_rust_debug_rust.log
+grep DEVICE_QUERY $TEMP/par_term_emu_core_rust_debug_rust.log
 
 # Find render warnings (Python log - TUI rendering)
-grep "WARNING" /tmp/par_term_emu_debug_python.log
+grep "WARNING" $TEMP/par_term_emu_debug_python.log
 
 # Get context around a specific time (both logs)
-grep -A 10 -B 10 "CORRUPTION" /tmp/par_term_emu_core_rust_debug_rust.log
-grep -A 10 -B 10 "CORRUPTION" /tmp/par_term_emu_debug_python.log
+grep -A 10 -B 10 "CORRUPTION" $TEMP/par_term_emu_core_rust_debug_rust.log
+grep -A 10 -B 10 "CORRUPTION" $TEMP/par_term_emu_debug_python.log
 ```
 
 ## Running the TUI with Debug Mode
@@ -390,26 +398,31 @@ DEBUG_LEVEL=3 uv run par-term-emu-tui-rust
 
 ```bash
 # Clear core debug log files (Rust + Python)
-rm -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log
+# Note: Replace $TEMP with your system temp directory
+rm -f $TEMP/par_term_emu_core_rust_debug_rust.log $TEMP/par_term_emu_debug_python.log
 
 # Clear TUI application logs
 rm -rf debug_logs/
 
-# Clear all debug logs
+# Clear all debug logs (recommended - uses Makefile)
 make debug-clear
 
 # View core debug logs in real-time
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log
+tail -f $TEMP/par_term_emu_core_rust_debug_rust.log $TEMP/par_term_emu_debug_python.log
 
 # View TUI application logs in real-time
 tail -f debug_logs/terminal_debug_*.log
 
 # View core debug logs with less
-less /tmp/par_term_emu_core_rust_debug_rust.log
-less /tmp/par_term_emu_debug_python.log
+less $TEMP/par_term_emu_core_rust_debug_rust.log
+less $TEMP/par_term_emu_debug_python.log
 
 # View TUI application logs with less
 less debug_logs/terminal_debug_*.log
+
+# Or use Makefile shortcuts (recommended - handles paths automatically)
+make debug-tail  # Tail both core logs in real-time
+make debug-view  # View both core logs with less
 ```
 
 ## Tips and Best Practices
@@ -419,14 +432,14 @@ Begin with `DEBUG_LEVEL=2` and increase only if needed. Higher levels generate m
 
 ### 2. Clear Logs Between Runs
 ```bash
-# Clear core logs (Rust + Python bindings)
-rm -f /tmp/par_term_emu_core_rust_debug_*.log
+# Clear core logs (Rust + Python bindings) - recommended approach
+make debug-clear
+
+# Or manually (replace $TEMP with your system temp directory)
+rm -f $TEMP/par_term_emu_core_rust_debug_*.log
 
 # Clear TUI application logs
 rm -rf debug_logs/
-
-# Or use make target to clear core logs
-make debug-clear
 
 # Note: TUI application logs are timestamped, so each run creates a new file
 # The debug-clear make target only clears core logs, not TUI logs
@@ -434,14 +447,16 @@ make debug-clear
 
 ### 3. Use Grep Effectively
 ```bash
+# Note: Replace $TEMP with your system temp directory throughout
+
 # Find specific categories in Rust log (VT sequences, core operations)
-grep "\[VT_INPUT\]" /tmp/par_term_emu_core_rust_debug_rust.log
-grep "\[CSI\]" /tmp/par_term_emu_core_rust_debug_rust.log
-grep "\[SCREEN_SWITCH\]" /tmp/par_term_emu_core_rust_debug_rust.log
+grep "\[VT_INPUT\]" $TEMP/par_term_emu_core_rust_debug_rust.log
+grep "\[CSI\]" $TEMP/par_term_emu_core_rust_debug_rust.log
+grep "\[SCREEN_SWITCH\]" $TEMP/par_term_emu_core_rust_debug_rust.log
 
 # Find specific categories in Python core log (rendering, widgets)
-grep "\[RENDER\]" /tmp/par_term_emu_debug_python.log
-grep "\[LIFECYCLE\]" /tmp/par_term_emu_debug_python.log
+grep "\[RENDER\]" $TEMP/par_term_emu_debug_python.log
+grep "\[LIFECYCLE\]" $TEMP/par_term_emu_debug_python.log
 
 # Search TUI application logs (standard Python logging format)
 grep "INFO" debug_logs/terminal_debug_*.log
@@ -449,18 +464,18 @@ grep "WARNING" debug_logs/terminal_debug_*.log
 grep "ERROR" debug_logs/terminal_debug_*.log
 
 # Check all logs for corruption
-grep "\[CORRUPTION\]" /tmp/par_term_emu_core_rust_debug_*.log
+grep "\[CORRUPTION\]" $TEMP/par_term_emu_core_rust_debug_*.log
 grep "corruption" debug_logs/terminal_debug_*.log
 
 # Find time ranges (timestamps are in seconds since epoch for core logs)
-awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' /tmp/par_term_emu_core_rust_debug_rust.log
-awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' /tmp/par_term_emu_debug_python.log
+awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' $TEMP/par_term_emu_core_rust_debug_rust.log
+awk '$2 >= 1234567890.0 && $2 <= 1234567900.0' $TEMP/par_term_emu_debug_python.log
 
 # Count event types in each log
 echo "Rust core events:"
-grep -o "\[.*\]" /tmp/par_term_emu_core_rust_debug_rust.log | sort | uniq -c
+grep -o "\[.*\]" $TEMP/par_term_emu_core_rust_debug_rust.log | sort | uniq -c
 echo "Python core events:"
-grep -o "\[.*\]" /tmp/par_term_emu_debug_python.log | sort | uniq -c
+grep -o "\[.*\]" $TEMP/par_term_emu_debug_python.log | sort | uniq -c
 echo "TUI application log levels:"
 grep -o "\[.*\]" debug_logs/terminal_debug_*.log | sort | uniq -c
 ```
@@ -474,24 +489,26 @@ When corruption appears:
 
 ### 5. Compare Good vs Bad Runs
 ```bash
+# Note: Replace $TEMP with your system temp directory
+
 # Good run
 export DEBUG_LEVEL=3
 uv run par-term-emu-tui-rust --debug
 # Exit cleanly
-mv /tmp/par_term_emu_core_rust_debug_rust.log /tmp/good_run_rust.log
-mv /tmp/par_term_emu_debug_python.log /tmp/good_run_python.log
-cp debug_logs/terminal_debug_*.log /tmp/good_run_tui.log
+mv $TEMP/par_term_emu_core_rust_debug_rust.log $TEMP/good_run_rust.log
+mv $TEMP/par_term_emu_debug_python.log $TEMP/good_run_python.log
+cp debug_logs/terminal_debug_*.log $TEMP/good_run_tui.log
 
 # Bad run (reproduce corruption)
 uv run par-term-emu-tui-rust --debug
-mv /tmp/par_term_emu_core_rust_debug_rust.log /tmp/bad_run_rust.log
-mv /tmp/par_term_emu_debug_python.log /tmp/bad_run_python.log
-cp debug_logs/terminal_debug_*.log /tmp/bad_run_tui.log
+mv $TEMP/par_term_emu_core_rust_debug_rust.log $TEMP/bad_run_rust.log
+mv $TEMP/par_term_emu_debug_python.log $TEMP/bad_run_python.log
+cp debug_logs/terminal_debug_*.log $TEMP/bad_run_tui.log
 
 # Compare
-diff /tmp/good_run_rust.log /tmp/bad_run_rust.log
-diff /tmp/good_run_python.log /tmp/bad_run_python.log
-diff /tmp/good_run_tui.log /tmp/bad_run_tui.log
+diff $TEMP/good_run_rust.log $TEMP/bad_run_rust.log
+diff $TEMP/good_run_python.log $TEMP/bad_run_python.log
+diff $TEMP/good_run_tui.log $TEMP/bad_run_tui.log
 ```
 
 ### 6. Use Buffer Snapshots Strategically
@@ -531,8 +548,9 @@ Debug logging has minimal impact at lower levels:
 
 ```bash
 # Check permissions for core log files
-ls -la /tmp/par_term_emu_core_rust_debug_rust.log
-ls -la /tmp/par_term_emu_debug_python.log
+# Note: Replace $TEMP with your system temp directory
+ls -la $TEMP/par_term_emu_core_rust_debug_rust.log
+ls -la $TEMP/par_term_emu_debug_python.log
 
 # Check TUI application log directory
 ls -la debug_logs/
@@ -545,6 +563,9 @@ DEBUG_LEVEL=3 python -c "import os; print(os.environ.get('DEBUG_LEVEL'))"
 
 # Check if --debug flag was used for TUI application logging
 # TUI logs only appear when --debug flag is passed
+
+# Find your system temp directory
+python -c "import tempfile; print(tempfile.gettempdir())"
 ```
 
 ### No output in debug logs
@@ -563,15 +584,15 @@ DEBUG_LEVEL=3 python -c "import os; print(os.environ.get('DEBUG_LEVEL'))"
 ### Log files growing too large
 
 ```bash
-# Truncate the core logs
-> /tmp/par_term_emu_core_rust_debug_rust.log
-> /tmp/par_term_emu_debug_python.log
-
-# Or delete core logs
-rm -f /tmp/par_term_emu_core_rust_debug_*.log
-
-# Or use make target (core logs only)
+# Use make target to clear core logs (recommended)
 make debug-clear
+
+# Or manually truncate the core logs (replace $TEMP with your system temp directory)
+> $TEMP/par_term_emu_core_rust_debug_rust.log
+> $TEMP/par_term_emu_debug_python.log
+
+# Or delete core logs manually
+rm -f $TEMP/par_term_emu_core_rust_debug_*.log
 
 # Clean up old TUI application logs
 rm -rf debug_logs/
@@ -585,17 +606,17 @@ cd debug_logs && ls -t | tail -n +2 | xargs rm -f
 Debug output goes to files specifically so you can read them from another terminal:
 
 ```bash
-# In a separate terminal window/pane - view core logs
-tail -f /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log
+# In a separate terminal window/pane - use make target (recommended)
+make debug-tail
+
+# Or manually (replace $TEMP with your system temp directory)
+tail -f $TEMP/par_term_emu_core_rust_debug_rust.log $TEMP/par_term_emu_debug_python.log
 
 # View TUI application logs
 tail -f debug_logs/terminal_debug_*.log
 
-# Or use make target for core logs
-make debug-tail
-
 # View all logs together
-tail -f /tmp/par_term_emu_core_rust_debug_*.log debug_logs/terminal_debug_*.log
+tail -f $TEMP/par_term_emu_core_rust_debug_*.log debug_logs/terminal_debug_*.log
 ```
 
 ## Advanced Usage
@@ -632,19 +653,21 @@ debug_info("MY_CATEGORY", "Informational message")
 Use the timestamps to create timelines and correlate events between Rust and Python:
 
 ```bash
+# Note: Replace $TEMP with your system temp directory
+
 # Extract timestamps and events from both logs
 echo "Rust events:"
-grep "\[VT_INPUT\]" /tmp/par_term_emu_core_rust_debug_rust.log | \
+grep "\[VT_INPUT\]" $TEMP/par_term_emu_core_rust_debug_rust.log | \
     awk '{print $2, $4, $5, $6}' | \
     head -10
 
 echo "Python events:"
-grep "\[RENDER\]" /tmp/par_term_emu_debug_python.log | \
+grep "\[RENDER\]" $TEMP/par_term_emu_debug_python.log | \
     awk '{print $2, $4, $5, $6}' | \
     head -10
 
 # Merge and sort by timestamp to see interleaved events
-sort -t'[' -k2 -n /tmp/par_term_emu_core_rust_debug_rust.log /tmp/par_term_emu_debug_python.log | \
+sort -t'[' -k2 -n $TEMP/par_term_emu_core_rust_debug_rust.log $TEMP/par_term_emu_debug_python.log | \
     grep -E '\[(VT_INPUT|RENDER|CORRUPTION)\]' | \
     head -30
 ```
@@ -663,9 +686,16 @@ A: This would be valuable information! It might suggest a timing-sensitive issue
 **Q: How do I debug the Python side without the Rust side?**
 A: Set `DEBUG_LEVEL` and use the Python debug module directly. The Rust side will respect the same environment variable.
 
+**Q: How do I find my system's temp directory?**
+A: Run this command:
+```bash
+python -c "import tempfile; print(tempfile.gettempdir())"
+```
+On Unix/macOS, it's typically `/tmp` or `/var/folders/...`. On Windows, it's typically `C:\Users\YourName\AppData\Local\Temp`.
+
 **Q: Can I change the debug output location?**
 A: For core logs (Rust/Python bindings), edit the file paths in the par-term-emu-core-rust package:
-  - Rust: `src/debug.rs` (hardcoded to `/tmp` on Unix/macOS, uses `std::env::temp_dir()` on Windows)
+  - Rust: `src/debug.rs` (uses `std::env::temp_dir()` for platform-specific temp directory)
   - Python: `python/par_term_emu_core_rust/debug.py` (uses `tempfile.gettempdir()` for platform-specific temp directory)
 
 For TUI application logs, they are always created in `debug_logs/` subdirectory of the current working directory. To change this, edit `setup_debug_logging()` in `src/par_term_emu_tui_rust/app.py`.
@@ -729,13 +759,14 @@ The project Makefile provides convenient targets for debugging:
 | `make debug` | Run with INFO level logging | `DEBUG_LEVEL=2` + `--debug` flag | All three log files |
 | `make debug-verbose` | Run with DEBUG level logging | `DEBUG_LEVEL=3` + `--debug` flag | All three log files |
 | `make debug-trace` | Run with TRACE level logging | `DEBUG_LEVEL=4` + `--debug` flag | All three log files (HUGE!) |
-| `make debug-clear` | Clear core debug logs | N/A | Removes Rust and Python core log files |
+| `make debug-clear` | Clear core debug logs | N/A | Removes Rust and Python core log files from temp dir |
 | `make debug-tail` | Tail core logs in real-time | N/A | Shows Rust + Python core logs |
 | `make debug-view` | View core logs with less | N/A | Opens Rust + Python core logs |
+| `make debug-copy-logs` | Copy logs to ./logs | N/A | **Not yet implemented** |
 
-**Note**: The `debug-copy-logs` target is mentioned in the Makefile help but not yet implemented.
-
-**Note**:
+**Notes**:
+- The `debug-copy-logs` target is mentioned in the Makefile help but not yet implemented
+- The Makefile automatically detects your system's temp directory using `$(TEMP_DIR)` variable
 - The `make debug-clear` target only clears core logs, not TUI application logs
 - TUI application logs are timestamped, so each run creates a new file in `debug_logs/`
 - All `make debug*` targets automatically run `make debug-clear` first to start with clean logs

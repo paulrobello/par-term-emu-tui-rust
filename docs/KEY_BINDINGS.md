@@ -444,7 +444,7 @@ focus_follows_mouse: false  # Auto-focus on mouse hover
 middle_click_paste: true   # Paste on middle click
 ```
 
-**Platform differences:**
+**Platform-specific behavior:**
 - **Linux**: Pastes PRIMARY selection (last text selected with mouse)
 - **macOS/Windows**: Pastes standard clipboard
 
