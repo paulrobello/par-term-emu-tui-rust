@@ -456,9 +456,6 @@ THEMES: dict[str, Theme] = {
     ),
 }
 
-# Default theme
-DEFAULT_THEME = "iterm2-dark"
-
 
 def get_theme(name: str) -> Theme:
     """Get theme by name (case-insensitive, normalized).

@@ -402,7 +402,8 @@ Subcommands:
             default=None,
             metavar="FLAGS",
             help=(
-                "KITTY protocol flags: 1=disambiguate, 2=events, 4=alternate, 8=report_all, 16=text (combine by adding)"
+                "KITTY protocol flags: 1=disambiguate, 2=events, 4=alternate, "
+                "8=report_all, 16=associated_text (combine by adding)"
             ),
         )
         parser.add_argument(

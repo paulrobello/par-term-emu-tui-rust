@@ -84,14 +84,12 @@ class TuiConfig:
         mouse_wheel_scroll_lines: Number of lines to scroll per mouse wheel tick.
                                  Controls how many lines the terminal scrolls when using the
                                  mouse wheel (when mouse tracking is off).
-                                 (default: 1)
+                                 (default: 3)
         disable_insecure_sequences: Block potentially risky escape sequences.
                                    When True, filters out sequences that could be security risks.
-                                   Note: Currently not implemented.
                                    (default: False)
         accept_osc7: Allow directory tracking via OSC 7 sequences.
                     When True, terminal applications can report current working directory.
-                    Note: Currently not implemented.
                     (default: True)
         theme: Color theme name to use for terminal colors.
               Available themes can be listed with `--list-themes`.
@@ -214,7 +212,7 @@ class TuiConfig:
                      "ctrl" - Require Ctrl+Click to open URLs
                      "shift" - Require Shift+Click to open URLs
                      "alt" - Require Alt+Click to open URLs
-                     (default: "none")
+                     (default: "ctrl")
         allowed_url_schemes: List of URL schemes allowed to be opened via clickable
                             links. Schemes are case-insensitive. Examples include
                             "http", "https", "ftp", "ftps", "file", "mailto".
