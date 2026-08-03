@@ -248,6 +248,6 @@ class RecordingManager:
             if file_path.is_relative_to(cwd):
                 return str(file_path.relative_to(cwd))
             return filepath
-        except (ValueError, OSError):
+        except ValueError, OSError:
             # Different drives on Windows or other path issues
             return filepath

@@ -584,7 +584,7 @@ class TuiConfig:
 
                     converted_data[field_info.name] = converted_value
 
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     # Use default value if conversion fails
                     logger.warning(
                         "Failed to convert %s value %r to type %s, using default",
@@ -703,7 +703,7 @@ class TuiConfig:
                         __import__("sys").exit(1)
 
                     print(f"Invalid option: {choice}", file=__import__("sys").stderr)
-                except (KeyboardInterrupt, EOFError):
+                except KeyboardInterrupt, EOFError:
                     print("\nExiting...", file=__import__("sys").stderr)
                     __import__("sys").exit(1)
 
