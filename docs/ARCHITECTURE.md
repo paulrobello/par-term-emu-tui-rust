@@ -81,23 +81,32 @@ par-term-emu-tui-rust/
 │       ├── flash_line.py               # FlashLine widget (flash messages)
 │       └── bell_flash.py               # BellFlash widget (visual bell overlay)
 ├── tests/
-│   └── test_keyboard_protocol.py
+│   ├── conftest.py
+│   ├── test_app_screenshot_integration.py
+│   ├── test_backend_controls.py
+│   ├── test_cli_config_and_themes.py
+│   ├── test_config_and_themes.py
+│   ├── test_keyboard_protocol.py
+│   ├── test_recording_manager.py
+│   ├── test_screenshot_manager.py
+│   └── test_selection_and_clipboard.py
 ├── pyproject.toml
 ├── README.md
 ├── docs/
-│   ├── DEBUG.md                        # Comprehensive debugging guide
-│   ├── CONFIG_REFERENCE.md             # Configuration options reference
-│   ├── DOCUMENTATION_STYLE_GUIDE.md    # Documentation standards
+│   ├── README.md                       # Documentation index
 │   ├── ARCHITECTURE.md                 # This file
-│   ├── KEYBOARD_PROTOCOL.md            # KITTY keyboard protocol documentation
+│   ├── CONFIG_REFERENCE.md             # Configuration options reference
+│   ├── DEBUG.md                        # Comprehensive debugging guide
+│   ├── DOCUMENTATION_STYLE_GUIDE.md    # Documentation standards
 │   ├── FEATURES.md                     # Feature descriptions
-│   ├── KEY_BINDINGS.md                 # Keyboard shortcuts
-│   ├── USAGE.md                        # Command-line usage
-│   ├── QUICK_START.md                  # Getting started
 │   ├── INSTALLATION.md                 # Installation guide
-│   ├── TROUBLESHOOTING.md              # Common issues
+│   ├── KEYBOARD_PROTOCOL.md            # KITTY keyboard protocol documentation
+│   ├── KEY_BINDINGS.md                 # Keyboard shortcuts
+│   ├── QUICK_START.md                  # Getting started
+│   ├── SCREENSHOTS.md                  # Screenshot gallery
 │   ├── THEMES.md                       # Theme documentation
-│   └── SCREENSHOTS.md                  # Screenshot gallery
+│   ├── TROUBLESHOOTING.md              # Common issues
+│   └── USAGE.md                        # Command-line usage
 └── Makefile
 ```
 
@@ -227,19 +236,19 @@ terminal_rows: int = 24
 term: PtyTerminal  # Rust terminal emulator
 
 # State tracking
-_scroll_offset: int          # Lines scrolled up from bottom (0 = at bottom)
-_at_bottom: bool             # True if viewing live output
-_rendering_ready: bool       # False until widget has non-zero size
-_was_alt_screen: bool        # Tracks primary ↔ alternate screen switching
+_scroll_offset: int  # Lines scrolled up from bottom (0 = at bottom)
+_at_bottom: bool  # True if viewing live output
+_rendering_ready: bool  # False until widget has non-zero size
+_was_alt_screen: bool  # Tracks primary ↔ alternate screen switching
 _cursor_blink_visible: bool  # Current blink state
 
 # Shell integration state
-_last_known_directory: str   # From OSC 7
-_last_known_title: str       # From OSC 0/1/2
+_last_known_directory: str  # From OSC 7
+_last_known_title: str  # From OSC 0/1/2
 
 # Generation tracking
 last_update_generation: int  # Last PTY generation we processed
-render_generation: int       # Generation being rendered (atomic snapshot)
+render_generation: int  # Generation being rendered (atomic snapshot)
 
 # Managers (composition)
 selection: SelectionManager
@@ -275,6 +284,8 @@ async on_mouse_scroll_*()     # Handle scrollback navigation
 action_copy_selection()       # Copy selected text to clipboard
 action_paste_clipboard()      # Paste from clipboard to PTY
 action_save_screenshot()      # Save screenshot
+action_toggle_recording()     # Start/stop session recording
+action_reset_keyboard_protocol()  # Reset KITTY keyboard protocol state
 action_scroll_up/down/top/bottom()  # Navigate scrollback
 
 # PTY communication
@@ -288,7 +299,7 @@ _get_cell_metrics()           # Get pixel metrics from environment
 
 **Configuration Integration:**
 
-The widget accepts a `TuiConfig` object and respects 55 configuration options including scrollback_lines, cursor settings, clipboard and clipboard-sync behavior, mouse handling, security options, theme selection, backend notification controls, screenshots, recording, URL handling, visual bell, keyboard protocol (KITTY), and search highlighting.
+The widget accepts a `TuiConfig` object and respects 56 configuration options including scrollback_lines, cursor settings, clipboard and clipboard-sync behavior, mouse handling, security options, theme selection, backend notification controls, screenshots, recording, URL handling, visual bell, keyboard protocol (KITTY), and search highlighting.
 
 **Message Production:**
 
@@ -302,6 +313,8 @@ The widget accepts a `TuiConfig` object and respects 55 configuration options in
 Ctrl+Shift+C        Copy selection
 Ctrl+Shift+V        Paste from clipboard
 Ctrl+Shift+S        Save screenshot
+Ctrl+Shift+R        Toggle session recording
+Ctrl+Shift+K        Reset KITTY keyboard protocol
 Ctrl+Shift+PageUp   Scroll up one page
 Ctrl+Shift+PageDown Scroll down one page
 Shift+Home          Scroll to top
@@ -397,8 +410,8 @@ Manages text selection state and operations for the terminal widget.
 ```python
 class SelectionMode(Enum):
     NORMAL = "normal"  # Character-by-character selection
-    WORD = "word"      # Word-based selection (double-click)
-    LINE = "line"      # Line-based selection (triple-click)
+    WORD = "word"  # Word-based selection (double-click)
+    LINE = "line"  # Line-based selection (triple-click)
 ```
 
 **Key Methods:**
@@ -417,10 +430,10 @@ def get_selected_text() -> str
 
 ```python
 self.start: tuple[int, int] | None  # (col, row) or None
-self.end: tuple[int, int] | None    # (col, row) or None
-self.selecting: bool                # True during mouse drag
+self.end: tuple[int, int] | None  # (col, row) or None
+self.selecting: bool  # True during mouse drag
 self.selection_mode: SelectionMode  # Current selection mode
-self.anchor_row: int | None         # Original row for line/word selection dragging
+self.anchor_row: int | None  # Original row for line/word selection dragging
 ```
 
 **Drag-to-Extend Behavior:**
@@ -548,19 +561,19 @@ Defines the `Theme` dataclass and 12 built-in color themes compatible with iTerm
 @dataclass
 class Theme:
     name: str
-    palette: list[str]         # 16 ANSI colors (hex)
-    background: str            # Default background
-    foreground: str            # Default foreground
-    cursor: str                # Cursor color
-    cursor_text: str           # Text color under cursor
-    selection: str             # Selection background
-    selection_text: str        # Selection text color
-    link: str                  # Hyperlink color
-    bold: str                  # Bold text color
-    cursor_guide: str          # Vertical cursor guide
-    underline: str             # Underline color
-    badge: str                 # Badge color
-    match: str                 # Search match highlight
+    palette: list[str]  # 16 ANSI colors (hex)
+    background: str  # Default background
+    foreground: str  # Default foreground
+    cursor: str  # Cursor color
+    cursor_text: str  # Text color under cursor
+    selection: str  # Selection background
+    selection_text: str  # Selection text color
+    link: str  # Hyperlink color
+    bold: str  # Bold text color
+    cursor_guide: str  # Vertical cursor guide
+    underline: str  # Underline color
+    badge: str  # Badge color
+    match: str  # Search match highlight
 ```
 
 **Built-in Themes:**
@@ -659,7 +672,7 @@ Manages application configuration with YAML persistence and XDG directory compli
 ~/.config/par-term-emu-tui-rust/config.yaml
 ```
 
-**Configuration Options (55 total):**
+**Configuration Options (56 total):**
 
 **Selection & Clipboard:**
 - `auto_copy_selection` - Copy on selection complete (default: true)
@@ -697,11 +710,30 @@ Manages application configuration with YAML persistence and XDG directory compli
 **Notifications:**
 - `show_notifications` - Display OSC 9/777 toasts (default: true)
 - `notification_timeout` - Toast duration seconds (default: 5)
+- `notification_bell_desktop` - Forward BEL events to desktop notification centers (default: false)
+- `notification_bell_sound` - Backend bell audio volume 0-100 (default: 0)
+- `notification_bell_visual` - Backend visual bell overlay (default: true)
+- `notification_activity_enabled` - Alert when activity resumes after inactivity (default: false)
+- `notification_activity_threshold` - Inactivity seconds before activity alerts fire (default: 10)
+- `notification_silence_enabled` - Alert after prolonged silence (default: false)
+- `notification_silence_threshold` - Silence seconds that trigger alerts (default: 300)
+- `notification_max_buffer` - Max OSC 9/777 entries buffered in the backend (default: 64)
+
+**Clipboard Sync:**
+- `clipboard_max_sync_events` - Cap on clipboard sync events retained by the backend (default: 64)
+- `clipboard_max_event_bytes` - Max payload size per clipboard sync event in bytes (default: 2048)
 
 **Screenshots:**
 - `screenshot_directory` - Save directory (default: auto-detect)
 - `screenshot_format` - File format (default: `"png"`)
 - `open_screenshot_after_capture` - Auto-open viewer (default: false)
+
+**Recording:**
+- `recording_directory` - Save directory for recordings (default: auto-detect)
+- `recording_format` - File format (default: `"asciicast"`)
+- `recording_title_template` - Title template with `{timestamp}` placeholder (default: `"Terminal Session {timestamp}"`)
+- `recording_auto_export_on_stop` - Auto-export recording when stopped (default: true)
+- `open_recording_after_export` - Auto-open recording after export (default: false)
 
 **Hyperlinks & URLs:**
 - `clickable_urls` - Enable URL clicking (default: true)
@@ -770,6 +802,7 @@ class Flash(Message):
         style: Semantic style (default, warning, success, error)
         duration: Display duration seconds (or None for default)
     """
+
     content: str | Content
     style: Literal["default", "warning", "success", "error"]
     duration: float | None = None
@@ -790,6 +823,7 @@ class TitleChanged(Message):
     Args:
         title: The new title
     """
+
     title: str
 ```
 
@@ -1110,6 +1144,7 @@ Textual's reactive system for dimension tracking:
 terminal_cols = reactive(80)
 terminal_rows = reactive(24)
 
+
 def watch_terminal_cols(self, cols: int):
     """Called when terminal_cols changes"""
     # Resize PTY if not in initialization
@@ -1186,6 +1221,7 @@ class MyManager:
     def my_method(self):
         pass
 
+
 # 2. Initialize in TerminalWidget.__init__()
 self.my_manager = MyManager(
     term=self.term,
@@ -1204,10 +1240,13 @@ self.my_manager.my_method()
 @dataclass
 class MyMessage(Message):
     """Custom message."""
+
     data: str
+
 
 # 2. Post from widget
 self.post_message(MyMessage(data="something"))
+
 
 # 3. Handle in app
 @on(MyMessage)
@@ -1433,13 +1472,13 @@ DEBUG_LEVEL=3 python -m par_term_emu_tui_rust
 
 ```python
 from par_term_emu_core_rust.debug import (
-    debug_log,          # General logging
-    debug_trace,        # Detailed trace (level 4)
-    log_generation_check,      # Generation tracking
-    log_widget_lifecycle,      # Widget mount/unmount/resize
-    log_render_call,    # Render call details
-    log_render_content, # Rendered line content
-    log_screen_corruption,     # Corruption detection
+    debug_log,  # General logging
+    debug_trace,  # Detailed trace (level 4)
+    log_generation_check,  # Generation tracking
+    log_widget_lifecycle,  # Widget mount/unmount/resize
+    log_render_call,  # Render call details
+    log_render_content,  # Rendered line content
+    log_screen_corruption,  # Corruption detection
 )
 ```
 
@@ -1530,7 +1569,7 @@ The par-term-emu-tui-rust architecture is a well-structured Python TUI wrapper a
 2. **Thread-safe design** - Atomic snapshots, generation tracking
 3. **Performance-optimized** - Debounced refresh, LRU caching, line API
 4. **Feature-rich** - Selection, clipboard, themes, screenshots, recording, shell integration
-5. **User-configurable** - 55 options in YAML config
+5. **User-configurable** - 56 options in YAML config
 6. **Debuggable** - Comprehensive logging infrastructure
 7. **Extensible** - Manager pattern allows easy feature additions
 

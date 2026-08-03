@@ -397,8 +397,8 @@ Navigate through terminal history to view previous output.
 ### Scrollback Features
 
 **Keyboard navigation:**
-- `Shift+PageUp` - Scroll up one page
-- `Shift+PageDown` - Scroll down one page
+- `Ctrl+Shift+PageUp` - Scroll up one page
+- `Ctrl+Shift+PageDown` - Scroll down one page
 - `Shift+Home` - Jump to top of history
 - `Shift+End` - Jump to bottom (live output)
 
@@ -801,7 +801,7 @@ The KITTY keyboard protocol provides:
 ```yaml
 # KITTY keyboard protocol settings
 keyboard_protocol_enabled: false        # Enable protocol globally
-keyboard_protocol_flags: 1              # Feature flags (1=disambiguate, 2=events, 4=alternate, 8=report_all, 16=text)
+keyboard_protocol_flags: 1              # Feature flags (1=disambiguate, 2=events, 4=alternate, 8=report_all, 16=associated_text)
 keyboard_protocol_auto_detect: false    # Auto-enable when apps request it
 ```
 

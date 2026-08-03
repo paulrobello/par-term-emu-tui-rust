@@ -47,7 +47,7 @@ Detailed reference for all features and configuration:
    - Clipboard operations
    - Special keys
 
-3. **[Configuration Reference](CONFIG_REFERENCE.md)** - All 55 configuration options
+3. **[Configuration Reference](CONFIG_REFERENCE.md)** - All 56 configuration options
    - Selection & clipboard
    - Scrollback & cursor
    - Paste enhancement
@@ -62,7 +62,7 @@ Detailed reference for all features and configuration:
 
 4. **[Theme System](THEMES.md)** - Color themes and customization
    - Using themes
-   - 11 built-in themes
+   - 12 built-in themes
    - Creating custom themes
    - Theme file format
    - Theme application

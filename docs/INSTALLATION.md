@@ -19,7 +19,7 @@ Before installing Par Term Emu TUI Rust, ensure your system meets these requirem
 
 | Requirement | Minimum Version | Notes | Check Command |
 |-------------|----------------|-------|---------------|
-| Python | 3.12 | Required for running the application | `python --version` |
+| Python | 3.12 | Runtime requirement; development requires 3.14 | `python --version` |
 | uv | Latest | Package manager for dependency installation | `uv --version` |
 | Terminal | N/A | True color support recommended | See below |
 
@@ -95,7 +95,7 @@ uv sync
 uv run pre-commit install
 ```
 
-> **📝 Note:** This project depends on `par-term-emu-core-rust` (Rust terminal emulation backend). The minimum required version is specified in `pyproject.toml`. For local development of both TUI and backend, ensure the Rust backend is cloned alongside this repository.
+> **📝 Note:** This project depends on `par-term-emu-core-rust` (Rust terminal emulation backend), which `uv sync` resolves automatically from PyPI. The required version is declared in `pyproject.toml`. No local checkout of the backend is required.
 
 ## Post-Installation Setup
 
@@ -235,7 +235,7 @@ Install Hack font for optimal screenshot rendering.
 par-term-emu-tui-rust install font
 ```
 
-**Installation location:** `~/.local/share/fonts/Hack/`
+**Installation location:** `~/.local/share/fonts/` (installed as `Hack-Regular.ttf`)
 
 **License:** MIT/Bitstream Vera License
 

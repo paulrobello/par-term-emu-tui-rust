@@ -323,7 +323,7 @@ The protocol can be enabled in three ways:
 1. **Manual Configuration:**
 ```yaml
 keyboard_protocol_enabled: true
-keyboard_protocol_flags: 15  # Enable all features (default)
+keyboard_protocol_flags: 15  # Enable all features
 ```
 
 2. **Auto-Detection (Recommended):**
@@ -347,7 +347,7 @@ The `keyboard_protocol_flags` value is a bitmask combining:
 - **8**: Report all keys as escape codes
 - **16**: Report associated text
 
-Default: `15` (all features enabled)
+Default: `1` (disambiguate escape codes)
 
 ### Key Encoding
 

@@ -266,15 +266,15 @@ snapshot = term.debug_snapshot_buffer()
 info = term.debug_info()
 
 # PtyTerminal adds extra info
-print(info['pty_running'])  # 'true'
-print(info['update_generation'])  # '42'
+print(info["pty_running"])  # 'true'
+print(info["update_generation"])  # '42'
 ```
 
 **Note**: These snapshot methods return data for programmatic inspection. To enable automatic debug logging to the log files, set the `DEBUG_LEVEL` environment variable as described in the Quick Start section.
 
 ## Debugging the TUI Corruption Issue
 
-Based on the handoff.md, here's how to use the debug system to investigate:
+The debug system is designed to help investigate rendering corruption and similar issues. Use the following workflow to narrow down where the problem originates:
 
 ### Step 1: Reproduce with Level 2 Logging
 
@@ -642,6 +642,7 @@ debug_log!("MY_CATEGORY", "Debug message: {}", value);
 ```python
 # Internal use only - these are imported within the par_term_emu_tui_rust package
 from par_term_emu_core_rust.debug import debug_log, debug_info
+
 debug_log("MY_CATEGORY", "Something interesting happened")
 debug_info("MY_CATEGORY", "Informational message")
 ```
@@ -769,7 +770,7 @@ The project Makefile provides convenient targets for debugging:
 - The Makefile automatically detects your system's temp directory using `$(TEMP_DIR)` variable
 - The `make debug-clear` target only clears core logs, not TUI application logs
 - TUI application logs are timestamped, so each run creates a new file in `debug_logs/`
-- All `make debug*` targets automatically run `make debug-clear` first to start with clean logs
+- The run targets (`debug`, `debug-verbose`, `debug-trace`) automatically run `make debug-clear` first to start with clean logs; the viewer targets (`debug-tail`, `debug-view`) do not
 
 ## See Also
 

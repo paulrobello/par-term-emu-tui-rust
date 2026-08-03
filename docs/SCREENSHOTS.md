@@ -77,14 +77,19 @@ graph TD
     Open -->|No| Done
     View --> Done
 
-    style Trigger fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
-    style Capture fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
-    style Format fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
-    style Dir fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
-    style Save fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
-    style Open fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
-    style View fill:#880e4f,stroke:#c2185b,stroke-width:2px,color:#ffffff
-    style Done fill:#37474f,stroke:#78909c,stroke-width:2px,color:#ffffff
+    class Trigger,Save active
+    class Capture primary
+    class Format data
+    class Dir,View external
+    class Open warning
+    class Done neutral
+
+    classDef primary fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
+    classDef active fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
+    classDef data fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
+    classDef warning fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
+    classDef external fill:#4a148c,stroke:#9c27b0,stroke-width:2px,color:#ffffff
+    classDef neutral fill:#37474f,stroke:#78909c,stroke-width:2px,color:#ffffff
 ```
 
 ## Screenshot Formats
@@ -113,7 +118,6 @@ screenshot_format: "png"
 **Characteristics:**
 - Lossy compression
 - Smaller file size
-- Quality configurable
 - Slight text artifacts
 
 **Configuration:**
@@ -231,15 +235,15 @@ graph TD
     PicturesDir --> Save
     Home --> Save
 
-    style Start fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
-    style Config fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
-    style OSC fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
-    style Pictures fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
-    style ConfigDir fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
-    style OSCDir fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
-    style PicturesDir fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
-    style Home fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
-    style Save fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
+    class Start active
+    class Config,OSC,Pictures warning
+    class ConfigDir,OSCDir,PicturesDir,Home data
+    class Save primary
+
+    classDef primary fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
+    classDef active fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
+    classDef data fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
+    classDef warning fill:#ff6f00,stroke:#ffa726,stroke-width:2px,color:#ffffff
 ```
 
 ### Configure Custom Directory
@@ -256,9 +260,9 @@ mkdir -p ~/Documents/Screenshots
 
 ### Filename Format
 
-Screenshots use timestamped filenames:
+Screenshots use timestamped filenames with the timestamp in UTC:
 
-```
+```text
 terminal_screenshot_YYYYMMDD_HHMMSS.<format>
 ```
 

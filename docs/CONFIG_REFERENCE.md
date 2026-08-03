@@ -250,12 +250,12 @@ mouse_wheel_scroll_lines: 3      # Scroll 3 lines per tick
 
 ### Cursor Style Options
 
-- `"block"` - Solid block cursor
-- `"blinking_block"` - Blinking block cursor
-- `"underline"` - Solid underline cursor
+- `"blinking_block"` - Blinking block cursor (default)
+- `"steady_block"` - Solid block cursor
 - `"blinking_underline"` - Blinking underline cursor
-- `"bar"` - Solid vertical bar cursor
+- `"steady_underline"` - Solid underline cursor
 - `"blinking_bar"` - Blinking vertical bar cursor
+- `"steady_bar"` - Solid vertical bar cursor
 
 ### Example Configuration
 

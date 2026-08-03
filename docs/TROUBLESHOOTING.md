@@ -517,7 +517,7 @@ exec $SHELL
 
 **Problem:** After exiting nvim, htop, or other TUI apps, keyboard input appears as codes like "8u 5u" or "105;5u"
 
-**Status:** **FIXED** automatically as of v0.6.1
+**Status:** **FIXED** automatically as of v0.4.0
 
 **How it's fixed:**
 - Terminal core automatically resets keyboard protocol state when:
@@ -526,7 +526,10 @@ exec $SHELL
 - No manual intervention needed
 
 **If you still see this:**
-1. Verify you're running v0.6.1 or later: `par-term-emu-tui-rust --version`
+1. Verify you're running v0.4.0 or later:
+   ```bash
+   uv run python -c "import importlib.metadata as m; print(m.version('par-term-emu-tui-rust'))"
+   ```
 2. Try Ctrl+L to force screen refresh
 3. As a workaround, type: `reset` and press Enter
 
@@ -755,7 +758,9 @@ make debug           # DEBUG_LEVEL=2 (info)
 make debug-verbose   # DEBUG_LEVEL=3 (debug)
 make debug-trace     # DEBUG_LEVEL=4 (trace - WARNING: huge logs)
 make debug-tail      # View core logs in real-time
+make debug-view      # View core logs with less
 make debug-clear     # Clear core debug logs
+make debug-copy-logs # Copy core debug logs to ./logs directory
 ```
 
 ### Debug Levels (Core Logs)
@@ -876,7 +881,7 @@ Failed to create screenshot directory: ...
 
 4. **Check version:**
    ```bash
-   par-term-emu-tui-rust --version
+   uv run python -c "import importlib.metadata as m; print(m.version('par-term-emu-tui-rust'))"
    python --version
    uv --version
    ```
@@ -893,7 +898,7 @@ uname -a
 python --version
 
 # Package version
-par-term-emu-tui-rust --version
+uv run python -c "import importlib.metadata as m; print(m.version('par-term-emu-tui-rust'))"
 
 # Terminal emulator
 echo $TERM

@@ -82,9 +82,13 @@ graph TD
     Start --> Shell
     Shell --> Ready
 
-    style Start fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
-    style Shell fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
-    style Ready fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
+    class Start primary
+    class Shell active
+    class Ready info
+
+    classDef primary fill:#e65100,stroke:#ff9800,stroke-width:3px,color:#ffffff
+    classDef active fill:#1b5e20,stroke:#4caf50,stroke-width:2px,color:#ffffff
+    classDef info fill:#0d47a1,stroke:#2196f3,stroke-width:2px,color:#ffffff
 ```
 
 ## Basic Configuration
@@ -135,8 +139,8 @@ screenshot_directory: null  # Auto-detect best location
 | **Ctrl+Shift+Q** | Quit application |
 | **Ctrl+Shift+S** | Take screenshot |
 | **Ctrl+Shift+C** | Copy selection |
-| **PageUp/Down** | Scroll history |
-| **Home/End** | Jump to top/bottom |
+| **Ctrl+Shift+PageUp/Down** | Scroll history one page |
+| **Shift+Home / Shift+End** | Jump to top / bottom of scrollback |
 
 ### Mouse Actions
 

@@ -8,6 +8,22 @@ The terminal emulator supports the KITTY keyboard protocol for enhanced keyboard
 - **Receive key release events**: With flag 2, apps can detect when keys are released (useful for games and advanced editors)
 - **Get alternate key representations**: With flag 4, apps can receive alternate interpretations of keys
 
+## Table of Contents
+
+- [Enabling the Protocol](#enabling-the-protocol)
+- [Protocol Flags](#protocol-flags)
+- [How It Works](#how-it-works)
+- [Compatible Applications](#compatible-applications)
+- [Testing](#testing)
+- [Neovim Configuration](#neovim-configuration)
+- [Troubleshooting](#troubleshooting)
+- [Use Cases](#use-cases)
+- [Technical Details](#technical-details)
+- [Limitations](#limitations)
+- [FAQ](#faq)
+- [See Also](#see-also)
+- [Related Documentation](#related-documentation)
+
 ## Enabling the Protocol
 
 There are two modes for enabling KITTY keyboard protocol:
@@ -92,25 +108,26 @@ Protocol features are controlled by combining flag values:
 | 1 | Disambiguate | Distinguish Ctrl+I from Tab, Ctrl+M from Enter, etc. | ✅ **Fully Supported** |
 | 2 | Report Events | Report both key press AND release events | ❌ Not supported (Textual limitation) |
 | 4 | Alternate Keys | Report alternate key representations | ❌ Not supported (Textual limitation) |
-| 8 | Report All | Report all keys as escape codes | ✅ Supported via flag 1 |
+| 8 | Report All | Report all keys as escape codes | ✅ Inherent — always on when protocol is active |
 | 16 | Associated Text | Include associated text with events | ❌ Not supported (Textual limitation) |
 
 ### Combining Flags
 
-Add flag values together to enable multiple features. Note that due to Textual framework limitations, only flag 1 (disambiguation) is currently effective:
+Add flag values together to enable multiple features. Only flag 1 changes what applications can interpret; flags 2, 4, and 16 require information that Textual does not expose:
 
 ```yaml
 # Just disambiguation (recommended and fully supported)
 keyboard_protocol_flags: 1
 
-# Disambiguation + key release events (flag 2 has no effect due to Textual limitation)
-keyboard_protocol_flags: 3   # 1 + 2
+# Disambiguate + report all keys (flag 8 is always on when the protocol is active,
+# so this is equivalent to flag 1 alone in practice)
+keyboard_protocol_flags: 9   # 1 + 8
 
-# Disambiguation + events + alternate keys (flags 2 and 4 have no effect)
+# Disambiguate + events + alternate keys (flags 2 and 4 have no effect due to Textual limitation)
 keyboard_protocol_flags: 7   # 1 + 2 + 4
 ```
 
-**Note**: While you can configure flags 2, 4, 8, and 16, they will not have any effect due to Textual framework constraints. Only flag 1 (disambiguation) is currently functional.
+**Note**: Flags 2 (key release events), 4 (alternate keys), and 16 (associated text) have no effect because Textual does not surface that information. Flag 8 (report all keys) is inherent — the TUI always encodes every key as an escape sequence when the protocol is active, so setting the bit does not change behavior. Flag 1 (disambiguation) is the only flag that controls what embedded applications can interpret.
 
 ## How It Works
 
@@ -562,7 +579,7 @@ The TUI implements KITTY keyboard protocol with the following support:
 ⚠️ **Limitations** (Textual framework constraints):
 - **Flag 2 (Key release events)**: Not supported - Textual doesn't report key releases
 - **Flag 4 (Alternate keys)**: Not supported - Textual doesn't provide alternate representations
-- **Flag 8 (Report all keys)**: Supported through flag 1 implementation
+- **Flag 8 (Report all keys)**: Inherent - the TUI always encodes every key as an escape sequence when the protocol is active, so this flag needs no special handling
 - **Flag 16 (Associated text)**: Not supported - Textual doesn't include associated text
 
 ### Why These Limitations?

@@ -313,35 +313,54 @@ grep "theme:" ~/.config/par-term-emu-tui-rust/config.yaml
 
 **Export current theme:**
 ```bash
-# Export theme to YAML file
+# Export theme to the XDG themes directory
 par-term-emu-tui-rust --export-theme my-custom-theme
 
-# Creates: my-custom-theme.yaml
+# Creates: ~/.config/par-term-emu-tui-rust/themes/my-custom-theme.yaml
 ```
 
 **Edit theme file:**
 ```yaml
-# my-custom-theme.yaml
+# ~/.config/par-term-emu-tui-rust/themes/my-custom-theme.yaml
 name: "my-custom-theme"
-colors:
-  # 16 ANSI colors
-  black: [0, 0, 0]
-  red: [205, 49, 49]
-  green: [13, 188, 121]
-  # ... more colors ...
-
-  # Special colors
-  background: [30, 30, 30]
-  foreground: [229, 229, 229]
-  cursor: [229, 229, 229]
-  selection: [54, 54, 54]
-  link: [100, 150, 255]
+palette:
+  # 16 ANSI colors (0-15) as hex strings
+  - "#000000"   # 0  black
+  - "#bb0000"   # 1  red
+  - "#00bb00"   # 2  green
+  - "#bbbb00"   # 3  yellow
+  - "#0000bb"   # 4  blue
+  - "#bb00bb"   # 5  magenta
+  - "#00bbbb"   # 6  cyan
+  - "#bbbbbb"   # 7  white
+  - "#555555"   # 8  bright black
+  - "#ff5555"   # 9  bright red
+  - "#55ff55"   # 10 bright green
+  - "#ffff55"   # 11 bright yellow
+  - "#5555ff"   # 12 bright blue
+  - "#ff55ff"   # 13 bright magenta
+  - "#55ffff"   # 14 bright cyan
+  - "#ffffff"   # 15 bright white
+background: "#1e1e1e"
+foreground: "#e5e5e5"
+cursor: "#e5e5e5"
+cursor_text: "#000000"
+selection: "#363636"
+selection_text: "#ffffff"
+link: "#6496ff"
+bold: "#ffffff"
+cursor_guide: "#a6e8ff"
+underline: "#bbbbbb"
+badge: "#ff0000"
+match: "#ffff00"
 ```
+
+> **📝 Note:** Every field is required. The cleanest way to create a custom theme is to export a built-in theme first, then edit the resulting file.
 
 **Apply custom theme:**
 ```bash
-# Load theme from file
-par-term-emu-tui-rust --apply-theme-from my-custom-theme.yaml
+# Load theme from file (path may be absolute or relative)
+par-term-emu-tui-rust --apply-theme-from ~/.config/par-term-emu-tui-rust/themes/my-custom-theme.yaml
 ```
 
 ## Testing and Automation
@@ -450,17 +469,17 @@ graph LR
 ```
 
 ```bash
-# 1. Export base theme
+# 1. Export base theme to ~/.config/par-term-emu-tui-rust/themes/my-theme.yaml
 par-term-emu-tui-rust --export-theme my-theme
 
 # 2. Edit colors
-$EDITOR my-theme.yaml
+$EDITOR ~/.config/par-term-emu-tui-rust/themes/my-theme.yaml
 
-# 3. Apply and test
-par-term-emu-tui-rust --apply-theme-from my-theme.yaml
+# 3. Apply and test (loads from file, writes theme key to config.yaml)
+par-term-emu-tui-rust --apply-theme-from ~/.config/par-term-emu-tui-rust/themes/my-theme.yaml
 
-# 4. If satisfied, make permanent
-par-term-emu-tui-rust --apply-theme-from my-theme.yaml
+# 4. Once the theme key is in config.yaml, later sessions load it automatically
+par-term-emu-tui-rust
 ```
 
 ## Advanced Usage
