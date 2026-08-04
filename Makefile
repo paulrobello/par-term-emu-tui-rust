@@ -1,7 +1,7 @@
 .PHONY: help run install setup-venv clean fmt lint test checkall themes \
         debug debug-verbose debug-trace debug-clear debug-tail debug-view debug-copy-logs \
         pre-commit-install pre-commit-uninstall pre-commit-run pre-commit-update keys borders colors \
-        deploy
+        deploy reinstall-core
 
 ###############################################################################
 # Common make values.
@@ -27,6 +27,7 @@ help:
 	@echo "Setup & Installation:"
 	@echo "  setup-venv      - Create virtual environment and install dependencies"
 	@echo "  install         - Install all dependencies (requires par-term-emu-core-rust)"
+	@echo "  reinstall-core  - Force reinstall par-term-emu-core-rust (rebuild Rust)"
 	@echo ""
 	@echo "Running:"
 	@echo "  run             - Run the interactive TUI"
@@ -87,6 +88,23 @@ install:
 	uv sync
 	@echo ""
 	@echo "Dependencies installed!"
+
+reinstall-core:
+	@echo "======================================================================"
+	@echo "  Force reinstalling par-term-emu-core-rust"
+	@echo "======================================================================"
+	@echo ""
+	@if [ ! -d ".venv" ]; then \
+		echo "Warning: .venv not found. Run 'make setup-venv' first."; \
+		exit 1; \
+	fi
+	@echo "Reinstalling par-term-emu-core-rust (this will rebuild the Rust library)..."
+	uv sync --reinstall-package par-term-emu-core-rust
+	@echo ""
+	@echo "======================================================================"
+	@echo "  par-term-emu-core-rust reinstalled successfully!"
+	@echo "======================================================================"
+	@echo ""
 
 # ============================================================================
 # Running
