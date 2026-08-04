@@ -277,6 +277,7 @@ import pytest
 from pathlib import Path
 from par_term_emu_tui_rust.config import Config
 
+
 def test_config_loading() -> None:
     """Test configuration file loading."""
     # Arrange
@@ -289,13 +290,12 @@ def test_config_loading() -> None:
     assert config is not None
     assert config.theme == "dark-background"
 
+
 @pytest.fixture
 def sample_config() -> dict[str, str]:
     """Fixture for test configuration."""
-    return {
-        "theme": "solarized-dark",
-        "scrollback_lines": 10000
-    }
+    return {"theme": "solarized-dark", "scrollback_lines": 10000}
+
 
 def test_with_fixture(sample_config: dict[str, str]) -> None:
     """Test using fixture."""
@@ -454,6 +454,7 @@ def process_items(items: list[str]) -> dict[str, int]:
     """Process items and return counts."""
     return {item: len(item) for item in items}
 
+
 # Use union operator
 def get_value(key: str) -> str | None:
     """Get value or None if not found."""
@@ -487,10 +488,12 @@ def complex_function(param1: str, param2: int) -> bool:
 ```python
 from pathlib import Path
 
+
 # Always specify encoding
 def read_config(path: Path) -> str:
     """Read configuration file."""
     return path.read_text(encoding="utf-8")
+
 
 def write_config(path: Path, content: str) -> None:
     """Write configuration file."""

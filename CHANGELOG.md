@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-11-24
+
+### Added
+- **Keyboard Protocol Reset**: Manual reset command for enhanced keyboard mode recovery
+
+### Fixed
+- **Scrollback Graphics Rendering**: Multiple fixes for Sixel/graphics display when scrolled back
+  - Graphics now correctly scroll with text content in scrollback
+  - Fixed graphics position calculation using scroll_offset_rows
+  - Graphics properly hidden when viewing scrollback without graphics
+  - Handle edge case when scrollback is cleared while scrolled back
+- **Debug Logging**: Use correct temp directory (`/tmp`) for debug logs on macOS
+- **Mouse Events**: Improved hover event delivery for nested TUI applications
+
 ## [0.6.0] - 2025-11-22
 
 ### Added

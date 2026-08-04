@@ -13,46 +13,20 @@ A modern terminal emulator TUI built with [Textual](https://textual.textualize.i
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/probello3)
 
-## What's New in v0.6.0
+## What's New in v0.6.1
 
-### Graphics Protocol Support 🎨
-- **Full Inline Graphics Rendering**: Display images directly in the terminal
-  - **Sixel Graphics**: DEC VT340 palette-based graphics protocol
-  - **Kitty Graphics Protocol**: Modern PNG/RGB image transmission
-  - **iTerm2 Inline Images**: Base64-encoded image display
-  - **Unicode Half-Block Rendering**: Efficient 2:1 vertical compression using ▀ (U+2580)
-  - **Full RGB Color**: 24-bit color with alpha channel transparency
+### Bug Fixes 🔧
+- **Scrollback Graphics Rendering**: Multiple fixes for Sixel/graphics display when scrolled back
+  - Graphics now correctly scroll with text content in scrollback
+  - Fixed graphics position calculation using scroll_offset_rows
+  - Handle edge case when scrollback is cleared while scrolled back
+- **Debug Logging**: Use correct temp directory (`/tmp`) for debug logs on macOS
+- **Mouse Events**: Improved hover event delivery for nested TUI applications
 
-### Animation Support 🎬
-- **Kitty Protocol Animations**: Smooth graphics animation at ~60Hz
-  - Multi-frame animation transmission
-  - Frame delay control in milliseconds
-  - Looping modes: infinite, finite, or single play
-  - Animation controls: play, pause, stop
-  - Automatic frame updates without manual refresh
+### Added
+- **Keyboard Protocol Reset**: Manual reset command for enhanced keyboard mode recovery
 
-### Enhanced Text Selection 🖱️
-- **Drag-to-Extend Multi-Click Selections**: Powerful selection extension
-  - Triple-click + drag to extend selection by full lines (upward or downward)
-  - Anchor point tracking maintains original selection position during drag
-  - Respects `triple_click_selects_wrapped_lines` configuration
-  - Auto-copy on mouse up (when `auto_copy_selection` enabled)
-
-### Graphics Integration
-- **Scrollback Preservation**: Graphics scroll with text content and remain visible in history
-- **Multiple Graphics**: Display multiple images on screen simultaneously
-- **Overlapping Support**: Graphics overlay properly on text content
-- **Testing Utilities**:
-  - `scripts/display_image_sixel.py` - Display images using Sixel protocol
-  - `scripts/test_kitty_animation.py` - Test Kitty animation features
-
-### Use Cases
-- **Image Viewers**: Use terminal image viewers like `viu`, `chafa`, or `img2sixel`
-- **Data Visualization**: Display charts, graphs, and plots inline
-- **Rich Media**: Preview images, animations, and graphics without leaving the terminal
-- **Documentation**: Show diagrams and images in terminal-based documentation
-
-See [CHANGELOG.md](CHANGELOG.md) for complete release history and v0.5.0 features.
+See [CHANGELOG.md](CHANGELOG.md) for complete release history and previous version features.
 
 ## Quick Start
 
